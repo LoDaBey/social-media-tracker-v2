@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { query, queryOne } from "@/lib/db";
 import type { Role, TempSocialMediaAccount, TempUser } from "@/types/db";
 import { SetupForm } from "@/components/setup/SetupForm";
+import { NoAssignedAccountsNotice } from "@/components/setup/NoAssignedAccountsNotice";
 import { PLATFORMS, type Platform } from "@/lib/platform-config";
 
 type UserTargetsRow = Pick<
@@ -63,7 +64,9 @@ export default async function SetupPage() {
 
   const targets = targetsFromUser(user);
   const assignedPlatforms = PLATFORMS.filter((p) => targets[p] > 0);
-  if (assignedPlatforms.length === 0) redirect("/dashboard");
+  if (assignedPlatforms.length === 0) {
+    return <NoAssignedAccountsNotice />;
+  }
 
   const existingAccounts = await query<TempSocialMediaAccount>(
     `SELECT *

@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getDashboardData } from "@/lib/dashboard-data";
 import { PLATFORMS } from "@/lib/platform-config";
-import { WalletPreviewCard } from "@/components/dashboard/WalletPreviewCard";
-import { LevelCard } from "@/components/dashboard/LevelCard";
+// import { WalletPreviewCard } from "@/components/dashboard/WalletPreviewCard";
+// import { LevelCard } from "@/components/dashboard/LevelCard";
 import { MissingAccountsBanner } from "@/components/dashboard/MissingAccountsBanner";
 import { DashboardRowsClient } from "@/components/dashboard/DashboardRowsClient";
 import { SubmissionCountdownChip } from "@/components/dashboard/SubmissionCountdownChip";
@@ -84,7 +84,7 @@ function targetForPlatform(user: TempUser, platform: (typeof PLATFORMS)[number])
 }
 
 function hasCompletedAssignedAccounts(data: DashboardData) {
-  if (assignedAccountTargetTotal(data.user) === 0) return true;
+  if (assignedAccountTargetTotal(data.user) === 0) return false;
 
   return PLATFORMS.every(
     (platform) =>
@@ -132,10 +132,12 @@ export default async function DashboardPage() {
         <SubmissionCountdownChip initialMs={data.windowClosesInMs} />
       </header>
 
+      {/*
       <section className="mt-6 flex flex-col gap-4 md:flex-row" aria-label="Wallet and level">
         <WalletPreviewCard wallet={data.wallet} />
         <LevelCard level={data.user.current_level} />
       </section>
+      */}
 
       <MissingAccountsBanner missingAccounts={data.missingAccounts} />
 
