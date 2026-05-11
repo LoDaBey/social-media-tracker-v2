@@ -6,7 +6,6 @@ const LINKS = [
   { href: "/admin/employees", label: "Employees" },
   { href: "/admin/team-leads", label: "Team leads" },
   { href: "/admin/payouts", label: "Payouts" },
-  { href: "/admin/settings", label: "Settings" },
 ] as const;
 
 function isActive(pathname: string, href: string) {
