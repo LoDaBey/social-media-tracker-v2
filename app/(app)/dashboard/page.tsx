@@ -26,6 +26,7 @@ function getCairoHour() {
   return Number(hour);
 }
 
+
 function formatLongCairoDate() {
   return new Intl.DateTimeFormat("en-US", {
     timeZone: "Africa/Cairo",
