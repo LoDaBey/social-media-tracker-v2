@@ -45,6 +45,20 @@ function isValidUrl(value: string) {
   }
 }
 
+function accountUrlKey(account: Pick<SaveAccountInput, "platform" | "url">) {
+  return `${account.platform}:${account.url.trim().replace(/\/+$/, "").toLowerCase()}`;
+}
+
+function hasDuplicateAccountUrl(accounts: SaveAccountInput[]) {
+  const seen = new Set<string>();
+  for (const account of accounts) {
+    const key = accountUrlKey(account);
+    if (seen.has(key)) return true;
+    seen.add(key);
+  }
+  return false;
+}
+
 function countByPlatform(accounts: SaveAccountInput[]) {
   const counts: Record<Platform, number> = {
     x: 0,
@@ -101,6 +115,9 @@ export async function saveAccountsAction(formData: FormData) {
     for (const a of accounts) {
       if (!a.handle) return { error: "Each account must have a handle." };
       if (!isValidUrl(a.url)) return { error: "Each account must have a valid URL." };
+    }
+    if (hasDuplicateAccountUrl(accounts)) {
+      return { error: "You used the same account URL twice. Please change one." };
     }
 
     const targets: Record<Platform, number> = {
@@ -170,10 +187,10 @@ export async function saveAccountsAction(formData: FormData) {
     } finally {
       client.release();
     }
-
-    redirect("/dashboard");
   } catch {
     return { error: "Something went wrong. Please try again." };
   }
+
+  redirect("/dashboard");
 }
 

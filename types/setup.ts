@@ -4,3 +4,5 @@ export type SetupAccountRow = {
   url: string;
   followers: string;
 };
+
+export type SetupRowErrors = Record<string, string>;

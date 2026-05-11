@@ -10,7 +10,7 @@ import {
   type Platform,
 } from "@/lib/platform-config";
 import type { TempSocialMediaAccount } from "@/types/db";
-import type { SetupAccountRow } from "@/types/setup";
+import type { SetupAccountRow, SetupRowErrors } from "@/types/setup";
 import { AddAccountButton } from "@/components/setup/AddAccountButton";
 import {
   setupButtonMotion,
@@ -24,6 +24,7 @@ type Props = {
   targetCount: number;
   existingAccounts: TempSocialMediaAccount[];
   rows: SetupAccountRow[];
+  rowErrors: SetupRowErrors;
   onChangeRow: (idx: number, patch: Partial<SetupAccountRow>) => void;
   onBlurHandle: (idx: number) => void;
   onAddRow: () => void;
@@ -81,6 +82,7 @@ export function PlatformAccountsCard({
   targetCount,
   existingAccounts,
   rows,
+  rowErrors,
   onChangeRow,
   onBlurHandle,
   onAddRow,
@@ -200,11 +202,19 @@ export function PlatformAccountsCard({
 
       <div className="mt-4 flex flex-col gap-2">
         <AnimatePresence initial={false}>
-          {rows.map((row, idx) => (
-            <motion.div
+          {rows.map((row, idx) => {
+            const rowError = rowErrors[row.id];
+
+            return (
+              <motion.div
               key={row.id}
               layout
-              className="grid grid-cols-1 gap-3 bg-[#FAF8F2] sm:grid-cols-[1.2fr_2fr_0.8fr_auto]"
+              className={[
+                "grid grid-cols-1 gap-3 border transition-colors sm:grid-cols-[1.2fr_2fr_0.8fr_auto]",
+                rowError
+                  ? "border-[var(--color-coral)] bg-[var(--color-coral-tint)]"
+                  : "border-transparent bg-[#FAF8F2]",
+              ].join(" ")}
               style={{
                 borderRadius: 14,
                 padding: "14px 16px",
@@ -227,6 +237,8 @@ export function PlatformAccountsCard({
                 onChange={(e) => onChangeRow(idx, { handle: e.target.value })}
                 onBlur={() => onBlurHandle(idx)}
                 aria-label={`${PLATFORM_LABELS[platform]} handle ${idx + 1}`}
+                aria-invalid={Boolean(rowError)}
+                aria-describedby={rowError ? `${row.id}-error` : undefined}
                 className="rounded outline-none border border-[var(--color-hairline)] bg-white px-3 py-2 text-[14px] text-[var(--color-ink)]"
                 style={{ fontFamily: "var(--font-cairo)", fontWeight: 500 }}
               />
@@ -244,7 +256,14 @@ export function PlatformAccountsCard({
                 placeholder="https://..."
                 onChange={(e) => onChangeRow(idx, { url: e.target.value })}
                 aria-label={`${PLATFORM_LABELS[platform]} URL ${idx + 1}`}
-                className="rounded outline-none border border-[var(--color-hairline)] bg-white px-3 py-2 text-[14px] text-[var(--color-ink)]"
+                aria-invalid={Boolean(rowError)}
+                aria-describedby={rowError ? `${row.id}-error` : undefined}
+                className={[
+                  "rounded outline-none border bg-white px-3 py-2 text-[14px] text-[var(--color-ink)]",
+                  rowError
+                    ? "border-[var(--color-coral)] focus-visible:ring-2 focus-visible:ring-[var(--color-coral)]"
+                    : "border-[var(--color-hairline)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]",
+                ].join(" ")}
                 style={{ fontFamily: "var(--font-cairo)", fontWeight: 500 }}
               />
             </div>
@@ -266,6 +285,8 @@ export function PlatformAccountsCard({
                   })
                 }
                 aria-label={`${PLATFORM_LABELS[platform]} followers ${idx + 1}`}
+                aria-invalid={Boolean(rowError)}
+                aria-describedby={rowError ? `${row.id}-error` : undefined}
                 className="rounded outline-none border border-[var(--color-hairline)] bg-white px-3 py-2 text-[14px] text-[var(--color-ink)]"
                 style={{ fontFamily: "var(--font-cairo)", fontWeight: 500 }}
               />
@@ -292,8 +313,18 @@ export function PlatformAccountsCard({
                 <Trash2 className="h-4 w-4" aria-hidden="true" />
               </motion.button>
             </div>
-            </motion.div>
-          ))}
+              {rowError ? (
+                <p
+                  id={`${row.id}-error`}
+                  className="text-[12px] font-semibold text-[var(--color-coral)] sm:col-span-4"
+                  style={{ fontFamily: "var(--font-cairo)" }}
+                >
+                  {rowError}
+                </p>
+              ) : null}
+              </motion.div>
+            );
+          })}
         </AnimatePresence>
       </div>
 
