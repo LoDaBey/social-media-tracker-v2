@@ -93,12 +93,15 @@ export function SetupForm({ userId, targets, existingByPlatform }: Props) {
   const [state, setState] = useState<FormState>({ error: null });
   const [pending, startTransition] = useTransition();
 
-  const totalAdded = useMemo(() => {
-    return assignedPlatforms.reduce((sum, p) => sum + (rowsByPlatform[p]?.length ?? 0), 0);
-  }, [assignedPlatforms, rowsByPlatform]);
+  const totalSavedAccounts = useMemo(() => {
+    return assignedPlatforms.reduce(
+      (sum, p) => sum + (existingByPlatform[p]?.length ?? 0),
+      0
+    );
+  }, [assignedPlatforms, existingByPlatform]);
 
-  const stillMissing = useMemo(() => Math.max(0, totalTarget - totalAdded), [
-    totalAdded,
+  const stillMissing = useMemo(() => Math.max(0, totalTarget - totalSavedAccounts), [
+    totalSavedAccounts,
     totalTarget,
   ]);
 
@@ -365,7 +368,7 @@ export function SetupForm({ userId, targets, existingByPlatform }: Props) {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.08, duration: 0.35 }}
             >
-              {totalAdded} of {totalTarget} accounts{" "}
+              {totalSavedAccounts} of {totalTarget} accounts saved{" "}
               <span className="text-[var(--color-muted)]">— </span>
               <span
                 className={
