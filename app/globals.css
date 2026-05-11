@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+:root {
+  /* Surfaces */
+  --color-cream: #F8F5EE;
+  --color-surface: #FFFFFF;
+  --color-cream-tint: #FAF8F2;
+
+  /* Text */
+  --color-ink: #1A1A1A;
+  --color-muted: #737373;
+
+  /* Borders */
+  --color-hairline: #EBE6DC;
+
+  /* Brand */
+  --color-emerald: #0E6B4F;
+  --color-emerald-hover: #0A523C;
+  --color-emerald-tint: #E8F2EC;
+
+  /* Accents */
+  --color-gold: #C9982E;
+  --color-coral: #D85B47;
+  --color-coral-tint: #FBEDE8;
+
+  /* Radii */
+  --radius-card: 20px;
+  --radius-button: 14px;
+  --radius-input: 12px;
+}
+
+html,
+body {
+  background-color: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-cairo), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tabular figures for numbers */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes submission-confetti-puff {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(calc(var(--dot-index) * 45deg)) translateY(0)
+      scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(calc(var(--dot-index) * 45deg)) translateY(-22px)
+      scale(0.2);
+  }
+}
+
+.submission-confetti-dot {
+  animation: submission-confetti-puff 600ms ease-out forwards;
+}
