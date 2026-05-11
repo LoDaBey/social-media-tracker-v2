@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link as LinkIcon, AlertCircle } from "lucide-react";
 import type { TempSocialMediaAccount } from "@/types/db";
-import type { SetupAccountRow } from "@/types/setup";
+import type { SetupAccountRow, SetupRowErrors } from "@/types/setup";
 import {
   PLATFORM_ICONS,
   PLATFORM_LABELS,
@@ -39,6 +39,63 @@ function normalizeHandleOnBlur(value: string) {
   const trimmed = value.trim();
   if (!trimmed) return "";
   return trimmed.startsWith("@") ? trimmed : `@${trimmed}`;
+}
+
+function isValidAccountUrl(value: string) {
+  try {
+    new URL(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function accountUrlKey(platform: Platform, url: string) {
+  return `${platform}:${url.trim().replace(/\/+$/, "").toLowerCase()}`;
+}
+
+function getSetupRowErrors(
+  assignedPlatforms: Platform[],
+  rowsByPlatform: Record<Platform, SetupAccountRow[]>
+) {
+  const errors: SetupRowErrors = {};
+  const seenUrls = new Map<string, string>();
+
+  for (const platform of assignedPlatforms) {
+    for (const row of rowsByPlatform[platform] ?? []) {
+      const handle = row.handle.trim();
+      const url = row.url.trim();
+      const followers = row.followers.trim();
+
+      if (!handle) {
+        errors[row.id] = "Add a handle.";
+        continue;
+      }
+      if (!url) {
+        errors[row.id] = "Add a URL.";
+        continue;
+      }
+      if (!isValidAccountUrl(url)) {
+        errors[row.id] = "Use a valid URL.";
+        continue;
+      }
+      if (!followers || !/^\d+$/.test(followers)) {
+        errors[row.id] = "Add followers.";
+        continue;
+      }
+
+      const key = accountUrlKey(platform, url);
+      const firstRowId = seenUrls.get(key);
+      if (firstRowId) {
+        errors[firstRowId] = "Same URL used twice.";
+        errors[row.id] = "Same URL used twice.";
+      } else {
+        seenUrls.set(key, row.id);
+      }
+    }
+  }
+
+  return errors;
 }
 
 function emptyRowFromExisting(a?: TempSocialMediaAccount): SetupAccountRow {
@@ -91,7 +148,15 @@ export function SetupForm({ userId, targets, existingByPlatform }: Props) {
   );
 
   const [state, setState] = useState<FormState>({ error: null });
+  const [showRowErrors, setShowRowErrors] = useState(false);
   const [pending, startTransition] = useTransition();
+
+  const rowErrors = useMemo(
+    () => getSetupRowErrors(assignedPlatforms, rowsByPlatform),
+    [assignedPlatforms, rowsByPlatform]
+  );
+
+  const displayedRowErrors = showRowErrors ? rowErrors : {};
 
   const totalSavedAccounts = useMemo(() => {
     return assignedPlatforms.reduce(
@@ -127,6 +192,7 @@ export function SetupForm({ userId, targets, existingByPlatform }: Props) {
   }, [assignedPlatforms, rowsByPlatform, targets]);
 
   function updateRow(platform: Platform, idx: number, patch: Partial<SetupAccountRow>) {
+    setState({ error: null });
     setRowsByPlatform((prev) => {
       const next = { ...prev };
       const rows = [...(next[platform] ?? [])];
@@ -137,6 +203,7 @@ export function SetupForm({ userId, targets, existingByPlatform }: Props) {
   }
 
   function blurHandle(platform: Platform, idx: number) {
+    setState({ error: null });
     setRowsByPlatform((prev) => {
       const next = { ...prev };
       const rows = [...(next[platform] ?? [])];
@@ -148,6 +215,7 @@ export function SetupForm({ userId, targets, existingByPlatform }: Props) {
   }
 
   function addRow(platform: Platform) {
+    setState({ error: null });
     setRowsByPlatform((prev) => {
       const next = { ...prev };
       const rows = [...(next[platform] ?? [])];
@@ -159,6 +227,7 @@ export function SetupForm({ userId, targets, existingByPlatform }: Props) {
   }
 
   function removeRow(platform: Platform, idx: number) {
+    setState({ error: null });
     setRowsByPlatform((prev) => {
       const next = { ...prev };
       const rows = [...(next[platform] ?? [])];
@@ -183,6 +252,13 @@ export function SetupForm({ userId, targets, existingByPlatform }: Props) {
 
   async function onSave() {
     setState({ error: null });
+    if (Object.keys(rowErrors).length > 0) {
+      setShowRowErrors(true);
+      setState({ error: Object.values(rowErrors)[0] ?? "Fix the highlighted account." });
+      return;
+    }
+
+    setShowRowErrors(false);
     const formData = new FormData();
     formData.set("accounts", JSON.stringify(buildPayload()));
     formData.set("userId", String(userId));
@@ -281,6 +357,7 @@ export function SetupForm({ userId, targets, existingByPlatform }: Props) {
                     targetCount: targets.facebook_personal,
                     existingAccounts: existingByPlatform.facebook_personal ?? [],
                     rows: rowsByPlatform.facebook_personal ?? [],
+                    rowErrors: displayedRowErrors,
                     onChangeRow: (idx, patch) =>
                       updateRow("facebook_personal", idx, patch),
                     onBlurHandle: (idx) => blurHandle("facebook_personal", idx),
@@ -296,6 +373,7 @@ export function SetupForm({ userId, targets, existingByPlatform }: Props) {
                     targetCount: targets.facebook_umbrella,
                     existingAccounts: existingByPlatform.facebook_umbrella ?? [],
                     rows: rowsByPlatform.facebook_umbrella ?? [],
+                    rowErrors: displayedRowErrors,
                     onChangeRow: (idx, patch) =>
                       updateRow("facebook_umbrella", idx, patch),
                     onBlurHandle: (idx) => blurHandle("facebook_umbrella", idx),
@@ -318,6 +396,7 @@ export function SetupForm({ userId, targets, existingByPlatform }: Props) {
               targetCount={targets[platform]}
               existingAccounts={existingByPlatform[platform] ?? []}
               rows={rowsByPlatform[platform] ?? []}
+              rowErrors={displayedRowErrors}
               onChangeRow={(idx, patch) => updateRow(platform, idx, patch)}
               onBlurHandle={(idx) => blurHandle(platform, idx)}
               onAddRow={() => addRow(platform)}
