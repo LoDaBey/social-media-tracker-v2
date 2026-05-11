@@ -9,6 +9,21 @@
       "name": "ALPHAA-DEV",
       "database": "ALPHA-DB",
       "username": "postgres"
+    },
+    {
+      "pgOptions": {
+        "ssl": {
+          "rejectUnauthorized": true
+        }
+      },
+      "ssh": "Disabled",
+      "previewLimit": 50,
+      "server": "dpg-cupfgst6l47c73cllqbg-a.oregon-postgres.render.com",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "name": "ALPHAA-DB",
+      "database": "alphaa_xml1",
+      "username": "admin"
     }
   ]
 }

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { query, queryOne } from "@/lib/db";
-import type { TempSocialMediaAccount, TempUser } from "@/types/db";
+import type { Role, TempSocialMediaAccount, TempUser } from "@/types/db";
 import { SetupForm } from "@/components/setup/SetupForm";
 import { PLATFORMS, type Platform } from "@/lib/platform-config";
 
@@ -41,6 +41,10 @@ export default async function SetupPage() {
   const session = await auth();
   if (!session) redirect("/login");
 
+  const role = (session.user.role ?? "employee") as Role;
+  if (role === "admin") redirect("/admin");
+  if (role === "team_lead") redirect("/qc");
+
   const userId = Number(session.user.id);
   if (!Number.isFinite(userId)) redirect("/login");
 
@@ -65,6 +69,7 @@ export default async function SetupPage() {
     `SELECT *
      FROM temp_social_media_accounts
      WHERE user_id = $1
+       AND status = 'active'
      ORDER BY platform ASC, id ASC`,
     [userId]
   );

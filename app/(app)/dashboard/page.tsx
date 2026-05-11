@@ -7,6 +7,8 @@ import { LevelCard } from "@/components/dashboard/LevelCard";
 import { MissingAccountsBanner } from "@/components/dashboard/MissingAccountsBanner";
 import { DashboardRowsClient } from "@/components/dashboard/DashboardRowsClient";
 import { SubmissionCountdownChip } from "@/components/dashboard/SubmissionCountdownChip";
+import type { Role, TempUser } from "@/types/db";
+import type { DashboardData } from "@/types/dashboard";
 
 function getTimeOfDayWord(hour: number) {
   if (hour < 12) return "morning";
@@ -61,9 +63,40 @@ function firstName(fullName: string) {
   return fullName.trim().split(/\s+/)[0] || "there";
 }
 
+function assignedAccountTargetTotal(user: TempUser) {
+  return (
+    user.target_x_count +
+    user.target_facebook_personal_count +
+    user.target_facebook_umbrella_count +
+    user.target_instagram_count +
+    user.target_tiktok_count
+  );
+}
+
+function targetForPlatform(user: TempUser, platform: (typeof PLATFORMS)[number]) {
+  if (platform === "x") return user.target_x_count;
+  if (platform === "facebook_personal") return user.target_facebook_personal_count;
+  if (platform === "facebook_umbrella") return user.target_facebook_umbrella_count;
+  if (platform === "instagram") return user.target_instagram_count;
+  return user.target_tiktok_count;
+}
+
+function hasCompletedAssignedAccounts(data: DashboardData) {
+  if (assignedAccountTargetTotal(data.user) === 0) return true;
+
+  return PLATFORMS.every(
+    (platform) =>
+      data.accountsByPlatform[platform].length === targetForPlatform(data.user, platform)
+  );
+}
+
 export default async function DashboardPage() {
   const session = await auth();
   if (!session) redirect("/login");
+
+  const role = (session.user.role ?? "employee") as Role;
+  if (role === "admin") redirect("/admin");
+  if (role === "team_lead") redirect("/qc");
 
   const userId = Number(session.user.id);
   if (!Number.isFinite(userId)) redirect("/login");
@@ -74,12 +107,10 @@ export default async function DashboardPage() {
   const accountPlatforms = PLATFORMS.filter(
     (platform) => data.accountsByPlatform[platform].length > 0
   );
-  const totalAccounts = accountPlatforms.reduce(
-    (sum, platform) => sum + data.accountsByPlatform[platform].length,
-    0
-  );
 
-  if (totalAccounts === 0) redirect("/setup");
+  if (!hasCompletedAssignedAccounts(data)) {
+    redirect("/setup");
+  }
 
   const timeOfDay = getTimeOfDayWord(getCairoHour());
   const cycleDay = getCycleDay(data.todayCairoDate, data.user.pay_cycle_start_date);
