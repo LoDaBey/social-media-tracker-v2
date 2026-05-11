@@ -39,12 +39,6 @@ export default async function LoginPage({ searchParams }: Props) {
         >
           <header className="flex flex-col items-start">
             <div className="flex w-full flex-col items-center gap-2 text-center">
-              <div className="h-10 w-10 rounded-[14px] bg-[var(--color-emerald-tint)] flex items-center justify-center">
-                <Sparkles
-                  className="h-[18px] w-[18px] text-[var(--color-emerald)]"
-                  aria-hidden="true"
-                />
-              </div>
               <div className="flex flex-col gap-1">
                 <p className="text-[18px] font-bold text-[var(--color-ink)]">
                   ALPHAA
@@ -79,11 +73,6 @@ export default async function LoginPage({ searchParams }: Props) {
         </section>
 
         <footer className="mt-5 flex flex-col items-center gap-2">
-          <p className="text-[11px] text-[var(--color-muted)]">
-            <span className="font-semibold text-[var(--color-ink)]">EN</span>
-            <span className="mx-2">·</span>
-            <span>العربية</span>
-          </p>
           <p className="text-[11px] text-[var(--color-muted)]">v1.0</p>
         </footer>
       </div>

@@ -154,15 +154,6 @@ export function LoginForm({ initialCredentialsError }: Props) {
           </button>
         </div>
 
-        <div className="flex justify-end">
-          <a
-            href="#"
-            aria-label="Forgot password"
-            className="text-[13px] font-semibold text-[var(--color-emerald)]"
-          >
-            Forgot password?
-          </a>
-        </div>
       </div>
 
       <div className="pt-2">
