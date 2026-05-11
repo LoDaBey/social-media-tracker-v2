@@ -16,6 +16,7 @@ function getTimeOfDayWord(hour: number) {
   return "evening";
 }
 
+
 function getCairoHour() {
   const hour = new Intl.DateTimeFormat("en-US", {
     timeZone: "Africa/Cairo",
@@ -25,6 +26,7 @@ function getCairoHour() {
 
   return Number(hour);
 }
+
 
 function formatLongCairoDate() {
   return new Intl.DateTimeFormat("en-US", {
