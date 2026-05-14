@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useTransition } from "react";
 import { markAllReadAction } from "@/actions/notifications";
 import type { TempNotificationRow } from "@/types/notifications";
@@ -64,16 +63,6 @@ export function NotificationDropdown({ items, unreadCount, onClose, onRefresh }:
           )}
         </div>
 
-        <div className="shrink-0 border-t border-[var(--color-hairline)] px-4 py-3">
-          <Link
-            href="/notifications"
-            className="inline-flex cursor-pointer rounded-lg text-[13px] font-semibold text-[var(--color-emerald)] outline-none hover:underline focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
-            aria-label="View older notifications (coming soon)"
-            onClick={onClose}
-          >
-            Older notifications →
-          </Link>
-        </div>
       </div>
     </>
   );

@@ -410,14 +410,11 @@ Notification UI components:
   - Mobile scrim.
   - `Mark all read` action.
   - Recent-notification list.
-  - `Older notifications →` link.
 - **`components/notifications/NotificationItem.tsx`**
   - Per-type visual icons and colors.
   - Marks unread item read before navigation.
   - Supports direct mark-read check button.
   - Uses `formatRelativeTime`.
-
-The placeholder full history page is **`app/(app)/notifications/page.tsx`**. It currently tells users to use the bell for recent activity and links back to `/dashboard`.
 
 ### Notification producers
 
@@ -718,7 +715,6 @@ Uses **`WalletSummary`**: **`+{bonusesCount} bonuses`** only if **`bonusesCount 
 - `lib/notifications.ts`
 - `actions/notifications.ts`
 - `app/api/notifications/route.ts`
-- `app/(app)/notifications/page.tsx`
 - `components/notifications/NotificationBell.tsx`
 - `components/notifications/NotificationDropdown.tsx`
 - `components/notifications/NotificationItem.tsx`

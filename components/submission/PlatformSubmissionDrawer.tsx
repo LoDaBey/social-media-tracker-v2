@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { motion } from "framer-motion";
-import { Check, CheckCircle2, Info, Lock, Minus, Plus, X } from "lucide-react";
+import { Check, Info, Lock, Minus, Plus, X } from "lucide-react";
 import { submitPlatformBatch } from "@/actions/submissions";
 import {
   drawerBackdropVariants,
@@ -19,14 +19,6 @@ import {
   PLATFORM_TINTS,
 } from "@/lib/platform-config";
 import type { PlatformSubmissionDrawerProps, SubmissionMetric } from "@/types/submissions";
-
-const ABBREVIATED_METRICS: Record<SubmissionMetric, string> = {
-  followers: "F",
-  posts: "P",
-  retweets_with_content: "RT",
-  replies: "R",
-  reels: "Re",
-};
 
 const EMPTY_VALUES: Record<SubmissionMetric, string> = {
   followers: "",
@@ -52,16 +44,39 @@ function formatNumber(value: number) {
   return value.toLocaleString("en-US");
 }
 
-function statusLabel(existingCount: number) {
-  if (existingCount === 0) {
+function statusPill(
+  accountList: PlatformSubmissionDrawerProps["accounts"],
+  existingByAccountId: Map<number, PlatformSubmissionDrawerProps["existingSubmissions"][number]>
+) {
+  const total = accountList.length;
+  if (total === 0) {
     return {
-      label: "Pending today",
+      label: "No accounts",
+      className: "bg-[var(--color-cream)] text-[var(--color-muted)]",
+    };
+  }
+
+  const sent = accountList.filter((account) => {
+    const row = existingByAccountId.get(account.id);
+    return Boolean(row && !row.is_auto_reset);
+  }).length;
+
+  if (sent === 0) {
+    return {
+      label: "Not sent yet",
       className: "bg-[var(--color-coral-tint)] text-[var(--color-coral)]",
     };
   }
 
+  if (sent >= total) {
+    return {
+      label: "All sent",
+      className: "bg-[var(--color-emerald-tint)] text-[var(--color-emerald)]",
+    };
+  }
+
   return {
-    label: existingCount === 1 ? "Partial · 1 done" : `Partial · ${existingCount} done`,
+    label: `${total - sent} left to send`,
     className: "bg-[var(--color-cream)] text-[var(--color-muted)]",
   };
 }
@@ -93,7 +108,6 @@ export function PlatformSubmissionDrawer({
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const drawerRef = useRef<HTMLElement | null>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
-  const [isConfirming, setIsConfirming] = useState(false);
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [values, setValues] = useState<Record<number, Record<SubmissionMetric, string>>>({});
@@ -107,7 +121,19 @@ export function PlatformSubmissionDrawer({
     return new Map(existingSubmissions.map((submission) => [submission.social_media_account_id, submission]));
   }, [existingSubmissions]);
   const editableAccounts = accounts.filter((account) => !existingByAccountId.has(account.id));
-  const pill = statusLabel(existingSubmissions.length);
+  const submittedNotesForView = useMemo(() => {
+    const seen = new Set<string>();
+    const parts: string[] = [];
+    for (const submission of existingSubmissions) {
+      const text = submission.notes?.trim();
+      if (text && !seen.has(text)) {
+        seen.add(text);
+        parts.push(text);
+      }
+    }
+    return parts.length > 0 ? parts.join("\n\n") : null;
+  }, [existingSubmissions]);
+  const pill = statusPill(accounts, existingByAccountId);
 
   useEffect(() => {
     if (!open) return;
@@ -118,11 +144,7 @@ export function PlatformSubmissionDrawer({
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         event.preventDefault();
-        if (isConfirming) {
-          setIsConfirming(false);
-        } else {
-          onClose();
-        }
+        onClose();
       }
 
       if (event.key !== "Tab" || !drawerRef.current) return;
@@ -156,7 +178,7 @@ export function PlatformSubmissionDrawer({
       document.body.style.overflow = "";
       previousFocusRef.current?.focus?.();
     };
-  }, [isConfirming, onClose, open]);
+  }, [onClose, open]);
 
   function currentValue(accountId: number, metric: SubmissionMetric) {
     return values[accountId]?.[metric] ?? "";
@@ -194,15 +216,14 @@ export function PlatformSubmissionDrawer({
     }));
   }
 
-  function onConfirmSubmit() {
+  function submitBatch() {
     setError(null);
     const payload = { notes: notes.trim() || undefined, rows: submitRows() };
 
     startTransition(async () => {
       const result = await submitPlatformBatch(platform, payload);
       if (!result.ok) {
-        setError(result.error ?? "Submission failed. Please try again.");
-        setIsConfirming(false);
+        setError(result.error ?? "Could not send. Try again.");
         return;
       }
 
@@ -244,12 +265,7 @@ export function PlatformSubmissionDrawer({
       >
         <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-[var(--color-hairline)] md:hidden" />
 
-        <div
-          className={[
-            "flex-1 overflow-y-auto pb-[96px]",
-            isConfirming ? "pointer-events-none opacity-50" : "",
-          ].join(" ")}
-        >
+        <div className="flex-1 overflow-y-auto pb-[96px]">
           <header className="p-7 pb-5">
             <div className="flex items-start gap-4">
               <div
@@ -268,7 +284,7 @@ export function PlatformSubmissionDrawer({
                   {PLATFORM_LABELS[platform]} update
                 </h2>
                 <p className="mt-1 text-[13px] font-medium text-[var(--color-muted)]">
-                  {accounts.length} {accounts.length === 1 ? "account" : "accounts"} · today
+                  {accounts.length} {accounts.length === 1 ? "account" : "accounts"}
                 </p>
               </div>
 
@@ -299,7 +315,7 @@ export function PlatformSubmissionDrawer({
           <section className="p-7">
             <div className="flex items-center justify-between gap-4">
               <h3 className="text-[18px] font-bold text-[var(--color-ink)]">
-                Today&apos;s numbers
+                Your numbers
               </h3>
               <div className="group relative">
                 <motion.button
@@ -311,8 +327,7 @@ export function PlatformSubmissionDrawer({
                   <Info className="h-4 w-4" aria-hidden="true" />
                 </motion.button>
                 <div className="pointer-events-none absolute right-0 top-9 z-20 w-64 rounded-[12px] border border-[var(--color-hairline)] bg-white p-3 text-[12px] font-medium leading-5 text-[var(--color-muted)] opacity-0 shadow-[0_12px_32px_rgba(20,20,20,.08)] transition group-hover:opacity-100 group-focus-within:opacity-100">
-                  Targets are listed in each column header. Submitted rows can&apos;t be edited —
-                  they&apos;re locked for today.
+                  Each column shows the goal at the top. After you send, that row locks until tomorrow.
                 </div>
               </div>
             </div>
@@ -336,11 +351,7 @@ export function PlatformSubmissionDrawer({
                           <span className="block text-[13px] font-bold uppercase tracking-[0.04em] text-[var(--color-ink)]">
                             {METRIC_LABELS[metric]}
                           </span>
-                          {metric === "followers" ? (
-                            <span className="mt-1 inline-flex rounded-full bg-[var(--color-cream-tint)] px-2 py-1 text-[11px] font-medium text-[var(--color-muted)]">
-                              Yesterday&apos;s value shown
-                            </span>
-                          ) : targets[metric] ? (
+                          {metric === "followers" ? null : targets[metric] ? (
                             <span className="mt-1 inline-flex rounded-full bg-[var(--color-emerald-tint)] px-2 py-1 text-[11px] font-medium text-[var(--color-emerald)]">
                               Target: {targets[metric]}
                             </span>
@@ -408,11 +419,11 @@ export function PlatformSubmissionDrawer({
                                 <p className="truncate text-[14px] font-bold text-[var(--color-ink)]">
                                   {account.handle}
                                 </p>
-                                <p className="text-[11px] font-medium text-[var(--color-muted)]">
-                                  {isAutoReset
-                                    ? "Auto-reset"
-                                    : `${formatNumber(account.current_followers)} followers yesterday`}
-                                </p>
+                                {isAutoReset ? (
+                                  <p className="text-[11px] font-medium text-[var(--color-muted)]">
+                                    Needs new numbers
+                                  </p>
+                                ) : null}
                               </div>
                             </div>
                           </td>
@@ -517,128 +528,83 @@ export function PlatformSubmissionDrawer({
               </div>
             </div>
 
-            <section className="mt-6 rounded-[14px] border border-[var(--color-hairline)] bg-white px-[18px] py-4 shadow-[0_1px_2px_rgba(20,20,20,.04)]">
-              <label
-                htmlFor="performance-summary"
-                className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--color-muted)]"
-              >
-                Performance Summary
-              </label>
-              <textarea
-                id="performance-summary"
-                value={notes}
-                maxLength={500}
-                onChange={(event) => setNotes(event.target.value)}
-                placeholder="Start typing today's highlights..."
-                className="mt-2 min-h-24 w-full resize-none rounded-lg border border-[var(--color-hairline)] bg-[var(--color-cream-tint)] px-3 py-3 text-[14px] font-normal text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
-              />
-              <p className="text-right text-[11px] font-medium text-[var(--color-muted)]">
-                {notes.length}/500
-              </p>
-            </section>
+            {editableAccounts.length > 0 ? (
+              <section className="mt-6 rounded-[14px] border border-[var(--color-hairline)] bg-white px-[18px] py-4 shadow-[0_1px_2px_rgba(20,20,20,.04)]">
+                <label
+                  htmlFor="performance-summary"
+                  className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--color-muted)]"
+                >
+                  Short note (optional)
+                </label>
+                <textarea
+                  id="performance-summary"
+                  value={notes}
+                  maxLength={500}
+                  onChange={(event) => setNotes(event.target.value)}
+                  placeholder="Anything you want your lead to know..."
+                  className="mt-2 min-h-24 w-full resize-none rounded-lg border border-[var(--color-hairline)] bg-[var(--color-cream-tint)] px-3 py-3 text-[14px] font-normal text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+                />
+                <p className="text-right text-[11px] font-medium text-[var(--color-muted)]">
+                  {notes.length}/500
+                </p>
+              </section>
+            ) : submittedNotesForView ? (
+              <section className="mt-6 rounded-[14px] border border-[var(--color-hairline)] bg-white px-[18px] py-4 shadow-[0_1px_2px_rgba(20,20,20,.04)]">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--color-muted)]">
+                  Your note
+                </p>
+                <p className="mt-2 whitespace-pre-wrap text-[14px] font-normal leading-relaxed text-[var(--color-ink)]">
+                  {submittedNotesForView}
+                </p>
+              </section>
+            ) : null}
           </section>
         </div>
 
         <motion.footer
           layout
           transition={{ layout: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } }}
-          className={[
-            "absolute inset-x-0 bottom-0 border-t border-[var(--color-hairline)] bg-white",
-            isConfirming ? "h-[320px]" : "h-[82px]",
-          ].join(" ")}
+          className="absolute inset-x-0 bottom-0 border-t border-[var(--color-hairline)] bg-white"
         >
-          {isConfirming ? (
-            <div className="flex h-full flex-col gap-3 p-5 sm:px-6">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-[var(--color-emerald)]" aria-hidden="true" />
-                <p className="text-[16px] font-bold text-[var(--color-ink)]">
-                  Confirm {PLATFORM_LABELS[platform]} submission?
-                </p>
-              </div>
-              <p className="text-[13px] font-normal text-[var(--color-muted)]">
-                We&apos;ll send these to your team lead. You can&apos;t edit afterwards.
-              </p>
-
-              <div className="max-h-[140px] overflow-y-auto rounded-[12px] border border-[var(--color-hairline)] bg-[var(--color-cream-tint)] px-3">
-                {editableAccounts.map((account, index) => (
-                  <p
-                    key={account.id}
-                    className={[
-                      "py-2 text-[13px] font-semibold text-[var(--color-ink)]",
-                      index > 0 ? "border-t border-[var(--color-hairline)]" : "",
-                    ].join(" ")}
-                  >
-                    {account.handle} —{" "}
-                    {metrics
-                      .map((metric) => {
-                        const value =
-                          metricNumber(account.id, metric) ??
-                          (metric === "followers" ? account.current_followers : 0);
-                        return `${ABBREVIATED_METRICS[metric]}: ${formatNumber(value)}`;
-                      })
-                      .join("  ")}
-                  </p>
-                ))}
-              </div>
-
-              {error ? (
-                <p className="text-[12px] font-semibold text-[var(--color-coral)]">{error}</p>
-              ) : null}
-
-              <div className="mt-auto flex items-center justify-between gap-3">
-                <motion.button
-                  type="button"
-                  aria-label="Go back to editing submission"
-                  onClick={() => setIsConfirming(false)}
-                  className="h-11 cursor-pointer rounded-lg px-4 text-[14px] font-semibold text-[var(--color-muted)] outline-none hover:bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
-                  {...setupButtonMotion(false)}
-                >
-                  Go back
-                </motion.button>
-                <motion.button
-                  type="button"
-                  aria-label="Confirm and submit all accounts"
-                  disabled={isPending}
-                  onClick={onConfirmSubmit}
-                  className="inline-flex h-12 cursor-pointer items-center gap-2 rounded-lg bg-[var(--color-emerald)] px-7 text-[14px] font-bold text-white outline-none hover:bg-[var(--color-emerald-hover)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
-                  {...setupButtonMotion(isPending)}
-                >
-                  <Check className="h-4 w-4" aria-hidden="true" />
-                  {isPending ? "Submitting..." : "Yes, submit all"}
-                </motion.button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex h-full flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="flex flex-col gap-2 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div className="min-w-0">
               <p className="flex items-center gap-2 text-[12px] font-medium text-[var(--color-muted)]">
-                <Lock className="h-4 w-4" aria-hidden="true" />
-                Submitted rows lock until tomorrow.
+                <Lock className="h-4 w-4 shrink-0" aria-hidden="true" />
+                After you send, you cannot change until tomorrow.
               </p>
-              <div className="flex items-center justify-end gap-3">
-                <motion.button
-                  type="button"
-                  aria-label="Cancel submission"
-                  onClick={onClose}
-                  className="h-11 cursor-pointer rounded-lg px-4 text-[14px] font-semibold text-[var(--color-muted)] outline-none hover:bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
-                  {...setupButtonMotion(false)}
-                >
-                  Cancel
-                </motion.button>
-                <motion.button
-                  type="button"
-                  aria-label={`Submit ${editableAccounts.length} accounts`}
-                  disabled={editableAccounts.length === 0}
-                  onClick={() => setIsConfirming(true)}
-                  className="inline-flex h-12 cursor-pointer items-center gap-2 rounded-lg bg-[var(--color-emerald)] px-7 text-[14px] font-bold text-white outline-none hover:bg-[var(--color-emerald-hover)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
-                  {...setupButtonMotion(editableAccounts.length === 0)}
-                >
-                  <Check className="h-4 w-4" aria-hidden="true" />
-                  Submit {editableAccounts.length}{" "}
-                  {editableAccounts.length === 1 ? "account" : "accounts"}
-                </motion.button>
-              </div>
+              {error ? (
+                <p className="mt-1 text-[12px] font-semibold text-[var(--color-coral)]">{error}</p>
+              ) : null}
             </div>
-          )}
+            <div className="flex shrink-0 items-center justify-end gap-3">
+              <motion.button
+                type="button"
+                aria-label="Close without sending"
+                onClick={onClose}
+                className="h-11 cursor-pointer rounded-lg px-4 text-[14px] font-semibold text-[var(--color-muted)] outline-none hover:bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+                {...setupButtonMotion(false)}
+              >
+                Close
+              </motion.button>
+              <motion.button
+                type="button"
+                aria-label={`Send ${editableAccounts.length} accounts`}
+                disabled={editableAccounts.length === 0 || isPending}
+                onClick={submitBatch}
+                className="inline-flex h-12 cursor-pointer items-center gap-2 rounded-lg bg-[var(--color-emerald)] px-7 text-[14px] font-bold text-white outline-none hover:bg-[var(--color-emerald-hover)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+                {...setupButtonMotion(editableAccounts.length === 0 || isPending)}
+              >
+                <Check className="h-4 w-4" aria-hidden="true" />
+                {isPending
+                  ? "Sending..."
+                  : editableAccounts.length === 0
+                    ? "Nothing to send"
+                    : editableAccounts.length === 1
+                      ? "Send 1 account"
+                      : `Send ${editableAccounts.length} accounts`}
+              </motion.button>
+            </div>
+          </div>
         </motion.footer>
       </motion.section>
     </motion.div>
