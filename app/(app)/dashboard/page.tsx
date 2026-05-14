@@ -109,19 +109,10 @@ export default async function DashboardPage() {
 
       <MissingAccountsBanner missingAccounts={data.missingAccounts} />
 
-      <section className="mt-8" aria-label="Today's accounts">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-[24px] font-bold text-[var(--color-ink)]">
-            Today&apos;s accounts
-          </h2>
-          <button
-            type="button"
-            aria-label="Filter platforms"
-            className="cursor-pointer rounded-lg px-3 py-2 text-[12px] font-semibold text-[var(--color-muted)] outline-none hover:bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
-          >
-            All platforms ▾
-          </button>
-        </div>
+      <section className="mt-8" aria-label="Your social accounts">
+        <h2 className="text-[24px] font-bold text-[var(--color-ink)]">
+          Your accounts
+        </h2>
 
         <DashboardRowsClient
           accountPlatforms={accountPlatforms}
@@ -133,15 +124,8 @@ export default async function DashboardPage() {
 
       <footer className="mt-8 text-center">
         <p className="text-[12px] font-normal text-[var(--color-muted)]">
-          Submission window resets every 24 hours at 00:00 Cairo time.
+          Counts start fresh at midnight Cairo time.
         </p>
-        <a
-          href="mailto:support@temp.local"
-          aria-label="Need help? Email support"
-          className="mt-2 inline-flex cursor-pointer rounded-lg px-2 py-1 text-[13px] font-semibold text-[var(--color-emerald)] outline-none hover:bg-[var(--color-emerald-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
-        >
-          Need help?
-        </a>
       </footer>
     </main>
   );

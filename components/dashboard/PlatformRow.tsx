@@ -34,34 +34,35 @@ function statusChip(status: PlatformDailyStatus) {
 
   if (totalAccounts > 0 && autoResetAccounts === totalAccounts) {
     return {
-      label: "Auto-reset · 0 logged",
+      label: "All reset — add new numbers",
       className: "bg-[var(--color-coral-tint)] text-[var(--color-coral)]",
     };
   }
 
   if (autoResetAccounts > 0) {
     return {
-      label: `Mixed · ${submittedAccounts} done, ${autoResetAccounts} reset`,
+      label: `Some sent, ${autoResetAccounts} reset`,
       className: "bg-[var(--color-cream-tint)] text-[var(--color-muted)]",
     };
   }
 
   if (totalAccounts > 0 && submittedAccounts === totalAccounts) {
+    const time = lastSubmittedAt ? formatSubmittedTime(lastSubmittedAt) : "";
     return {
-      label: `Submitted ✓ ${formatSubmittedTime(lastSubmittedAt)}`,
+      label: time ? `All sent · ${time}` : "All sent",
       className: "bg-[var(--color-emerald-tint)] text-[var(--color-emerald)]",
     };
   }
 
   if (submittedAccounts > 0) {
     return {
-      label: `${submittedAccounts} of ${totalAccounts} done`,
+      label: `${submittedAccounts} of ${totalAccounts} sent`,
       className: "bg-[var(--color-emerald-tint)] text-[var(--color-emerald)]",
     };
   }
 
   return {
-    label: "Pending today",
+    label: "Not sent yet",
     className: "bg-[var(--color-coral-tint)] text-[var(--color-coral)]",
   };
 }
@@ -143,10 +144,10 @@ export function PlatformRow({
           <button
             type="button"
             onClick={() => onSubmitPlatform?.(platform)}
-            aria-label={`Submit ${PLATFORM_LABELS[platform]} accounts`}
+            aria-label={`Send ${PLATFORM_LABELS[platform]} accounts`}
             className="inline-flex h-11 cursor-pointer items-center justify-center rounded-lg bg-[var(--color-emerald)] px-5 text-[14px] font-bold text-white outline-none transition-colors hover:bg-[var(--color-emerald-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
           >
-            {pendingAccounts === 1 ? "Submit account" : `Submit ${pendingAccounts} accounts`}
+            {pendingAccounts === 1 ? "Send 1 account" : `Send ${pendingAccounts} accounts`}
           </button>
         ) : (
           <button
