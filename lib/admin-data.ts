@@ -9,11 +9,16 @@ import {
 import { getCairoMonthStartDate, getCairoNextMonthStartDate } from "@/lib/cairo-month";
 import type {
   AdminEmployeeCycleStatus,
+  AdminEmployeeEditorBundle,
   AdminEmployeeListRow,
   AdminPayoutRow,
   AdminTeamLeadRow,
+  EmployeeActivityItem,
+  EmployeeFormInitial,
 } from "@/types/admin";
 import { computeWallet } from "@/lib/wallet";
+import { fetchWalletTransactionsThisCycle } from "@/lib/wallet-page-data";
+import { fetchManagerOptions } from "@/lib/manager-data";
 import type { TempUser } from "@/types/db";
 
 export type AdminOverviewKpis = {
@@ -190,6 +195,7 @@ function mapCycleStatus(
 export type AdminEmployeeListFilters = {
   q?: string;
   status?: "all" | "active" | "inactive";
+  role?: "all" | "employee" | "manager";
   teamLeadId?: number | null;
 };
 
@@ -199,11 +205,16 @@ export async function fetchAdminEmployeesList(
   const today = getTodayCairoDate();
   const q = filters.q?.trim() ?? "";
   const status = filters.status ?? "all";
+  const role = filters.role ?? "all";
   const teamLeadId = filters.teamLeadId;
 
   const params: unknown[] = [];
-  const where: string[] = [`u.role = 'employee'`];
+  const where: string[] = [`u.role IN ('employee', 'manager')`];
 
+  if (role === "employee" || role === "manager") {
+    params.push(role);
+    where.push(`u.role = $${params.length}`);
+  }
   if (q) {
     params.push(`%${q}%`);
     where.push(
@@ -226,12 +237,15 @@ export async function fetchAdminEmployeesList(
       u.is_active,
       u.team_lead_id,
       tl.full_name AS team_lead_name,
+      u.manager_id,
+      mgr.full_name AS manager_name,
       u.current_level,
-      (u.target_x_count + u.target_facebook_personal_count + u.target_facebook_umbrella_count
+      (u.target_x_count + GREATEST(u.target_facebook_personal_count, u.target_facebook_umbrella_count)
         + u.target_instagram_count + u.target_tiktok_count)::int AS target_accounts_sum,
       u.pay_cycle_start_date::text AS pay_cycle_start_date
     FROM temp_users u
     LEFT JOIN temp_users tl ON tl.id = u.team_lead_id
+    LEFT JOIN temp_users mgr ON mgr.id = u.manager_id
     WHERE ${where.join(" AND ")}
     ORDER BY u.full_name ASC
   `;
@@ -244,6 +258,8 @@ export async function fetchAdminEmployeesList(
     is_active: boolean;
     team_lead_id: number | null;
     team_lead_name: string | null;
+    manager_id: number | null;
+    manager_name: string | null;
     current_level: number;
     target_accounts_sum: number;
     pay_cycle_start_date: string | null;
@@ -257,6 +273,8 @@ export async function fetchAdminEmployeesList(
     is_active: r.is_active,
     team_lead_id: r.team_lead_id,
     team_lead_name: r.team_lead_name,
+    manager_id: r.manager_id,
+    manager_name: r.manager_name,
     current_level: r.current_level,
     target_accounts_sum: r.target_accounts_sum,
     cycle_status: mapCycleStatus(r.pay_cycle_start_date, today),
@@ -284,6 +302,16 @@ export async function fetchTeamLeadOptions(): Promise<
   return query(
     `SELECT id, full_name FROM temp_users WHERE role = 'team_lead' AND is_active = TRUE ORDER BY full_name`
   );
+}
+
+export async function fetchManagerCountriesForUser(
+  userId: number
+): Promise<string[]> {
+  const rows = await query<{ country: string }>(
+    `SELECT country FROM temp_manager_countries WHERE user_id = $1 ORDER BY country ASC`,
+    [userId]
+  );
+  return rows.map((r) => r.country);
 }
 
 export async function fetchAdminPayoutRows(): Promise<AdminPayoutRow[]> {
@@ -335,12 +363,6 @@ export async function fetchActiveAccountCountsByPlatform(
   return out;
 }
 
-export type EmployeeActivityItem = {
-  kind: string;
-  created_at: string;
-  description: string;
-};
-
 export async function fetchEmployeeActivityTimeline(
   userId: number
 ): Promise<EmployeeActivityItem[]> {
@@ -387,3 +409,68 @@ export async function fetchEmployeeActivityTimeline(
     [userId]
   );
 }
+
+export async function fetchAdminEmployeeEditorBundle(
+  userId: number
+): Promise<AdminEmployeeEditorBundle | null> {
+  const user = await queryOne<TempUser>(
+    `SELECT * FROM temp_users WHERE id = $1`,
+    [userId]
+  );
+  if (!user) return null;
+
+  const cycleStartStr = normalizePgDateColumn(user.pay_cycle_start_date);
+  const [teamLeads, managers, managerCountries, activeCounts, wallet, transactions, activity] =
+    await Promise.all([
+      fetchTeamLeadOptions(),
+      fetchManagerOptions(),
+      user.role === "manager"
+        ? fetchManagerCountriesForUser(userId)
+        : Promise.resolve([] as string[]),
+      fetchActiveAccountCountsByPlatform(userId),
+      computeWallet(user),
+      fetchWalletTransactionsThisCycle(userId, cycleStartStr),
+      fetchEmployeeActivityTimeline(userId),
+    ]);
+
+  const profile: EmployeeFormInitial = {
+    id: user.id,
+    full_name: user.full_name,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+    is_active: user.is_active,
+    hire_date: normalizePgDateColumn(user.hire_date) ?? "",
+    team_lead_id: user.team_lead_id,
+    manager_id: user.manager_id,
+    manager_countries: managerCountries,
+    base_salary: user.base_salary,
+    current_level: user.current_level,
+    pay_cycle_start_date: normalizePgDateColumn(user.pay_cycle_start_date),
+    country: user.country ?? "",
+    updated_at:
+      typeof user.updated_at === "string"
+        ? user.updated_at
+        : String(user.updated_at),
+  };
+
+  return {
+    fullName: user.full_name,
+    role: user.role,
+    profile,
+    teamLeads,
+    managers,
+    targets: {
+      target_x_count: user.target_x_count,
+      target_facebook_personal_count: user.target_facebook_personal_count,
+      target_facebook_umbrella_count: user.target_facebook_umbrella_count,
+      target_instagram_count: user.target_instagram_count,
+      target_tiktok_count: user.target_tiktok_count,
+    },
+    activeCounts,
+    wallet,
+    transactions,
+    activity,
+  };
+}
+

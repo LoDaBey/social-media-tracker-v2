@@ -4,14 +4,14 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { processPayout } from "@/actions/admin";
+import type { ProcessPayoutBarProps } from "@/types/admin";
 
-type Props = {
-  userId: number;
-  daysToPayout: number;
-  canForce: boolean;
-};
-
-export function ProcessPayoutBar({ userId, daysToPayout, canForce }: Props) {
+export function ProcessPayoutBar({
+  userId,
+  daysToPayout,
+  canForce,
+  onSuccess,
+}: ProcessPayoutBarProps) {
   const router = useRouter();
   const [force, setForce] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,6 +27,7 @@ export function ProcessPayoutBar({ userId, daysToPayout, canForce }: Props) {
           force: daysToPayout > 0 && force,
         });
         router.refresh();
+        onSuccess?.();
       } catch (e) {
         setError(e instanceof Error ? e.message : "Payout failed.");
       }

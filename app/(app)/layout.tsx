@@ -11,12 +11,14 @@ import { fetchPendingCountForReviewer } from "@/lib/qc-data";
 function roleBadgeLabel(role: Role) {
   if (role === "team_lead") return "QC · Team Lead";
   if (role === "admin") return "Admin";
+  if (role === "manager") return "Manager";
   return null;
 }
 
 function avatarRingColor(role: Role) {
   if (role === "admin") return "var(--color-gold)";
   if (role === "team_lead") return "var(--color-emerald)";
+  if (role === "manager") return "var(--color-emerald)";
   return "var(--color-hairline)";
 }
 
@@ -81,6 +83,18 @@ export default async function AppLayout({
               >
                 <span className="bg-gradient-to-r from-[var(--color-emerald)] to-[var(--color-emerald)] bg-[length:0%_2px] bg-left-bottom bg-no-repeat transition-[background-size] duration-200 group-hover:bg-[length:100%_2px]">
                   Admin
+                </span>
+              </Link>
+            ) : null}
+
+            {role === "manager" ? (
+              <Link
+                href="/manager"
+                aria-label="Open manager team home"
+                className="group inline-flex cursor-pointer items-center rounded-lg px-2 py-1 text-[13px] font-semibold text-[var(--color-muted)] outline-none hover:text-[var(--color-ink)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+              >
+                <span className="bg-gradient-to-r from-[var(--color-emerald)] to-[var(--color-emerald)] bg-[length:0%_2px] bg-left-bottom bg-no-repeat transition-[background-size] duration-200 group-hover:bg-[length:100%_2px]">
+                  Team
                 </span>
               </Link>
             ) : null}

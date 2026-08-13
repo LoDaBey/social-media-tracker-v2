@@ -1,5 +1,10 @@
 import { query, queryOne } from "@/lib/db";
 import { PLATFORMS, type Platform } from "@/lib/platform-config";
+import {
+  facebookAssignedCount,
+  facebookRequiredTarget,
+  isFacebookPlatform,
+} from "@/lib/setup-facebook";
 import { computeWallet } from "@/lib/wallet";
 import type { DashboardData, PlatformDailyStatus } from "@/types/dashboard";
 import type { TempGrowth, TempSocialMediaAccount, TempUser } from "@/types/db";
@@ -166,8 +171,23 @@ function buildMissingAccounts(
 ) {
   const targets = targetsFromUser(user);
   const missing: Partial<Record<Platform, number>> = {};
+  const facebookMissing = Math.max(
+    0,
+    facebookRequiredTarget(targets) -
+      facebookAssignedCount({
+        x: 0,
+        facebook_personal: accountsByPlatform.facebook_personal.length,
+        facebook_umbrella: accountsByPlatform.facebook_umbrella.length,
+        instagram: 0,
+        tiktok: 0,
+      })
+  );
+  if (facebookMissing > 0) {
+    missing.facebook_personal = facebookMissing;
+  }
 
   for (const platform of PLATFORMS) {
+    if (isFacebookPlatform(platform)) continue;
     const count = Math.max(0, targets[platform] - accountsByPlatform[platform].length);
     if (count > 0) missing[platform] = count;
   }

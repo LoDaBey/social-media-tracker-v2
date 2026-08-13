@@ -1,14 +1,31 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+} from "react";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link as LinkIcon, AlertCircle } from "lucide-react";
+import toast from "react-hot-toast";
 import type { TempSocialMediaAccount } from "@/types/db";
 import type { SetupAccountRow, SetupFormProps, SetupProfile } from "@/types/setup";
 import {
   PLATFORMS,
   type Platform,
 } from "@/lib/platform-config";
+import {
+  clearSetupDraft,
+  isSetupDraftReusable,
+  readSetupDraft,
+  setupExistingSignature,
+  writeSetupDraft,
+} from "@/lib/setup-draft";
 import {
   setupButtonMotion,
   setupFadeUpChild,
@@ -19,26 +36,65 @@ import {
   setupStaggerContainer,
 } from "@/lib/setup-motion";
 import {
+  accountsMeetTargets,
+  facebookRequiredTarget,
+  isFacebookPlatform,
+} from "@/lib/setup-facebook";
+import {
   firstSetupValidationMessage,
   getFirstErrorSetupStepIndex,
   getSetupProfileFieldErrors,
   getSetupRowFieldErrors,
+  ignoredFacebookRowIds,
+  isSetupAccountRowComplete,
+  facebookCompleteRowCount,
   missingAccountsForSetupStep,
   setupStepHasErrors,
   setupStepMissingAccountsMessage,
 } from "@/lib/setup-validation";
 import { buildSetupSteps } from "@/lib/setup-steps";
 import { saveAccountsAction } from "@/actions/setup";
+import { saveEmployeeAccountsAsManager } from "@/actions/manager-setup";
 import { PlatformAccountsCard } from "@/components/setup/PlatformAccountsCard";
 import { FacebookAccountsCard } from "@/components/setup/FacebookAccountsCard";
 import { SetupCancelButton } from "@/components/setup/SetupCancelButton";
 import { SetupProfileFields } from "@/components/setup/SetupProfileFields";
 import { SetupStepNav } from "@/components/setup/SetupStepNav";
 import { ScrollToFirstSetupError } from "@/components/setup/ScrollToFirstSetupError";
+import { SetupDraftRestoring } from "@/components/setup/SetupDraftRestoring";
 
 type FormState = {
   error: string | null;
 };
+
+function emptySubscribe() {
+  return () => {};
+}
+
+function buildInitialRowsByPlatform(
+  fullName: string,
+  assignedPlatforms: Platform[],
+  targets: Record<Platform, number>,
+  existingByPlatform: Record<Platform, TempSocialMediaAccount[]>
+): Record<Platform, SetupAccountRow[]> {
+  const init: Record<Platform, SetupAccountRow[]> = {
+    x: [],
+    facebook_personal: [],
+    facebook_umbrella: [],
+    instagram: [],
+    tiktok: [],
+  };
+  for (const p of assignedPlatforms) {
+    init[p] = isFacebookPlatform(p)
+      ? initialFacebookTypeRows(fullName, existingByPlatform[p] ?? [])
+      : initialRowsForPlatform(
+          fullName,
+          targets[p],
+          existingByPlatform[p] ?? []
+        );
+  }
+  return init;
+}
 
 function emptyAccountRow(fullName: string): SetupAccountRow {
   return {
@@ -72,6 +128,16 @@ function emptyRowFromExisting(
   };
 }
 
+function initialFacebookTypeRows(
+  fullName: string,
+  existing: TempSocialMediaAccount[]
+): SetupAccountRow[] {
+  if (existing.length) {
+    return existing.map((a) => emptyRowFromExisting(fullName, a));
+  }
+  return [emptyAccountRow(fullName)];
+}
+
 function initialRowsForPlatform(
   fullName: string,
   targetCount: number,
@@ -91,9 +157,19 @@ export function SetupForm({
   targets,
   existingByPlatform,
   initialProfile,
+  mode = "employee",
+  cancelHref,
 }: SetupFormProps) {
+  const router = useRouter();
+  const isManager = mode === "manager";
+  const backHref = cancelHref ?? (isManager ? "/manager" : "/dashboard");
   const assignedPlatforms = useMemo(
-    () => PLATFORMS.filter((p) => targets[p] > 0),
+    () =>
+      PLATFORMS.filter((p) =>
+        isFacebookPlatform(p)
+          ? facebookRequiredTarget(targets) > 0
+          : targets[p] > 0
+      ),
     [targets]
   );
 
@@ -102,29 +178,23 @@ export function SetupForm({
     [assignedPlatforms]
   );
 
-  const totalTarget = useMemo(
-    () => assignedPlatforms.reduce((sum, p) => sum + targets[p], 0),
-    [assignedPlatforms, targets]
-  );
+  const totalTarget = useMemo(() => {
+    const other = PLATFORMS.filter((p) => !isFacebookPlatform(p)).reduce(
+      (sum, p) => sum + targets[p],
+      0
+    );
+    return other + facebookRequiredTarget(targets);
+  }, [targets]);
 
-  const [rowsByPlatform, setRowsByPlatform] = useState<Record<Platform, SetupAccountRow[]>>(
-    () => {
-      const init: Record<Platform, SetupAccountRow[]> = {
-        x: [],
-        facebook_personal: [],
-        facebook_umbrella: [],
-        instagram: [],
-        tiktok: [],
-      };
-      for (const p of assignedPlatforms) {
-        init[p] = initialRowsForPlatform(
-          fullName,
-          targets[p],
-          existingByPlatform[p] ?? []
-        );
-      }
-      return init;
-    }
+  const [rowsByPlatform, setRowsByPlatform] = useState<
+    Record<Platform, SetupAccountRow[]>
+  >(() =>
+    buildInitialRowsByPlatform(
+      fullName,
+      assignedPlatforms,
+      targets,
+      existingByPlatform
+    )
   );
 
   const [profile, setProfile] = useState<SetupProfile>(initialProfile);
@@ -133,20 +203,59 @@ export function SetupForm({
   const [showFieldErrors, setShowFieldErrors] = useState(false);
   const [errorScrollToken, setErrorScrollToken] = useState(0);
   const [pending, startTransition] = useTransition();
+  const [hydratedUserId, setHydratedUserId] = useState<number | null>(null);
+  const isClient = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
 
-  const safeStepIndex = Math.min(stepIndex, Math.max(0, steps.length - 1));
-  const currentStep = steps[safeStepIndex];
-  const isFirstStep = safeStepIndex <= 0;
-  const isLastStep = safeStepIndex >= steps.length - 1;
+  const existingSignature = useMemo(
+    () => setupExistingSignature(existingByPlatform),
+    [existingByPlatform]
+  );
 
-  function revealFieldErrors() {
-    setShowFieldErrors(true);
-    setErrorScrollToken((token) => token + 1);
-  }
+  const persistDraft = useCallback(
+    (
+      nextProfile: SetupProfile,
+      nextRows: Record<Platform, SetupAccountRow[]>,
+      nextStepIndex: number
+    ) => {
+      writeSetupDraft({
+        version: 1,
+        userId,
+        stepIndex: nextStepIndex,
+        profile: { ...nextProfile, country: initialProfile.country },
+        rowsByPlatform: nextRows,
+        targets,
+        existingSignature,
+      });
+    },
+    [userId, initialProfile.country, targets, existingSignature]
+  );
+
+  const draftReady = isClient && hydratedUserId === userId;
+
+  const persistArmedRef = useRef(false);
+
+  useEffect(() => {
+    if (!draftReady) {
+      persistArmedRef.current = false;
+      return;
+    }
+    if (!persistArmedRef.current) {
+      persistArmedRef.current = true;
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      persistDraft(profile, rowsByPlatform, stepIndex);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [draftReady, persistDraft, profile, rowsByPlatform, stepIndex]);
 
   const rowFieldErrors = useMemo(
-    () => getSetupRowFieldErrors(assignedPlatforms, rowsByPlatform),
-    [assignedPlatforms, rowsByPlatform]
+    () => getSetupRowFieldErrors(assignedPlatforms, rowsByPlatform, targets),
+    [assignedPlatforms, rowsByPlatform, targets]
   );
   const profileFieldErrors = useMemo(
     () => getSetupProfileFieldErrors(profile),
@@ -163,18 +272,67 @@ export function SetupForm({
     );
   }, [assignedPlatforms, existingByPlatform]);
 
-  const stillMissing = useMemo(() => Math.max(0, totalTarget - totalSavedAccounts), [
-    totalSavedAccounts,
-    totalTarget,
-  ]);
-
-  const countsMatchTargets = useMemo(
-    () =>
-      assignedPlatforms.every(
-        (p) => (rowsByPlatform[p]?.length ?? 0) === targets[p]
-      ),
-    [assignedPlatforms, rowsByPlatform, targets]
+  const stillMissing = useMemo(
+    () => Math.max(0, totalTarget - totalSavedAccounts),
+    [totalSavedAccounts, totalTarget]
   );
+
+  const countsMatchTargets = useMemo(() => {
+    const counts: Record<Platform, number> = {
+      x: rowsByPlatform.x.filter((row) => isSetupAccountRowComplete(row, "x"))
+        .length,
+      facebook_personal: rowsByPlatform.facebook_personal.filter((row) =>
+        isSetupAccountRowComplete(row, "facebook_personal")
+      ).length,
+      facebook_umbrella: rowsByPlatform.facebook_umbrella.filter((row) =>
+        isSetupAccountRowComplete(row, "facebook_umbrella")
+      ).length,
+      instagram: rowsByPlatform.instagram.filter((row) =>
+        isSetupAccountRowComplete(row, "instagram")
+      ).length,
+      tiktok: rowsByPlatform.tiktok.filter((row) =>
+        isSetupAccountRowComplete(row, "tiktok")
+      ).length,
+    };
+    return accountsMeetTargets(counts, targets);
+  }, [rowsByPlatform, targets]);
+
+  if (isClient && hydratedUserId !== userId) {
+    const draft = readSetupDraft(userId);
+    if (
+      draft &&
+      isSetupDraftReusable(draft, { userId, targets, existingSignature })
+    ) {
+      setProfile({ ...draft.profile, country: initialProfile.country });
+      setRowsByPlatform(draft.rowsByPlatform);
+      setStepIndex(Math.min(draft.stepIndex, Math.max(0, steps.length - 1)));
+    } else {
+      if (draft) clearSetupDraft(userId);
+      if (hydratedUserId !== null) {
+        setProfile(initialProfile);
+        setRowsByPlatform(
+          buildInitialRowsByPlatform(
+            fullName,
+            assignedPlatforms,
+            targets,
+            existingByPlatform
+          )
+        );
+        setStepIndex(0);
+      }
+    }
+    setHydratedUserId(userId);
+  }
+
+  const safeStepIndex = Math.min(stepIndex, Math.max(0, steps.length - 1));
+  const currentStep = steps[safeStepIndex];
+  const isFirstStep = safeStepIndex <= 0;
+  const isLastStep = safeStepIndex >= steps.length - 1;
+
+  function revealFieldErrors() {
+    setShowFieldErrors(true);
+    setErrorScrollToken((token) => token + 1);
+  }
 
   const hasValidationErrors =
     Object.keys(profileFieldErrors).length > 0 ||
@@ -196,9 +354,16 @@ export function SetupForm({
     setRowsByPlatform((prev) => {
       const next = { ...prev };
       const rows = [...(next[platform] ?? [])];
-      if (rows.length >= targets[platform]) return prev;
+      if (isFacebookPlatform(platform)) {
+        if (facebookCompleteRowCount(prev) >= facebookRequiredTarget(targets)) {
+          return prev;
+        }
+      } else if (rows.length >= targets[platform]) {
+        return prev;
+      }
       rows.push(emptyAccountRow(fullName));
       next[platform] = rows;
+      persistDraft(profile, next, stepIndex);
       return next;
     });
   }
@@ -209,11 +374,18 @@ export function SetupForm({
       const next = { ...prev };
       for (const platform of platforms) {
         const rows = [...(next[platform] ?? [])];
-        if (rows.length >= targets[platform]) continue;
+        if (isFacebookPlatform(platform)) {
+          if (facebookCompleteRowCount(next) >= facebookRequiredTarget(targets)) {
+            continue;
+          }
+        } else if (rows.length >= targets[platform]) {
+          continue;
+        }
         rows.push(emptyAccountRow(fullName));
         next[platform] = rows;
         changed = true;
       }
+      if (changed) persistDraft(profile, next, stepIndex);
       return changed ? next : prev;
     });
   }
@@ -226,6 +398,7 @@ export function SetupForm({
       if (rows.length <= 1) return prev;
       rows.splice(idx, 1);
       next[platform] = rows;
+      persistDraft(profile, next, stepIndex);
       return next;
     });
   }
@@ -241,18 +414,21 @@ export function SetupForm({
   }
 
   function buildPayload() {
+    const ignored = ignoredFacebookRowIds(rowsByPlatform, targets);
     const accounts = assignedPlatforms.flatMap((platform) =>
-      (rowsByPlatform[platform] ?? []).map((r) => ({
-        platform,
-        accountHolder: r.accountHolder.trim(),
-        url: r.url.trim(),
-        category: r.category.trim(),
-        username: r.username.trim(),
-        email: r.email.trim(),
-        accountPassword: r.accountPassword,
-        emailPassword: r.emailPassword,
-        mobileNumber: r.mobileNumber.trim(),
-      }))
+      (rowsByPlatform[platform] ?? [])
+        .filter((r) => !ignored.has(r.id))
+        .map((r) => ({
+          platform,
+          accountHolder: r.accountHolder.trim(),
+          url: r.url.trim(),
+          category: r.category.trim(),
+          username: r.username.trim(),
+          email: r.email.trim(),
+          accountPassword: r.accountPassword,
+          emailPassword: r.emailPassword,
+          mobileNumber: r.mobileNumber.trim(),
+        }))
     );
     return {
       country: profile.country,
@@ -274,13 +450,16 @@ export function SetupForm({
 
   function onBack() {
     setState({ error: null });
-    setStepIndex((index) => Math.max(0, index - 1));
+    const nextIndex = Math.max(0, stepIndex - 1);
+    persistDraft(profile, rowsByPlatform, nextIndex);
+    setStepIndex(nextIndex);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function onNext() {
     if (!currentStep) return;
     setState({ error: null });
+    persistDraft(profile, rowsByPlatform, stepIndex);
 
     if (currentStep.id === "profile") {
       const stepInvalid = setupStepHasErrors(
@@ -298,7 +477,9 @@ export function SetupForm({
         return;
       }
       setShowFieldErrors(false);
-      setStepIndex((index) => Math.min(steps.length - 1, index + 1));
+      const nextIndex = Math.min(steps.length - 1, stepIndex + 1);
+      persistDraft(profile, rowsByPlatform, nextIndex);
+      setStepIndex(nextIndex);
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
@@ -335,12 +516,16 @@ export function SetupForm({
     }
 
     setShowFieldErrors(false);
-    setStepIndex((index) => Math.min(steps.length - 1, index + 1));
+    const nextIndex = Math.min(steps.length - 1, stepIndex + 1);
+    persistDraft(profile, rowsByPlatform, nextIndex);
+    setStepIndex(nextIndex);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function onSave() {
     setState({ error: null });
+
+    persistDraft(profile, rowsByPlatform, stepIndex);
 
     if (!countsMatchTargets || hasValidationErrors) {
       jumpToFirstErrorStep();
@@ -359,55 +544,56 @@ export function SetupForm({
     formData.set("userId", String(userId));
 
     startTransition(async () => {
-      const res = await saveAccountsAction(formData);
+      const payload = buildPayload();
+      const res = isManager
+        ? await saveEmployeeAccountsAsManager({
+            employeeId: userId,
+            language: payload.language,
+            accounts: payload.accounts,
+          })
+        : await saveAccountsAction(formData);
       if (res?.error) {
+        persistDraft(profile, rowsByPlatform, stepIndex);
         jumpToFirstErrorStep();
         revealFieldErrors();
         setState({ error: res.error });
+        return;
+      }
+      clearSetupDraft(userId);
+      if (isManager) {
+        toast.success(
+          `Setup complete for ${fullName}. All target accounts are saved.`
+        );
+        router.push("/manager");
+        router.refresh();
       }
     });
   }
 
   function renderFacebookCard() {
-    if (
-      targets.facebook_personal <= 0 &&
-      targets.facebook_umbrella <= 0
-    ) {
-      return null;
+    const facebookTarget = facebookRequiredTarget(targets);
+    if (facebookTarget <= 0) return null;
+    const poolComplete = facebookCompleteRowCount(rowsByPlatform);
+
+    function facebookSection(platform: "facebook_personal" | "facebook_umbrella") {
+      return {
+        platform,
+        targetCount: facebookTarget,
+        poolComplete,
+        existingAccounts: existingByPlatform[platform] ?? [],
+        rows: rowsByPlatform[platform] ?? [],
+        fieldErrors: displayedRowFieldErrors,
+        onChangeRow: (idx: number, patch: Partial<SetupAccountRow>) =>
+          updateRow(platform, idx, patch),
+        onAddRow: () => addRow(platform),
+        onRemoveRow: (idx: number) => removeRow(platform, idx),
+      };
     }
 
     return (
       <FacebookAccountsCard
-        personal={
-          targets.facebook_personal > 0
-            ? {
-                platform: "facebook_personal",
-                targetCount: targets.facebook_personal,
-                existingAccounts: existingByPlatform.facebook_personal ?? [],
-                rows: rowsByPlatform.facebook_personal ?? [],
-                fieldErrors: displayedRowFieldErrors,
-                onChangeRow: (idx, patch) =>
-                  updateRow("facebook_personal", idx, patch),
-                onAddRow: () => addRow("facebook_personal"),
-                onRemoveRow: (idx) => removeRow("facebook_personal", idx),
-              }
-            : null
-        }
-        umbrella={
-          targets.facebook_umbrella > 0
-            ? {
-                platform: "facebook_umbrella",
-                targetCount: targets.facebook_umbrella,
-                existingAccounts: existingByPlatform.facebook_umbrella ?? [],
-                rows: rowsByPlatform.facebook_umbrella ?? [],
-                fieldErrors: displayedRowFieldErrors,
-                onChangeRow: (idx, patch) =>
-                  updateRow("facebook_umbrella", idx, patch),
-                onAddRow: () => addRow("facebook_umbrella"),
-                onRemoveRow: (idx) => removeRow("facebook_umbrella", idx),
-              }
-            : null
-        }
+        personal={facebookSection("facebook_personal")}
+        umbrella={facebookSection("facebook_umbrella")}
       />
     );
   }
@@ -439,6 +625,11 @@ export function SetupForm({
           language={profile.language}
           fieldErrors={displayedProfileFieldErrors}
           onChange={updateProfile}
+          hint={
+            isManager
+              ? "Country is assigned by admin — choose this account holder's language."
+              : undefined
+          }
         />
       );
     }
@@ -448,6 +639,10 @@ export function SetupForm({
     }
 
     return renderPlatformCard(currentStep.id);
+  }
+
+  if (!draftReady) {
+    return <SetupDraftRestoring />;
   }
 
   return (
@@ -479,7 +674,7 @@ export function SetupForm({
           style={{ fontFamily: "var(--font-cairo)", fontWeight: 800 }}
           variants={setupFadeUpChild}
         >
-          Let&apos;s set up your accounts
+          Let&apos;s set up {isManager ? `${fullName}'s` : "your"} accounts
         </motion.h1>
 
         <motion.p
@@ -491,7 +686,9 @@ export function SetupForm({
           }}
           variants={setupFadeUpChild}
         >
-          Follow each step to add your profile and social accounts.
+          {isManager
+            ? "Follow each step to add their work profile and social accounts."
+            : "Follow each step to add your profile and social accounts."}
         </motion.p>
 
         <motion.div className="mt-5 w-full" variants={setupFadeUpChild}>
@@ -596,7 +793,7 @@ export function SetupForm({
             </motion.p>
 
             <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-              <SetupCancelButton disabled={pending} />
+              <SetupCancelButton disabled={pending} href={backHref} />
               {!isFirstStep ? (
                 <motion.button
                   type="button"

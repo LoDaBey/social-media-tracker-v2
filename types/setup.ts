@@ -7,6 +7,12 @@ import type {
 } from "@/lib/setup-options";
 
 export type SetupCountry = (typeof SETUP_COUNTRIES)[number];
+
+export type CountryFlagProps = {
+  country: string;
+  title?: string;
+  className?: string;
+};
 export type SetupCategory = (typeof SETUP_CATEGORIES)[number];
 export type SetupLanguage = (typeof SETUP_LANGUAGES)[number];
 
@@ -52,6 +58,9 @@ export type SetupFormProps = {
   targets: Record<Platform, number>;
   existingByPlatform: Record<Platform, TempSocialMediaAccount[]>;
   initialProfile: SetupProfile;
+  /** Manager fills this for a selected teammate; employee self-setup is unused. */
+  mode?: "employee" | "manager";
+  cancelHref?: string;
 };
 
 export type SetupProfileFieldsProps = {
@@ -59,6 +68,7 @@ export type SetupProfileFieldsProps = {
   language: string;
   fieldErrors?: SetupProfileFieldErrors;
   onChange: (patch: Partial<SetupProfile>) => void;
+  hint?: string;
 };
 
 export type SetupSelectProps = {
@@ -121,6 +131,7 @@ export type SetupSavePayload = {
 
 export type SetupCancelButtonProps = {
   disabled?: boolean;
+  href?: string;
 };
 
 export type ScrollToFirstSetupErrorProps = {
@@ -140,6 +151,16 @@ export type SetupStep = {
 };
 
 export type SetupStepNavProps = {
-  steps: SetupStep[];
+  steps: { id: string; label: string }[];
   currentIndex: number;
+};
+
+export type SetupDraft = {
+  version: 1;
+  userId: number;
+  stepIndex: number;
+  profile: SetupProfile;
+  rowsByPlatform: Record<Platform, SetupAccountRow[]>;
+  targets: Record<Platform, number>;
+  existingSignature: string;
 };

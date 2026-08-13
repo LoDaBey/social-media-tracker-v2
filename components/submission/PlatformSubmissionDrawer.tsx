@@ -365,13 +365,8 @@ export function PlatformSubmissionDrawer({
                       <tr>
                         <td colSpan={metrics.length + 1} className="px-4 py-8 text-center">
                           <p className="text-[14px] font-medium text-[var(--color-muted)]">
-                            No accounts on this platform yet.{" "}
-                            <a
-                              href="/setup"
-                              className="font-bold text-[var(--color-emerald)] underline-offset-4 hover:underline"
-                            >
-                              Add them in setup.
-                            </a>
+                            No accounts on this platform yet. Ask your manager
+                            to add them in setup.
                           </p>
                         </td>
                       </tr>

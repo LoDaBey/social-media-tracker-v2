@@ -1,10 +1,14 @@
-import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import { PLATFORM_LABELS, type Platform } from "@/lib/platform-config";
+import { isFacebookPlatform } from "@/lib/setup-facebook";
 
 type Props = {
   missingAccounts: Partial<Record<Platform, number>>;
 };
+
+function platformMissingLabel(platform: Platform) {
+  return isFacebookPlatform(platform) ? "Facebook" : PLATFORM_LABELS[platform];
+}
 
 function missingSentence(missingAccounts: Partial<Record<Platform, number>>) {
   const entries = Object.entries(missingAccounts) as [Platform, number][];
@@ -14,13 +18,13 @@ function missingSentence(missingAccounts: Partial<Record<Platform, number>>) {
 
   if (visible.length === 1) {
     const [platform, count] = visible[0];
-    return `You're missing ${count} ${PLATFORM_LABELS[platform]} ${
+    return `You're missing ${count} ${platformMissingLabel(platform)} ${
       count === 1 ? "account" : "accounts"
     }.`;
   }
 
   const platforms = visible
-    .map(([platform, count]) => `${count} ${PLATFORM_LABELS[platform]}`)
+    .map(([platform, count]) => `${count} ${platformMissingLabel(platform)}`)
     .join(", ");
 
   return `You're missing ${platforms} accounts.`;
@@ -44,18 +48,10 @@ export function MissingAccountsBanner({ missingAccounts }: Props) {
         <div>
           <p className="text-[16px] font-bold text-[var(--color-ink)]">{sentence}</p>
           <p className="mt-1 text-[14px] font-normal text-[var(--color-muted)]">
-            Add them to start logging work.
+            Ask your manager to finish setup for these accounts.
           </p>
         </div>
       </div>
-
-      <Link
-        href="/setup"
-        aria-label="Add missing accounts"
-        className="inline-flex h-11 cursor-pointer items-center justify-center rounded-lg bg-[var(--color-coral)] px-5 text-[14px] font-bold text-white outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--color-coral)]"
-      >
-        Add accounts
-      </Link>
     </section>
   );
 }

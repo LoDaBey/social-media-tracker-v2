@@ -5,16 +5,16 @@ import { useRouter } from "next/navigation";
 import { setupButtonMotion } from "@/lib/setup-motion";
 import type { SetupCancelButtonProps } from "@/types/setup";
 
-export function SetupCancelButton({ disabled }: SetupCancelButtonProps) {
+export function SetupCancelButton({ disabled, href = "/dashboard" }: SetupCancelButtonProps) {
   const router = useRouter();
   const isDisabled = Boolean(disabled);
 
   return (
     <motion.button
       type="button"
-      aria-label="Cancel and go back to dashboard"
+      aria-label="Cancel and go back"
       disabled={isDisabled}
-      onClick={() => router.push("/dashboard")}
+      onClick={() => router.push(href)}
       layout
       className={[
         "cursor-pointer rounded-lg",

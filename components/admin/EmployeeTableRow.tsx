@@ -1,7 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import type { AdminEmployeeListRow } from "@/types/admin";
+import { adminRoleBadge } from "@/lib/admin-view";
+import { EmployeeActiveToggle } from "@/components/admin/EmployeeActiveToggle";
+import { EmployeeDeleteButton } from "@/components/admin/EmployeeDeleteButton";
+import { EmployeeViewButton } from "@/components/admin/EmployeeViewButton";
+import type { AdminEmployeeListRow, EmployeeTableRowProps } from "@/types/admin";
 
 const cycleLabel: Record<AdminEmployeeListRow["cycle_status"], string> = {
   pending: "Pending",
@@ -9,27 +12,14 @@ const cycleLabel: Record<AdminEmployeeListRow["cycle_status"], string> = {
   payable: "Payable",
 };
 
-type Props = {
-  row: AdminEmployeeListRow;
-};
-
-export function EmployeeTableRow({ row }: Props) {
-  const router = useRouter();
+export function EmployeeTableRow({ row }: EmployeeTableRowProps) {
   const initial = (row.full_name.trim()[0] ?? "?").toUpperCase();
 
   return (
     <tr
-      role="link"
-      tabIndex={0}
-      aria-label={`Open employee ${row.full_name}`}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          router.push(`/admin/employees/${row.id}`);
-        }
-      }}
-      onClick={() => router.push(`/admin/employees/${row.id}`)}
-      className="cursor-pointer border-b border-[var(--color-hairline)] odd:bg-[var(--color-cream-tint)] hover:bg-[var(--color-emerald-tint)]/40"
+      className={`border-b border-[var(--color-hairline)] odd:bg-[var(--color-cream-tint)] hover:bg-[var(--color-emerald-tint)]/40 ${
+        row.is_active ? "" : "opacity-70"
+      }`}
     >
       <td className="px-4 py-3 align-top">
         <div className="flex items-start gap-3">
@@ -47,8 +37,8 @@ export function EmployeeTableRow({ row }: Props) {
           </div>
         </div>
       </td>
-      <td className="px-4 py-3 text-[14px] capitalize text-[var(--color-ink)]">
-        {row.role.replace("_", " ")}
+      <td className="px-4 py-3 text-[14px] text-[var(--color-ink)]">
+        {adminRoleBadge(row.role)}
       </td>
       <td className="px-4 py-3 text-[14px] text-[var(--color-ink)]">
         {row.team_lead_name ?? "—"}
@@ -64,8 +54,20 @@ export function EmployeeTableRow({ row }: Props) {
           {cycleLabel[row.cycle_status]}
         </span>
       </td>
-      <td className="px-4 py-3 text-[13px] font-semibold text-[var(--color-emerald)]">
-        View
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-1.5">
+          <EmployeeViewButton
+            employeeId={row.id}
+            fullName={row.full_name}
+            role={row.role}
+          />
+          <EmployeeDeleteButton userId={row.id} fullName={row.full_name} />
+          <EmployeeActiveToggle
+            userId={row.id}
+            fullName={row.full_name}
+            isActive={row.is_active}
+          />
+        </div>
       </td>
     </tr>
   );

@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import type { PoolClient } from "pg";
 import { auth } from "@/auth";
-import { pool } from "@/lib/db";
+import { pool, queryOne } from "@/lib/db";
 import {
   addDaysToIsoDate,
   formatShortDate,
@@ -15,9 +15,11 @@ import {
 } from "@/lib/cairo-date";
 import { LEVEL_LABELS, LEVEL_SALARY_PERCENT } from "@/lib/level-labels";
 import { createNotification } from "@/lib/notifications";
+import { fetchAdminEmployeeEditorBundle } from "@/lib/admin-data";
 import { SETUP_COUNTRIES, SETUP_REGION } from "@/lib/setup-options";
 import { recordBaseSalary, recordBonus, recordPayout } from "@/lib/wallet-events";
 import type {
+  AdminEmployeeEditorBundle,
   CreateEmployeePayload,
   UpdateEmployeeProfilePayload,
   UpdateEmployeeTargetsPayload,
@@ -78,19 +80,42 @@ function revalidateAdminEmployee(userId: number) {
   revalidatePath("/dashboard");
 }
 
+const managerCountriesSchema = z
+  .array(setupCountrySchema)
+  .min(1, "Select at least one country for this manager.");
+
 const createEmployeeSchema = z.object({
   full_name: z.string().trim().min(1).max(255),
   email: z.string().trim().email().max(255),
   password: z.string().min(8).max(128),
   phone: z.string().trim().max(50).optional().nullable(),
-  role: z.enum(["employee", "team_lead", "admin"]).optional(),
+  role: z.enum(["employee", "team_lead", "admin", "manager"]).optional(),
   team_lead_id: z.number().int().positive().nullable().optional(),
+  manager_id: z.number().int().positive().nullable().optional(),
+  manager_countries: z.array(z.string()).optional(),
   base_salary: z.number().min(0).max(10_000_000).optional(),
   hire_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   pay_cycle_start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   current_level: z.number().int().min(1).max(6).optional(),
   country: setupCountrySchema,
 });
+
+async function replaceManagerCountries(
+  client: PoolClient,
+  userId: number,
+  countries: string[]
+) {
+  await client.query(`DELETE FROM temp_manager_countries WHERE user_id = $1`, [
+    userId,
+  ]);
+  for (const country of countries) {
+    await client.query(
+      `INSERT INTO temp_manager_countries (user_id, country) VALUES ($1, $2)
+       ON CONFLICT DO NOTHING`,
+      [userId, country]
+    );
+  }
+}
 
 export async function createEmployee(
   payload: CreateEmployeePayload
@@ -105,22 +130,57 @@ export async function createEmployee(
   const baseSalary = p.base_salary ?? 0;
   const level = p.current_level ?? 2;
   let teamLeadId: number | null = p.team_lead_id ?? null;
-  if (role === "team_lead" || role === "admin") teamLeadId = null;
+  let managerId: number | null = p.manager_id ?? null;
+  // Employees and managers can report to a team lead; only employees get a manager.
+  if (role === "team_lead" || role === "admin") {
+    teamLeadId = null;
+  }
+  if (role !== "employee") {
+    managerId = null;
+  }
+  if (role === "employee" && !managerId) {
+    throw new Error("Select a manager for this employee.");
+  }
+
+  let managerCountries: string[] = [];
+  if (role === "manager") {
+    managerCountries = managerCountriesSchema.parse(p.manager_countries ?? []);
+  }
+
+  const primaryCountry =
+    role === "manager" ? managerCountries[0]! : p.country;
 
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+
+    if (managerId) {
+      const mgr = await client.query<{ id: number }>(
+        `SELECT id FROM temp_users WHERE id = $1 AND role = 'manager' AND is_active = TRUE`,
+        [managerId]
+      );
+      if (!mgr.rows[0]) throw new Error("Selected manager is invalid.");
+    }
+
+    if (teamLeadId) {
+      const tl = await client.query<{ id: number }>(
+        `SELECT id FROM temp_users WHERE id = $1 AND role = 'team_lead' AND is_active = TRUE`,
+        [teamLeadId]
+      );
+      if (!tl.rows[0]) throw new Error("Selected team lead is invalid.");
+    }
+
     const ins = await client.query<{ id: number }>(
       `INSERT INTO temp_users (
          full_name, email, password_hash, role, phone, is_active,
-         team_lead_id, base_salary, hire_date, pay_cycle_start_date, current_level,
+         team_lead_id, manager_id, base_salary, hire_date, pay_cycle_start_date, current_level,
          region, country,
          target_x_count, target_facebook_personal_count, target_facebook_umbrella_count,
          target_instagram_count, target_tiktok_count
        ) VALUES (
          $1, $2, $3, $4, $5, TRUE,
-         $6, $7, $8::date, $9::date, $10,
-         $11, $12,
+         $6, $7, $8, $9::date, $10::date, $11,
+         $12, $13,
          0, 0, 0, 0, 0
        ) RETURNING id`,
       [
@@ -130,16 +190,21 @@ export async function createEmployee(
         role,
         p.phone ?? null,
         teamLeadId,
+        managerId,
         baseSalary,
         hire,
         cycleStart,
         level,
         SETUP_REGION,
-        p.country,
+        primaryCountry,
       ]
     );
     const id = ins.rows[0]?.id;
     if (!id) throw new Error("Insert failed.");
+
+    if (role === "manager") {
+      await replaceManagerCountries(client, id, managerCountries);
+    }
 
     await recordBaseSalary(client, {
       user_id: id,
@@ -174,10 +239,12 @@ const updateProfileSchema = z.object({
     .transform((s) =>
       s == null || String(s).trim() === "" ? null : String(s).trim().slice(0, 50)
     ),
-  role: z.enum(["employee", "team_lead", "admin"]),
+  role: z.enum(["employee", "team_lead", "admin", "manager"]),
   is_active: z.boolean(),
   hire_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   team_lead_id: z.number().int().positive().nullable(),
+  manager_id: z.number().int().positive().nullable(),
+  manager_countries: z.array(z.string()).optional(),
   base_salary: z.number().min(0).max(10_000_000),
   current_level: z.number().int().min(1).max(6),
   pay_cycle_start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
@@ -193,7 +260,24 @@ export async function updateEmployeeProfile(
   const p = updateProfileSchema.parse(payload);
 
   let teamLeadId = p.team_lead_id;
-  if (p.role === "team_lead" || p.role === "admin") teamLeadId = null;
+  let managerId = p.manager_id;
+  if (p.role === "team_lead" || p.role === "admin") {
+    teamLeadId = null;
+  }
+  if (p.role !== "employee") {
+    managerId = null;
+  }
+  if (p.role === "employee" && !managerId) {
+    throw new Error("Select a manager for this employee.");
+  }
+
+  let managerCountries: string[] = [];
+  if (p.role === "manager") {
+    managerCountries = managerCountriesSchema.parse(p.manager_countries ?? []);
+  }
+
+  const primaryCountry =
+    p.role === "manager" ? managerCountries[0]! : p.country;
 
   const client = await pool.connect();
   try {
@@ -204,6 +288,22 @@ export async function updateEmployeeProfile(
     );
     if (dup.rowCount && dup.rowCount > 0) {
       throw new Error("Email already in use.");
+    }
+
+    if (managerId) {
+      const mgr = await client.query<{ id: number }>(
+        `SELECT id FROM temp_users WHERE id = $1 AND role = 'manager' AND is_active = TRUE`,
+        [managerId]
+      );
+      if (!mgr.rows[0]) throw new Error("Selected manager is invalid.");
+    }
+
+    if (teamLeadId) {
+      const tl = await client.query<{ id: number }>(
+        `SELECT id FROM temp_users WHERE id = $1 AND role = 'team_lead' AND is_active = TRUE`,
+        [teamLeadId]
+      );
+      if (!tl.rows[0]) throw new Error("Selected team lead is invalid.");
     }
 
     const prevLevelRes = await client.query<{ current_level: number }>(
@@ -218,9 +318,9 @@ export async function updateEmployeeProfile(
          email = $2,
          phone = $3,
          role = $4,
-         is_active = $5,
-         hire_date = $6::date,
-         team_lead_id = $7,
+         hire_date = $5::date,
+         team_lead_id = $6,
+         manager_id = $7,
          base_salary = $8,
          current_level = $9,
          pay_cycle_start_date = $10::date,
@@ -232,17 +332,25 @@ export async function updateEmployeeProfile(
         p.email,
         p.phone,
         p.role,
-        p.is_active,
         p.hire_date,
         teamLeadId,
+        managerId,
         p.base_salary,
         p.current_level,
         p.pay_cycle_start_date,
         SETUP_REGION,
-        p.country,
+        primaryCountry,
         user_id,
       ]
     );
+
+    if (p.role === "manager") {
+      await replaceManagerCountries(client, user_id, managerCountries);
+    } else {
+      await client.query(`DELETE FROM temp_manager_countries WHERE user_id = $1`, [
+        user_id,
+      ]);
+    }
 
     if (
       previousLevel !== undefined &&
@@ -265,11 +373,67 @@ export async function updateEmployeeProfile(
     await client.query("COMMIT");
     revalidateAdminEmployee(user_id);
   } catch (e) {
-    await client.query("ROLLBACK");
+    await client.query("ROLLBACK").catch(() => {});
     throw e;
   } finally {
     client.release();
   }
+}
+
+export async function setEmployeeActive(
+  user_id: number,
+  is_active: boolean
+): Promise<void> {
+  await requireAdminSession();
+  if (!Number.isFinite(user_id)) throw new Error("Invalid user.");
+
+  await pool.query(`UPDATE temp_users SET is_active = $2 WHERE id = $1`, [
+    user_id,
+    is_active,
+  ]);
+  revalidateAdminEmployee(user_id);
+}
+
+export async function getAdminEmployeeEditorBundle(
+  userId: number
+): Promise<AdminEmployeeEditorBundle | null> {
+  await requireAdminSession();
+  if (!Number.isFinite(userId)) return null;
+  return fetchAdminEmployeeEditorBundle(userId);
+}
+
+export async function deleteEmployee(user_id: number): Promise<void> {
+  const { adminId } = await requireAdminSession();
+  if (!Number.isFinite(user_id)) throw new Error("Invalid user.");
+  if (user_id === adminId) {
+    throw new Error("You cannot delete your own account.");
+  }
+
+  const user = await queryOne<{ id: number; role: Role }>(
+    `SELECT id, role FROM temp_users WHERE id = $1`,
+    [user_id]
+  );
+  if (!user) throw new Error("User not found.");
+
+  if (user.role === "admin") {
+    const remaining = await queryOne<{ c: string }>(
+      `SELECT COUNT(*)::text AS c
+         FROM temp_users
+        WHERE role = 'admin' AND id <> $1`,
+      [user_id]
+    );
+    if (Number(remaining?.c ?? 0) < 1) {
+      throw new Error("Cannot delete the last admin.");
+    }
+  }
+
+  await pool.query(`DELETE FROM temp_users WHERE id = $1`, [user_id]);
+  revalidatePath("/admin");
+  revalidatePath("/admin/employees");
+  revalidatePath("/admin/payouts");
+  revalidatePath("/admin/team-leads");
+  revalidatePath("/manager");
+  revalidatePath("/dashboard");
 }
 
 const targetsSchema = z.object({
@@ -312,7 +476,7 @@ export async function updateEmployeeTargets(
     category: "admin",
     title: "Account targets updated",
     body: "Your assigned accounts changed. Visit setup to add or archive accounts.",
-    action_route: "/setup",
+    action_route: "/dashboard",
     metadata: {},
     created_by: adminId,
   });

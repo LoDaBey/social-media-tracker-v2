@@ -36,11 +36,31 @@ async function main() {
     ["Mariam (Team Lead)", "lead@temp.local", password_hash]
   );
 
+  await pool.query(
+    `INSERT INTO temp_users (full_name, email, password_hash, role, country, region)
+     VALUES ($1, $2, $3, 'manager', 'Ghana', 'Africa')
+     ON CONFLICT (email) DO UPDATE SET role = 'manager', country = 'Ghana'`,
+    ["Kwame (Manager)", "manager@temp.local", password_hash]
+  );
+
   const lead = await queryOne<Pick<TempUser, "id">>(
     "SELECT id FROM temp_users WHERE email = $1",
     ["lead@temp.local"]
   );
   if (!lead) throw new Error("Team lead not found after seed insert/select.");
+
+  const manager = await queryOne<Pick<TempUser, "id">>(
+    "SELECT id FROM temp_users WHERE email = $1",
+    ["manager@temp.local"]
+  );
+  if (!manager) throw new Error("Manager not found after seed insert/select.");
+
+  await pool.query(
+    `INSERT INTO temp_manager_countries (user_id, country)
+     VALUES ($1, 'Ghana'), ($1, 'Nigeria')
+     ON CONFLICT DO NOTHING`,
+    [manager.id]
+  );
 
   await pool.query(
     `INSERT INTO temp_users (
@@ -49,6 +69,10 @@ async function main() {
        password_hash,
        role,
        team_lead_id,
+       manager_id,
+       country,
+       region,
+       language,
        base_salary,
        current_level,
        pay_cycle_start_date,
@@ -64,16 +88,24 @@ async function main() {
        'employee',
        $4,
        $5,
+       'Ghana',
+       'Africa',
+       'English',
        $6,
-       CURRENT_DATE,
        $7,
+       CURRENT_DATE,
        $8,
        $9,
        $10,
-       $11
+       $11,
+       $12
      )
      ON CONFLICT (email) DO UPDATE SET
        team_lead_id = EXCLUDED.team_lead_id,
+       manager_id = EXCLUDED.manager_id,
+       country = EXCLUDED.country,
+       region = EXCLUDED.region,
+       language = EXCLUDED.language,
        base_salary = EXCLUDED.base_salary,
        current_level = EXCLUDED.current_level,
        pay_cycle_start_date = EXCLUDED.pay_cycle_start_date,
@@ -87,6 +119,7 @@ async function main() {
       "employee@temp.local",
       password_hash,
       lead.id,
+      manager.id,
       4500,
       3,
       5,

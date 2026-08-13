@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import toast from "react-hot-toast";
 import { updateEmployeeTargets } from "@/actions/admin";
 import {
   PLATFORM_LABELS,
@@ -10,19 +11,19 @@ import {
   PLATFORMS,
   type Platform,
 } from "@/lib/platform-config";
-import type { UpdateEmployeeTargetsPayload } from "@/types/admin";
-
-type Props = {
-  userId: number;
-  initial: UpdateEmployeeTargetsPayload;
-  activeCounts: Record<string, number>;
-};
+import type { EmployeeTargetsFormProps, UpdateEmployeeTargetsPayload } from "@/types/admin";
 
 function fieldForPlatform(p: Platform): keyof UpdateEmployeeTargetsPayload {
   return PLATFORM_TARGET_COLUMNS[p] as keyof UpdateEmployeeTargetsPayload;
 }
 
-export function EmployeeTargetsForm({ userId, initial, activeCounts }: Props) {
+export function EmployeeTargetsForm({
+  userId,
+  initial,
+  activeCounts,
+  embedded = false,
+  onSaved,
+}: EmployeeTargetsFormProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -50,9 +51,13 @@ export function EmployeeTargetsForm({ userId, initial, activeCounts }: Props) {
     startTransition(async () => {
       try {
         await updateEmployeeTargets(userId, form);
+        toast.success("Account targets saved.");
         router.refresh();
+        onSaved?.();
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Save failed.");
+        const message = e instanceof Error ? e.message : "Save failed.";
+        setError(message);
+        toast.error(message);
       }
     });
   }
@@ -122,7 +127,13 @@ export function EmployeeTargetsForm({ userId, initial, activeCounts }: Props) {
         })}
       </div>
 
-      <div className="sticky bottom-0 z-20 -mx-4 flex flex-wrap gap-3 border-t border-[var(--color-hairline)] bg-[var(--color-cream)] px-4 py-4 sm:-mx-8">
+      <div
+        className={
+          embedded
+            ? "sticky bottom-0 z-20 flex flex-wrap gap-3 border-t border-[var(--color-hairline)] bg-[var(--color-surface)] py-4"
+            : "sticky bottom-0 z-20 -mx-4 flex flex-wrap gap-3 border-t border-[var(--color-hairline)] bg-[var(--color-cream)] px-4 py-4 sm:-mx-8"
+        }
+      >
         <motion.button
           type="button"
           layout

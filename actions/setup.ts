@@ -12,6 +12,7 @@ import {
   platformUrlErrorMessage,
 } from "@/lib/setup-validation";
 import { setupSavePayloadSchema } from "@/lib/setup-schema";
+import { accountsMeetTargets } from "@/lib/setup-facebook";
 import type { SetupSaveAccountInput } from "@/types/setup";
 
 function accountUrlKey(account: Pick<SetupSaveAccountInput, "platform" | "url">) {
@@ -123,17 +124,8 @@ export async function saveAccountsAction(formData: FormData) {
     };
 
     const counts = countByPlatform(accounts);
-    for (const platform of Object.keys(targets) as Platform[]) {
-      const target = targets[platform];
-      if (target === 0) {
-        if (counts[platform] !== 0) {
-          return { error: "You added accounts for a platform that is not assigned to you." };
-        }
-        continue;
-      }
-      if (counts[platform] !== target) {
-        return { error: "Please add exactly the assigned number of accounts per platform." };
-      }
+    if (!accountsMeetTargets(counts, targets)) {
+      return { error: "Please add exactly the assigned number of accounts per platform." };
     }
 
     const client = await pool.connect();
