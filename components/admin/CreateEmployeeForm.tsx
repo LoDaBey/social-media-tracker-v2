@@ -4,12 +4,12 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { createEmployee } from "@/actions/admin";
+import { SETUP_COUNTRIES, SETUP_REGION } from "@/lib/setup-options";
 import type { Role } from "@/types/db";
-
-type TeamLeadOption = { id: number; full_name: string };
+import type { AdminTeamLeadOption } from "@/types/admin";
 
 type Props = {
-  teamLeads: TeamLeadOption[];
+  teamLeads: AdminTeamLeadOption[];
 };
 
 export function CreateEmployeeForm({ teamLeads }: Props) {
@@ -23,6 +23,7 @@ export function CreateEmployeeForm({ teamLeads }: Props) {
   const [role, setRole] = useState<Role>("employee");
   const [team_lead_id, setTeamLeadId] = useState<string>("");
   const [base_salary, setBaseSalary] = useState("4500");
+  const [country, setCountry] = useState("");
 
   function submit() {
     setError(null);
@@ -37,6 +38,7 @@ export function CreateEmployeeForm({ teamLeads }: Props) {
           team_lead_id:
             role === "employee" && team_lead_id ? Number(team_lead_id) : null,
           base_salary: Number(base_salary),
+          country,
         });
         router.push(`/admin/employees/${id}`);
         router.refresh();
@@ -49,7 +51,7 @@ export function CreateEmployeeForm({ teamLeads }: Props) {
   const teamLeadDisabled = role !== "employee";
 
   const fieldClass =
-    "rounded-lg border border-[var(--color-hairline)] bg-[var(--color-cream-tint)] px-3 py-2.5 text-[15px] font-medium text-[var(--color-ink)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]";
+    "rounded outline-none border border-[var(--color-hairline)] bg-[var(--color-cream-tint)] px-3 py-2.5 text-[15px] font-medium text-[var(--color-ink)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]";
 
   return (
     <div
@@ -60,8 +62,8 @@ export function CreateEmployeeForm({ teamLeads }: Props) {
         New employee
       </h2>
       <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-[var(--color-muted)]">
-        Create an account and sign-in credentials. The employee can change their password after first
-        login.
+        Create an account and assign their country. Region is always {SETUP_REGION}. The employee
+        can change their password after first login.
       </p>
       {error ? (
         <p className="mt-4 rounded-lg bg-[var(--color-coral-tint)] px-4 py-3 text-[14px] text-[var(--color-coral)]">
@@ -102,6 +104,32 @@ export function CreateEmployeeForm({ teamLeads }: Props) {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             className={fieldClass}
+          />
+        </label>
+        <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
+          Country
+          <select
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            aria-label="Assign employee country"
+            className={`cursor-pointer ${fieldClass}`}
+          >
+            <option value="">Select a country</option>
+            {SETUP_COUNTRIES.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
+          Region
+          <input
+            value={SETUP_REGION}
+            disabled
+            readOnly
+            aria-label="Region is Africa for every country"
+            className={`${fieldClass} cursor-not-allowed opacity-70`}
           />
         </label>
         <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">

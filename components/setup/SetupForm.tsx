@@ -232,7 +232,12 @@ export function SetupForm({
 
   function updateProfile(patch: Partial<SetupProfile>) {
     setState({ error: null });
-    setProfile((prev) => ({ ...prev, ...patch }));
+    setProfile((prev) => ({
+      ...prev,
+      ...patch,
+      // Country is admin-assigned and cannot be changed during setup.
+      country: prev.country,
+    }));
   }
 
   function buildPayload() {

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { pool, queryOne } from "@/lib/db";
 import type { TempUser } from "@/types/db";
 import type { Platform } from "@/lib/platform-config";
-import { SETUP_REGION } from "@/lib/setup-options";
+import { SETUP_REGION, isSetupCountry } from "@/lib/setup-options";
 import {
   isPlatformAccountUrl,
   isValidAccountEmail,
@@ -55,6 +55,7 @@ export async function saveAccountsAction(formData: FormData) {
       Pick<
         TempUser,
         | "id"
+        | "country"
         | "target_x_count"
         | "target_facebook_personal_count"
         | "target_facebook_umbrella_count"
@@ -63,6 +64,7 @@ export async function saveAccountsAction(formData: FormData) {
       >
     >(
       `SELECT id,
+              country,
               target_x_count,
               target_facebook_personal_count,
               target_facebook_umbrella_count,
@@ -73,6 +75,13 @@ export async function saveAccountsAction(formData: FormData) {
       [userId]
     );
     if (!user) return { error: "User not found." };
+
+    const assignedCountry = user.country?.trim() ?? "";
+    if (!isSetupCountry(assignedCountry)) {
+      return {
+        error: "Ask your admin to assign a country before finishing setup.",
+      };
+    }
 
     const accounts: SetupSaveAccountInput[] = parsed.data.accounts.map((a) => ({
       platform: a.platform,
@@ -137,7 +146,7 @@ export async function saveAccountsAction(formData: FormData) {
              country = $3,
              language = $4
          WHERE id = $1`,
-        [userId, SETUP_REGION, parsed.data.country, parsed.data.language]
+        [userId, SETUP_REGION, assignedCountry, parsed.data.language]
       );
 
       await client.query(

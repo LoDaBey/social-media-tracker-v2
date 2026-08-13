@@ -15,6 +15,7 @@ import {
 } from "@/lib/cairo-date";
 import { LEVEL_LABELS, LEVEL_SALARY_PERCENT } from "@/lib/level-labels";
 import { createNotification } from "@/lib/notifications";
+import { SETUP_COUNTRIES, SETUP_REGION } from "@/lib/setup-options";
 import { recordBaseSalary, recordBonus, recordPayout } from "@/lib/wallet-events";
 import type {
   CreateEmployeePayload,
@@ -24,6 +25,15 @@ import type {
 import type { Role } from "@/types/db";
 
 const CYCLE_LENGTH_DAYS = 30;
+
+const setupCountrySchema = z
+  .string()
+  .trim()
+  .min(1, "Select a country.")
+  .refine(
+    (value) => (SETUP_COUNTRIES as readonly string[]).includes(value),
+    "Select a valid country."
+  );
 
 async function requireAdminSession() {
   const session = await auth();
@@ -79,6 +89,7 @@ const createEmployeeSchema = z.object({
   hire_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   pay_cycle_start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   current_level: z.number().int().min(1).max(6).optional(),
+  country: setupCountrySchema,
 });
 
 export async function createEmployee(
@@ -103,11 +114,13 @@ export async function createEmployee(
       `INSERT INTO temp_users (
          full_name, email, password_hash, role, phone, is_active,
          team_lead_id, base_salary, hire_date, pay_cycle_start_date, current_level,
+         region, country,
          target_x_count, target_facebook_personal_count, target_facebook_umbrella_count,
          target_instagram_count, target_tiktok_count
        ) VALUES (
          $1, $2, $3, $4, $5, TRUE,
          $6, $7, $8::date, $9::date, $10,
+         $11, $12,
          0, 0, 0, 0, 0
        ) RETURNING id`,
       [
@@ -121,6 +134,8 @@ export async function createEmployee(
         hire,
         cycleStart,
         level,
+        SETUP_REGION,
+        p.country,
       ]
     );
     const id = ins.rows[0]?.id;
@@ -166,6 +181,7 @@ const updateProfileSchema = z.object({
   base_salary: z.number().min(0).max(10_000_000),
   current_level: z.number().int().min(1).max(6),
   pay_cycle_start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+  country: setupCountrySchema,
 });
 
 export async function updateEmployeeProfile(
@@ -207,8 +223,10 @@ export async function updateEmployeeProfile(
          team_lead_id = $7,
          base_salary = $8,
          current_level = $9,
-         pay_cycle_start_date = $10::date
-       WHERE id = $11`,
+         pay_cycle_start_date = $10::date,
+         region = $11,
+         country = $12
+       WHERE id = $13`,
       [
         p.full_name,
         p.email,
@@ -220,6 +238,8 @@ export async function updateEmployeeProfile(
         p.base_salary,
         p.current_level,
         p.pay_cycle_start_date,
+        SETUP_REGION,
+        p.country,
         user_id,
       ]
     );

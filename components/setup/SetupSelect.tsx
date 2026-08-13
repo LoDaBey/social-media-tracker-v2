@@ -11,6 +11,7 @@ export function SetupSelect({
   ariaLabel,
   ariaInvalid,
   error,
+  disabled = false,
   onChange,
 }: SetupSelectProps) {
   const invalid = Boolean(ariaInvalid || error);
@@ -28,16 +29,22 @@ export function SetupSelect({
       <select
         id={id}
         value={value}
+        disabled={disabled}
         aria-label={ariaLabel}
         aria-invalid={invalid}
         aria-describedby={errorId}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {
+          if (disabled) return;
+          onChange(e.target.value);
+        }}
         data-setup-field=""
         className={[
-          "box-border w-full min-w-0 max-w-full scroll-mb-28 scroll-mt-6 cursor-pointer rounded outline-none border bg-white px-3 py-2 text-[14px] text-[var(--color-ink)]",
-          invalid
-            ? "border-[var(--color-coral)] focus-visible:ring-2 focus-visible:ring-[var(--color-coral)]"
-            : "border-[var(--color-hairline)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]",
+          "box-border w-full min-w-0 max-w-full scroll-mb-28 scroll-mt-6 rounded outline-none border px-3 py-2 text-[14px] text-[var(--color-ink)]",
+          disabled
+            ? "cursor-not-allowed border-[var(--color-hairline)] bg-[var(--color-cream-tint)] text-[var(--color-muted)]"
+            : invalid
+              ? "cursor-pointer border-[var(--color-coral)] bg-white focus-visible:ring-2 focus-visible:ring-[var(--color-coral)]"
+              : "cursor-pointer border-[var(--color-hairline)] bg-white focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]",
         ].join(" ")}
         style={{ fontFamily: "var(--font-cairo)", fontWeight: 500 }}
       >
