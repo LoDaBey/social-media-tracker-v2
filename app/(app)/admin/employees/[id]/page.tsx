@@ -1,28 +1,21 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { queryOne } from "@/lib/db";
 import { fetchActiveAccountCountsByPlatform, fetchTeamLeadOptions } from "@/lib/admin-data";
 import { normalizePgDateColumn } from "@/lib/cairo-date";
 import type { TempUser } from "@/types/db";
-import { EmployeeForm, type EmployeeFormInitial } from "@/components/admin/EmployeeForm";
+import type { EmployeeFormInitial } from "@/types/admin";
+import { EmployeeForm } from "@/components/admin/EmployeeForm";
 import { EmployeeTargetsForm } from "@/components/admin/EmployeeTargetsForm";
-import { AdminEmployeeTabs } from "@/components/admin/AdminEmployeeTabs";
 import { AdminEmployeeWalletEmbed } from "@/components/admin/AdminEmployeeWalletEmbed";
 import { AdminEmployeeActivity } from "@/components/admin/AdminEmployeeActivity";
+import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
+import {
+  adminViewEmployee,
+  resolveAdminEmployeePanel,
+} from "@/lib/admin-view";
 
-type SearchParams = { tab?: string };
-
-function tabOrDefault(tab: string | undefined) {
-  if (tab === "targets" || tab === "wallet" || tab === "activity") return tab;
-  return "profile";
-}
-
-function roleBadge(role: string) {
-  if (role === "admin") return "Admin";
-  if (role === "team_lead") return "Team lead";
-  return "Employee";
-}
+type SearchParams = { panel?: string; tab?: string };
 
 export default async function AdminEmployeeDetailPage({
   params,
@@ -36,14 +29,17 @@ export default async function AdminEmployeeDetailPage({
   if (!Number.isFinite(id)) notFound();
 
   const sp = (await searchParams) ?? {};
-  const tab = tabOrDefault(typeof sp.tab === "string" ? sp.tab : undefined);
+  const panel = resolveAdminEmployeePanel({
+    panel: typeof sp.panel === "string" ? sp.panel : undefined,
+    tab: typeof sp.tab === "string" ? sp.tab : undefined,
+  });
 
   const user = await queryOne<TempUser>(`SELECT * FROM temp_users WHERE id = $1`, [id]);
   if (!user) notFound();
 
   const teamLeads = await fetchTeamLeadOptions();
   const counts =
-    tab === "targets"
+    panel === "targets"
       ? await fetchActiveAccountCountsByPlatform(id)
       : ({} as Record<string, number>);
 
@@ -59,6 +55,7 @@ export default async function AdminEmployeeDetailPage({
     base_salary: user.base_salary,
     current_level: user.current_level,
     pay_cycle_start_date: normalizePgDateColumn(user.pay_cycle_start_date),
+    country: user.country ?? "",
     updated_at: user.updated_at,
   };
 
@@ -71,45 +68,19 @@ export default async function AdminEmployeeDetailPage({
   };
 
   return (
-    <main className="flex flex-col gap-8">
-      <nav className="text-[13px] font-medium text-[var(--color-muted)]" aria-label="Breadcrumb">
-        <ol className="flex flex-wrap items-center gap-2">
-          <li>
-            <Link
-              href="/admin"
-              className="cursor-pointer rounded-lg text-[var(--color-emerald)] outline-none hover:underline focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
-            >
-              Admin
-            </Link>
-          </li>
-          <li aria-hidden="true">·</li>
-          <li>
-            <Link
-              href="/admin/employees"
-              className="cursor-pointer rounded-lg text-[var(--color-emerald)] outline-none hover:underline focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
-            >
-              Employees
-            </Link>
-          </li>
-          <li aria-hidden="true">·</li>
-          <li className="text-[var(--color-ink)]">{user.full_name}</li>
-        </ol>
-      </nav>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-[32px] font-extrabold text-[var(--color-ink)]">{user.full_name}</h1>
-        <span className="rounded-full bg-[var(--color-emerald-tint)] px-3 py-1 text-[12px] font-semibold uppercase tracking-wide text-[var(--color-emerald)]">
-          {roleBadge(user.role)}
-        </span>
-      </div>
-
-      <AdminEmployeeTabs userId={id} tab={typeof sp.tab === "string" ? sp.tab : undefined} />
-
-      {tab === "profile" ? (
+    <AdminWorkspace
+      view={adminViewEmployee({
+        employeeId: id,
+        employeeName: user.full_name,
+        role: user.role,
+        panel,
+      })}
+    >
+      {panel === "profile" ? (
         <EmployeeForm key={initial.updated_at} initial={initial} teamLeads={teamLeads} />
       ) : null}
 
-      {tab === "targets" ? (
+      {panel === "targets" ? (
         <EmployeeTargetsForm
           key={user.updated_at}
           userId={id}
@@ -118,7 +89,7 @@ export default async function AdminEmployeeDetailPage({
         />
       ) : null}
 
-      {tab === "wallet" ? (
+      {panel === "wallet" ? (
         <Suspense
           fallback={
             <div className="min-h-[200px] rounded-2xl bg-[var(--color-cream-tint)] animate-pulse" />
@@ -128,7 +99,7 @@ export default async function AdminEmployeeDetailPage({
         </Suspense>
       ) : null}
 
-      {tab === "activity" ? (
+      {panel === "activity" ? (
         <Suspense
           fallback={
             <div className="min-h-[200px] rounded-2xl bg-[var(--color-cream-tint)] animate-pulse" />
@@ -137,6 +108,6 @@ export default async function AdminEmployeeDetailPage({
           <AdminEmployeeActivity userId={id} />
         </Suspense>
       ) : null}
-    </main>
+    </AdminWorkspace>
   );
 }

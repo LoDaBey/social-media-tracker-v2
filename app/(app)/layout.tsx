@@ -45,22 +45,34 @@ export default async function AppLayout({
     <div className="min-h-dvh bg-[var(--color-cream)]">
       <header className="h-16 bg-[var(--color-surface)] border-b border-[var(--color-hairline)]">
         <div className="mx-auto flex h-full w-full max-w-7xl items-center justify-between px-4 sm:px-8">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-[14px] bg-[var(--color-emerald-tint)] flex items-center justify-center">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[var(--color-emerald-tint)]">
               <Sparkles
                 className="h-[18px] w-[18px] text-[var(--color-emerald)]"
                 aria-hidden="true"
               />
             </div>
-            <div className="flex items-center gap-3">
-              <p className="text-[16px] font-bold text-[var(--color-ink)]">
-                ALPHAA
-              </p>
-              <DateBadge />
-            </div>
+            {role === "admin" ? (
+              <>
+                <span className="sr-only">ALPHAA</span>
+                <div className="hidden min-w-0 items-center gap-3 lg:flex">
+                  <p className="text-[16px] font-bold text-[var(--color-ink)]">
+                    ALPHAA
+                  </p>
+                  <DateBadge />
+                </div>
+              </>
+            ) : (
+              <div className="flex min-w-0 items-center gap-3">
+                <p className="text-[16px] font-bold text-[var(--color-ink)]">
+                  ALPHAA
+                </p>
+                <DateBadge />
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             {role === "admin" ? (
               <Link
                 href="/admin"
@@ -148,7 +160,12 @@ export default async function AppLayout({
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-7xl px-4 sm:px-8 py-8">
+      <div
+        className={[
+          "mx-auto w-full max-w-7xl px-3 sm:px-8",
+          role === "admin" ? "py-4 sm:py-6" : "py-8",
+        ].join(" ")}
+      >
         {children}
       </div>
     </div>

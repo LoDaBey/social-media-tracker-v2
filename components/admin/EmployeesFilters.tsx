@@ -3,11 +3,12 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useCallback, useTransition } from "react";
-
-type TeamLeadOption = { id: number; full_name: string };
+import { motion } from "framer-motion";
+import { Search, UserPlus } from "lucide-react";
+import type { AdminTeamLeadOption } from "@/types/admin";
 
 type Props = {
-  teamLeads: TeamLeadOption[];
+  teamLeads: AdminTeamLeadOption[];
 };
 
 function chipClass(active: boolean) {
@@ -39,7 +40,7 @@ export function EmployeesFilters({ teamLeads }: Props) {
   );
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
       <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by status">
         <Link
           href={buildHref({ status: undefined })}
@@ -64,10 +65,8 @@ export function EmployeesFilters({ teamLeads }: Props) {
         </Link>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <label className="text-[13px] font-semibold text-[var(--color-muted)]">
-          By team lead
-        </label>
+      <label className="flex min-w-0 flex-wrap items-center gap-2 text-[13px] font-semibold text-[var(--color-muted)]">
+        <span className="shrink-0">Team lead</span>
         <select
           value={lead}
           onChange={(e) => {
@@ -77,7 +76,7 @@ export function EmployeesFilters({ teamLeads }: Props) {
             });
           }}
           aria-label="Filter employees by team lead"
-          className="cursor-pointer rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 py-2 text-[14px] font-medium text-[var(--color-ink)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+          className="cursor-pointer rounded outline-none border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 py-2 text-[14px] font-medium text-[var(--color-ink)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
         >
           <option value="">All team leads</option>
           {teamLeads.map((tl) => (
@@ -86,7 +85,7 @@ export function EmployeesFilters({ teamLeads }: Props) {
             </option>
           ))}
         </select>
-      </div>
+      </label>
     </div>
   );
 }
@@ -104,7 +103,7 @@ export function EmployeesSearchForm({
     <form
       action="/admin/employees"
       method="get"
-      className="flex max-w-md flex-1 items-center gap-2"
+      className="flex min-w-0 flex-1 items-center gap-2"
       role="search"
     >
       {hiddenStatus ? <input type="hidden" name="status" value={hiddenStatus} /> : null}
@@ -113,17 +112,35 @@ export function EmployeesSearchForm({
         type="search"
         name="q"
         defaultValue={initialQ}
-        placeholder="Search by name or email..."
+        placeholder="Search name or email..."
         aria-label="Search employees by name or email"
-        className="w-full rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 py-2 text-[14px] font-medium text-[var(--color-ink)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+        className="min-w-0 w-full rounded outline-none border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 py-2 text-[14px] font-medium text-[var(--color-ink)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
       />
-      <button
+      <motion.button
         type="submit"
+        layout
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
         aria-label="Run search"
-        className="cursor-pointer rounded-lg bg-[var(--color-cream-tint)] px-3 py-2 text-[13px] font-semibold text-[var(--color-ink)] outline-none hover:bg-[var(--color-hairline)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+        className="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface)] text-[var(--color-ink)] outline-none hover:bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
       >
-        Search
-      </button>
+        <Search className="h-4 w-4" aria-hidden="true" />
+      </motion.button>
     </form>
+  );
+}
+
+export function EmployeesCreateButton() {
+  return (
+    <motion.div layout whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+      <Link
+        href="/admin/employees/new"
+        aria-label="Create a new employee"
+        title="Create a new employee"
+        className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg bg-[var(--color-emerald)] text-white outline-none hover:bg-[var(--color-emerald-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+      >
+        <UserPlus className="h-5 w-5" aria-hidden="true" strokeWidth={2.25} />
+      </Link>
+    </motion.div>
   );
 }

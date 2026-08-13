@@ -46,7 +46,7 @@ export function SetupProfileFields({
             className="text-[13px] text-[var(--color-muted)]"
             style={{ fontFamily: "var(--font-cairo)", fontWeight: 500 }}
           >
-            Region is {SETUP_REGION} for every country. Choose country and language.
+            Region is {SETUP_REGION}. Country is assigned by your admin — choose your language.
           </p>
         </div>
       </div>
@@ -57,11 +57,12 @@ export function SetupProfileFields({
           label="Country"
           value={country}
           options={SETUP_COUNTRIES}
-          placeholder="Select a country"
-          ariaLabel="Country"
+          placeholder={country ? country : "Assigned by admin"}
+          ariaLabel="Country assigned by admin"
           ariaInvalid={Boolean(fieldErrors.country)}
           error={fieldErrors.country}
-          onChange={(value) => onChange({ country: value })}
+          disabled
+          onChange={() => undefined}
         />
         <SetupSelect
           id="setup-language"

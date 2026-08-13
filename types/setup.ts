@@ -70,6 +70,7 @@ export type SetupSelectProps = {
   ariaLabel: string;
   ariaInvalid?: boolean;
   error?: string;
+  disabled?: boolean;
   onChange: (value: string) => void;
 };
 

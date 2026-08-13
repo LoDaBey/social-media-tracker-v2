@@ -1,10 +1,12 @@
-import Link from "next/link";
 import { fetchAdminEmployeesList, fetchTeamLeadOptions } from "@/lib/admin-data";
 import { EmployeesTable } from "@/components/admin/EmployeesTable";
 import {
+  EmployeesCreateButton,
   EmployeesFilters,
   EmployeesSearchForm,
 } from "@/components/admin/EmployeesFilters";
+import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
+import { adminViewEmployees } from "@/lib/admin-view";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -32,28 +34,21 @@ export default async function AdminEmployeesPage({
   ]);
 
   return (
-    <main className="flex flex-col gap-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-[32px] font-extrabold text-[var(--color-ink)]">Employees</h1>
-        <div className="flex flex-wrap items-center gap-3">
+    <AdminWorkspace view={adminViewEmployees()}>
+      <div className="flex flex-col gap-4 sm:gap-5">
+        <div className="flex items-center gap-2 sm:gap-3">
           <EmployeesSearchForm
             initialQ={q}
             hiddenStatus={status === "all" ? undefined : status}
             hiddenLead={leadRaw || undefined}
           />
-          <Link
-            href="/admin/employees/new"
-            aria-label="Create a new employee"
-            className="inline-flex cursor-pointer rounded-lg bg-[var(--color-emerald)] px-4 py-2 text-[13px] font-semibold text-white outline-none hover:bg-[var(--color-emerald-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
-          >
-            + Create employee
-          </Link>
+          <EmployeesCreateButton />
         </div>
+
+        <EmployeesFilters teamLeads={teamLeads} />
+
+        <EmployeesTable rows={rows} />
       </div>
-
-      <EmployeesFilters teamLeads={teamLeads} />
-
-      <EmployeesTable rows={rows} />
-    </main>
+    </AdminWorkspace>
   );
 }

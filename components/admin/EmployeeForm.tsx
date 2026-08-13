@@ -5,30 +5,17 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { updateEmployeeProfile } from "@/actions/admin";
 import { LEVEL_LABELS } from "@/lib/level-labels";
+import { SETUP_COUNTRIES, SETUP_REGION } from "@/lib/setup-options";
 import type { Role } from "@/types/db";
-import type { UpdateEmployeeProfilePayload } from "@/types/admin";
-
-type TeamLeadOption = { id: number; full_name: string };
-
-export type EmployeeFormInitial = {
-  id: number;
-  full_name: string;
-  email: string;
-  phone: string | null;
-  role: Role;
-  is_active: boolean;
-  hire_date: string;
-  team_lead_id: number | null;
-  base_salary: string;
-  current_level: number;
-  pay_cycle_start_date: string | null;
-  /** Bumps when the user row changes so the parent can reset client form state via `key`. */
-  updated_at: string;
-};
+import type {
+  AdminTeamLeadOption,
+  EmployeeFormInitial,
+  UpdateEmployeeProfilePayload,
+} from "@/types/admin";
 
 type Props = {
   initial: EmployeeFormInitial;
-  teamLeads: TeamLeadOption[];
+  teamLeads: AdminTeamLeadOption[];
 };
 
 function normalizeDate(v: string | null): string {
@@ -53,6 +40,7 @@ export function EmployeeForm({ initial, teamLeads }: Props) {
       base_salary: String(initial.base_salary),
       current_level: initial.current_level,
       pay_cycle_start_date: normalizeDate(initial.pay_cycle_start_date),
+      country: initial.country,
     }),
     [initial]
   );
@@ -81,6 +69,7 @@ export function EmployeeForm({ initial, teamLeads }: Props) {
       base_salary: Number(form.base_salary),
       current_level: form.current_level,
       pay_cycle_start_date: form.pay_cycle_start_date === "" ? null : form.pay_cycle_start_date,
+      country: form.country.trim(),
     };
 
     startTransition(async () => {
@@ -92,6 +81,9 @@ export function EmployeeForm({ initial, teamLeads }: Props) {
       }
     });
   }
+
+  const fieldClass =
+    "rounded outline-none border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 py-2 text-[14px] font-medium text-[var(--color-ink)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]";
 
   return (
     <div className="flex flex-col gap-8">
@@ -107,7 +99,7 @@ export function EmployeeForm({ initial, teamLeads }: Props) {
           <input
             value={form.full_name}
             onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
-            className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 py-2 text-[14px] font-medium text-[var(--color-ink)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+            className={fieldClass}
           />
         </label>
 
@@ -117,7 +109,7 @@ export function EmployeeForm({ initial, teamLeads }: Props) {
             type="email"
             value={form.email}
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-            className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 py-2 text-[14px] font-medium text-[var(--color-ink)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+            className={fieldClass}
           />
         </label>
 
@@ -126,7 +118,35 @@ export function EmployeeForm({ initial, teamLeads }: Props) {
           <input
             value={form.phone}
             onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-            className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 py-2 text-[14px] font-medium text-[var(--color-ink)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+            className={fieldClass}
+          />
+        </label>
+
+        <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
+          Country
+          <select
+            value={form.country}
+            onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
+            aria-label="Employee country"
+            className={`cursor-pointer ${fieldClass}`}
+          >
+            <option value="">Select a country</option>
+            {SETUP_COUNTRIES.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
+          Region
+          <input
+            value={SETUP_REGION}
+            disabled
+            readOnly
+            aria-label="Region is Africa for every country"
+            className={`${fieldClass} cursor-not-allowed bg-[var(--color-cream-tint)] text-[var(--color-muted)]`}
           />
         </label>
 
@@ -144,7 +164,7 @@ export function EmployeeForm({ initial, teamLeads }: Props) {
                     : f.team_lead_id,
               }))
             }
-            className="cursor-pointer rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 py-2 text-[14px] font-medium text-[var(--color-ink)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+            className={`cursor-pointer ${fieldClass}`}
           >
             <option value="employee">Employee</option>
             <option value="team_lead">Team lead</option>
@@ -178,7 +198,7 @@ export function EmployeeForm({ initial, teamLeads }: Props) {
             type="date"
             value={form.hire_date}
             onChange={(e) => setForm((f) => ({ ...f, hire_date: e.target.value }))}
-            className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 py-2 text-[14px] font-medium text-[var(--color-ink)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+            className={fieldClass}
           />
         </label>
 
@@ -193,7 +213,7 @@ export function EmployeeForm({ initial, teamLeads }: Props) {
                 team_lead_id: e.target.value ? Number(e.target.value) : null,
               }))
             }
-            className="cursor-pointer rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 py-2 text-[14px] font-medium text-[var(--color-ink)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] disabled:cursor-not-allowed disabled:opacity-50"
+            className={`cursor-pointer ${fieldClass} disabled:cursor-not-allowed disabled:opacity-50`}
           >
             <option value="">None</option>
             {teamLeads.map((tl) => (
@@ -226,7 +246,7 @@ export function EmployeeForm({ initial, teamLeads }: Props) {
             onChange={(e) =>
               setForm((f) => ({ ...f, current_level: Number(e.target.value) }))
             }
-            className="cursor-pointer rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 py-2 text-[14px] font-medium text-[var(--color-ink)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+            className={`cursor-pointer ${fieldClass}`}
           >
             {[1, 2, 3, 4, 5, 6].map((lv) => (
               <option key={lv} value={lv}>
@@ -244,7 +264,7 @@ export function EmployeeForm({ initial, teamLeads }: Props) {
             onChange={(e) =>
               setForm((f) => ({ ...f, pay_cycle_start_date: e.target.value }))
             }
-            className="max-w-xs rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 py-2 text-[14px] font-medium text-[var(--color-ink)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+            className={`max-w-xs ${fieldClass}`}
           />
           <span className="text-[12px] font-normal text-[var(--color-muted)]">
             Changing this will reset the cycle for this employee.

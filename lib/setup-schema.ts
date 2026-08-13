@@ -143,10 +143,10 @@ export const setupProfileSchema = z.object({
   country: z
     .string()
     .trim()
-    .min(1, "Select a country.")
+    .min(1, "Ask your admin to assign a country.")
     .refine(
       (value) => (SETUP_COUNTRIES as readonly string[]).includes(value),
-      "Select a country."
+      "Ask your admin to assign a country."
     ),
   language: z
     .string()
