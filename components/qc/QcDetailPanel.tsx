@@ -97,7 +97,11 @@ export function QcDetailPanel({ row }: Props) {
   }
 
   const metrics = PLATFORM_METRICS[row.account_platform];
-  const handle = row.account_handle ?? `@${row.account_name}`;
+  const handle = row.account_name.trim()
+    ? row.account_name.startsWith("@")
+      ? row.account_name
+      : `@${row.account_name}`
+    : row.account_handle?.trim() || "Account";
   const isReadonly = row.qc_status !== "pending";
 
   return (

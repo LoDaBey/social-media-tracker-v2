@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Trash2 } from "lucide-react";
+import { Check } from "lucide-react";
 import type { TempSocialMediaAccount } from "@/types/db";
 import {
   PLATFORM_ICONS,
@@ -9,23 +9,19 @@ import {
   PLATFORM_TINTS,
   type Platform,
 } from "@/lib/platform-config";
-import type { SetupAccountRow, SetupRowErrors } from "@/types/setup";
+import type { SetupAccountRow, SetupRowFieldErrors } from "@/types/setup";
+import { isSetupAccountRowComplete } from "@/lib/setup-validation";
 import { AddAccountButton } from "@/components/setup/AddAccountButton";
-import {
-  setupButtonMotion,
-  setupCardVariants,
-  setupRowVariants,
-  setupTransition,
-} from "@/lib/setup-motion";
+import { SetupAccountRowFields } from "@/components/setup/SetupAccountRowFields";
+import { setupCardVariants, setupTransition } from "@/lib/setup-motion";
 
 type SectionProps = {
   platform: Platform;
   targetCount: number;
   existingAccounts: TempSocialMediaAccount[];
   rows: SetupAccountRow[];
-  rowErrors: SetupRowErrors;
+  fieldErrors: SetupRowFieldErrors;
   onChangeRow: (idx: number, patch: Partial<SetupAccountRow>) => void;
-  onBlurHandle: (idx: number) => void;
   onAddRow: () => void;
   onRemoveRow: (idx: number) => void;
 };
@@ -81,17 +77,8 @@ function ProgressDial({ value }: { value: number }) {
   );
 }
 
-function validCount(rows: SetupAccountRow[]) {
-  return rows.filter((r) => {
-    const handle = r.handle.trim();
-    const url = r.url.trim();
-    const followers = r.followers.trim();
-    if (!handle) return false;
-    if (!url) return false;
-    if (!followers) return false;
-    if (!/^\d+$/.test(followers)) return false;
-    return true;
-  }).length;
+function validCount(rows: SetupAccountRow[], platform: Platform) {
+  return rows.filter((r) => isSetupAccountRowComplete(r, platform)).length;
 }
 
 function Section({
@@ -99,14 +86,13 @@ function Section({
   targetCount,
   existingAccounts,
   rows,
-  rowErrors,
+  fieldErrors,
   onChangeRow,
-  onBlurHandle,
   onAddRow,
   onRemoveRow,
 }: SectionProps) {
   const Icon = PLATFORM_ICONS[platform];
-  const validAdded = validCount(rows);
+  const validAdded = validCount(rows, platform);
   const added = rows.length;
   const progress = targetCount === 0 ? 1 : validAdded / targetCount;
   const atTarget = targetCount > 0 && validAdded === targetCount;
@@ -116,7 +102,10 @@ function Section({
   const canRemove = rows.length > 1 || existingAccounts.length > 0;
 
   return (
-    <div>
+    <div
+      className="min-w-0 w-full max-w-full"
+      data-setup-needs-accounts={canAddMore ? "true" : undefined}
+    >
       <motion.div
         className="flex items-center justify-between gap-4"
         initial={{ opacity: 0, y: 6 }}
@@ -190,130 +179,23 @@ function Section({
 
       <div className="mt-4 flex flex-col gap-2">
         <AnimatePresence initial={false}>
-          {rows.map((row, idx) => {
-            const rowError = rowErrors[row.id];
-
-            return (
-              <motion.div
+          {rows.map((row, idx) => (
+            <SetupAccountRowFields
               key={row.id}
-              layout
-              className={[
-                "grid grid-cols-1 gap-3 border transition-colors sm:grid-cols-[1.2fr_2fr_0.8fr_auto]",
-                rowError
-                  ? "border-[var(--color-coral)] bg-[var(--color-coral-tint)]"
-                  : "border-transparent bg-[#FAF8F2]",
-              ].join(" ")}
-              style={{ borderRadius: 14, padding: "14px 16px" }}
-              variants={setupRowVariants}
-              initial="hidden"
-              animate="show"
-              exit="exit"
-            >
-            <div className="flex flex-col gap-2">
-              <label
-                className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-muted)]"
-                style={{ fontFamily: "var(--font-cairo)" }}
-              >
-                Handle
-              </label>
-              <input
-                value={row.handle}
-                placeholder="@username"
-                onChange={(e) => onChangeRow(idx, { handle: e.target.value })}
-                onBlur={() => onBlurHandle(idx)}
-                aria-label={`${PLATFORM_LABELS[platform]} handle ${idx + 1}`}
-                aria-invalid={Boolean(rowError)}
-                aria-describedby={rowError ? `${row.id}-error` : undefined}
-                className="rounded outline-none border border-[var(--color-hairline)] bg-white px-3 py-2 text-[14px] text-[var(--color-ink)]"
-                style={{ fontFamily: "var(--font-cairo)", fontWeight: 500 }}
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label
-                className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-muted)]"
-                style={{ fontFamily: "var(--font-cairo)" }}
-              >
-                URL
-              </label>
-              <input
-                value={row.url}
-                placeholder="https://..."
-                onChange={(e) => onChangeRow(idx, { url: e.target.value })}
-                aria-label={`${PLATFORM_LABELS[platform]} URL ${idx + 1}`}
-                aria-invalid={Boolean(rowError)}
-                aria-describedby={rowError ? `${row.id}-error` : undefined}
-                className={[
-                  "rounded outline-none border bg-white px-3 py-2 text-[14px] text-[var(--color-ink)]",
-                  rowError
-                    ? "border-[var(--color-coral)] focus-visible:ring-2 focus-visible:ring-[var(--color-coral)]"
-                    : "border-[var(--color-hairline)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]",
-                ].join(" ")}
-                style={{ fontFamily: "var(--font-cairo)", fontWeight: 500 }}
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label
-                className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-muted)]"
-                style={{ fontFamily: "var(--font-cairo)" }}
-              >
-                Followers
-              </label>
-              <input
-                inputMode="numeric"
-                value={row.followers}
-                placeholder="0"
-                onChange={(e) =>
-                  onChangeRow(idx, {
-                    followers: e.target.value.replace(/[^\d]/g, ""),
-                  })
-                }
-                aria-label={`${PLATFORM_LABELS[platform]} followers ${idx + 1}`}
-                aria-invalid={Boolean(rowError)}
-                aria-describedby={rowError ? `${row.id}-error` : undefined}
-                className="rounded outline-none border border-[var(--color-hairline)] bg-white px-3 py-2 text-[14px] text-[var(--color-ink)]"
-                style={{ fontFamily: "var(--font-cairo)", fontWeight: 500 }}
-              />
-            </div>
-
-            <div className="flex items-end justify-end">
-              <motion.button
-                type="button"
-                aria-label={`Remove ${PLATFORM_LABELS[platform]} row ${idx + 1}`}
-                disabled={!canRemove}
-                onClick={() => onRemoveRow(idx)}
-                className={[
-                  "cursor-pointer rounded-lg",
-                  "h-10 w-10",
-                  "flex items-center justify-center",
-                  "border border-[var(--color-hairline)] bg-white",
-                  "text-[var(--color-muted)]",
-                  "hover:bg-[var(--color-cream-tint)]",
-                  "disabled:opacity-50 disabled:cursor-not-allowed",
-                  "outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]",
-                ].join(" ")}
-                {...setupButtonMotion(!canRemove)}
-              >
-                <Trash2 className="h-4 w-4" aria-hidden="true" />
-              </motion.button>
-            </div>
-              {rowError ? (
-                <p
-                  id={`${row.id}-error`}
-                  className="text-[12px] font-semibold text-[var(--color-coral)] sm:col-span-4"
-                  style={{ fontFamily: "var(--font-cairo)" }}
-                >
-                  {rowError}
-                </p>
-              ) : null}
-              </motion.div>
-            );
-          })}
+              platform={platform}
+              platformLabel={PLATFORM_LABELS[platform]}
+              row={row}
+              index={idx}
+              fieldErrors={fieldErrors[row.id]}
+              canRemove={canRemove}
+              onChange={(patch) => onChangeRow(idx, patch)}
+              onRemove={() => onRemoveRow(idx)}
+            />
+          ))}
         </AnimatePresence>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 min-w-0">
         <AddAccountButton
           ariaLabel={`Add ${PLATFORM_LABELS[platform]} account`}
           disabled={!canAddMore}
@@ -339,7 +221,7 @@ export function FacebookAccountsCard({ personal, umbrella }: Props) {
 
   return (
     <motion.section
-      className="bg-[var(--color-surface)] border border-[var(--color-hairline)] p-6 sm:p-7"
+      className="min-w-0 w-full max-w-full overflow-x-hidden bg-[var(--color-surface)] border border-[var(--color-hairline)] p-4 sm:p-6 md:p-7"
       style={{
         borderRadius: 20,
         boxShadow: "0 1px 2px rgba(20,20,20,.04), 0 12px 32px rgba(20,20,20,.05)",

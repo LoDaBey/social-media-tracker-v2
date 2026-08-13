@@ -10,8 +10,10 @@ import { formatShortDate } from "@/lib/cairo-date";
 import type { Role } from "@/types/db";
 import type { QcDecisionResult } from "@/types/qc";
 
-function submissionAccountLabel(handle: string | null, accountName: string) {
-  return handle?.trim() ? (handle.startsWith("@") ? handle : `@${handle}`) : `@${accountName}`;
+function submissionAccountLabel(_handle: string | null, accountName: string) {
+  const name = accountName.trim();
+  if (!name) return "account";
+  return name.startsWith("@") ? name : `@${name}`;
 }
 
 const QC_ROLES: Role[] = ["team_lead", "admin"];
@@ -80,9 +82,13 @@ async function lockPendingGrowthRow(
   return row;
 }
 
-function formatRejectionReason(handle: string | null, name: string, submissionDate: string) {
+function formatRejectionReason(_handle: string | null, name: string, submissionDate: string) {
   const dateLabel = formatShortDate(submissionDate);
-  const who = handle ?? `@${name}`;
+  const who = name.trim()
+    ? name.startsWith("@")
+      ? name
+      : `@${name}`
+    : "account";
   return `Rejected · ${who} · ${dateLabel}`;
 }
 

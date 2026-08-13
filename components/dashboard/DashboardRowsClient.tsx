@@ -91,7 +91,11 @@ export function DashboardRowsClient({
             platform={openPlatform}
             accounts={accountsByPlatform[openPlatform].map((account) => ({
               id: account.id,
-              handle: account.account_handle ?? `@${account.account_name}`,
+              handle: (() => {
+                const raw = (account.username ?? account.account_name).trim();
+                if (!raw) return account.account_handle?.trim() || "Account";
+                return raw.startsWith("@") ? raw : `@${raw}`;
+              })(),
               url: account.account_url,
               current_followers: account.current_followers,
             }))}

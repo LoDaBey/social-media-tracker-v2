@@ -4,15 +4,19 @@ import { query, queryOne } from "@/lib/db";
 import type { Role, TempSocialMediaAccount, TempUser } from "@/types/db";
 import { SetupForm } from "@/components/setup/SetupForm";
 import { PLATFORMS, type Platform } from "@/lib/platform-config";
+import { isSetupCategory, isSetupProfileComplete } from "@/lib/setup-options";
 
 type UserTargetsRow = Pick<
   TempUser,
   | "id"
+  | "full_name"
   | "target_x_count"
   | "target_facebook_personal_count"
   | "target_facebook_umbrella_count"
   | "target_instagram_count"
   | "target_tiktok_count"
+  | "country"
+  | "language"
 >;
 
 function targetsFromUser(u: UserTargetsRow): Record<Platform, number> {
@@ -37,6 +41,17 @@ function groupAccounts(accounts: TempSocialMediaAccount[]) {
   return grouped;
 }
 
+function accountsHaveCategories(
+  assignedPlatforms: Platform[],
+  existingByPlatform: Record<Platform, TempSocialMediaAccount[]>
+) {
+  return assignedPlatforms.every((platform) =>
+    (existingByPlatform[platform] ?? []).every((account) =>
+      isSetupCategory(account.category ?? "")
+    )
+  );
+}
+
 export default async function SetupPage() {
   const session = await auth();
   if (!session) redirect("/login");
@@ -50,11 +65,14 @@ export default async function SetupPage() {
 
   const user = await queryOne<UserTargetsRow>(
     `SELECT id,
+            full_name,
             target_x_count,
             target_facebook_personal_count,
             target_facebook_umbrella_count,
             target_instagram_count,
-            target_tiktok_count
+            target_tiktok_count,
+            country,
+            language
      FROM temp_users
      WHERE id = $1`,
     [userId]
@@ -63,9 +81,6 @@ export default async function SetupPage() {
 
   const targets = targetsFromUser(user);
   const assignedPlatforms = PLATFORMS.filter((p) => targets[p] > 0);
-  if (assignedPlatforms.length === 0) {
-    redirect("/dashboard");
-  }
 
   const existingAccounts = await query<TempSocialMediaAccount>(
     `SELECT *
@@ -81,14 +96,21 @@ export default async function SetupPage() {
   const hasAllExact = assignedPlatforms.every(
     (p) => (existingByPlatform[p]?.length ?? 0) === targets[p]
   );
-  if (hasAllExact) redirect("/dashboard");
+  const hasProfile = isSetupProfileComplete(user);
+  const hasCategories = accountsHaveCategories(assignedPlatforms, existingByPlatform);
+  if (hasAllExact && hasProfile && hasCategories) redirect("/dashboard");
 
   return (
     <main className="w-full">
       <SetupForm
         userId={userId}
+        fullName={user.full_name}
         targets={targets}
         existingByPlatform={existingByPlatform}
+        initialProfile={{
+          country: user.country ?? "",
+          language: user.language ?? "",
+        }}
       />
     </main>
   );

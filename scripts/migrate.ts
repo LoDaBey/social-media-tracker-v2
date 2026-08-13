@@ -3,6 +3,7 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 
 dotenv.config({ path: ".env.local" });
+dotenv.config({ path: ".env" });
 
 async function main() {
   const { pool } = await import("../lib/db");

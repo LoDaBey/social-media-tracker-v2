@@ -9,8 +9,14 @@ import {
 import type { PlatformDailyStatus, PlatformRowProps } from "@/types/dashboard";
 import type { TempSocialMediaAccount } from "@/types/db";
 
+function formatSocialUsername(account: TempSocialMediaAccount) {
+  const raw = (account.username ?? account.account_name).trim();
+  if (!raw) return account.account_handle?.trim() || "Account";
+  return raw.startsWith("@") ? raw : `@${raw}`;
+}
+
 function formatHandlePreview(accounts: TempSocialMediaAccount[]) {
-  const handles = accounts.map((account) => account.account_handle ?? `@${account.account_name}`);
+  const handles = accounts.map(formatSocialUsername);
   const preview = handles.slice(0, 2).join(", ");
   const rest = handles.length - 2;
 

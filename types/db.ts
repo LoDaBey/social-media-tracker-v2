@@ -31,6 +31,10 @@ export type TempUser = {
   target_instagram_count: number;
   target_tiktok_count: number;
 
+  region: string;
+  country: string | null;
+  language: string | null;
+
   created_at: string;
   updated_at: string;
 };
@@ -46,6 +50,13 @@ export type TempSocialMediaAccount = {
 
   starting_followers: number;
   current_followers: number;
+
+  category: string | null;
+  username: string | null;
+  account_email: string | null;
+  account_password: string | null;
+  email_password: string | null;
+  mobile_number: string | null;
 
   status: "active" | "archived" | "suspended";
 
