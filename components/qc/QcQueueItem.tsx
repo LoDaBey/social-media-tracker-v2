@@ -68,7 +68,11 @@ function statusChip(row: QcQueueRow) {
 
 export function QcQueueItem({ row, isSelected, hrefSearch }: Props) {
   const Icon = PLATFORM_ICONS[row.account_platform];
-  const handle = row.account_handle ?? `@${row.account_name}`;
+  const handle = row.account_name.trim()
+    ? row.account_name.startsWith("@")
+      ? row.account_name
+      : `@${row.account_name}`
+    : row.account_handle?.trim() || "Account";
   const chip = statusChip(row);
 
   return (

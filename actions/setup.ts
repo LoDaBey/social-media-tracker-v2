@@ -1,55 +1,24 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { z } from "zod";
 import { pool, queryOne } from "@/lib/db";
 import type { TempUser } from "@/types/db";
 import type { Platform } from "@/lib/platform-config";
+import { SETUP_REGION } from "@/lib/setup-options";
+import {
+  isPlatformAccountUrl,
+  isValidAccountEmail,
+  isValidAccountUrl,
+  platformUrlErrorMessage,
+} from "@/lib/setup-validation";
+import { setupSavePayloadSchema } from "@/lib/setup-schema";
+import type { SetupSaveAccountInput } from "@/types/setup";
 
-type SaveAccountInput = {
-  platform: Platform;
-  handle: string;
-  url: string;
-  followers: number;
-};
-
-const saveAccountSchema = z.object({
-  platform: z.enum([
-    "x",
-    "facebook_personal",
-    "facebook_umbrella",
-    "instagram",
-    "tiktok",
-  ]),
-  handle: z.string().min(1),
-  url: z.string().min(1),
-  followers: z.number().int().min(0),
-});
-
-const savePayloadSchema = z.object({
-  accounts: z.array(saveAccountSchema),
-});
-
-function normalizeHandle(handle: string) {
-  const trimmed = handle.trim();
-  if (!trimmed) return "";
-  return trimmed.startsWith("@") ? trimmed : `@${trimmed}`;
-}
-
-function isValidUrl(value: string) {
-  try {
-    new URL(value);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function accountUrlKey(account: Pick<SaveAccountInput, "platform" | "url">) {
+function accountUrlKey(account: Pick<SetupSaveAccountInput, "platform" | "url">) {
   return `${account.platform}:${account.url.trim().replace(/\/+$/, "").toLowerCase()}`;
 }
 
-function hasDuplicateAccountUrl(accounts: SaveAccountInput[]) {
+function hasDuplicateAccountUrl(accounts: SetupSaveAccountInput[]) {
   const seen = new Set<string>();
   for (const account of accounts) {
     const key = accountUrlKey(account);
@@ -59,7 +28,7 @@ function hasDuplicateAccountUrl(accounts: SaveAccountInput[]) {
   return false;
 }
 
-function countByPlatform(accounts: SaveAccountInput[]) {
+function countByPlatform(accounts: SetupSaveAccountInput[]) {
   const counts: Record<Platform, number> = {
     x: 0,
     facebook_personal: 0,
@@ -75,7 +44,7 @@ export async function saveAccountsAction(formData: FormData) {
   try {
     const raw = String(formData.get("accounts") ?? "");
     const json = JSON.parse(raw);
-    const parsed = savePayloadSchema.safeParse(json);
+    const parsed = setupSavePayloadSchema.safeParse(json);
     if (!parsed.success) return { error: "Please review the form and try again." };
 
     const sessionUserIdRaw = String(formData.get("userId") ?? "");
@@ -105,16 +74,32 @@ export async function saveAccountsAction(formData: FormData) {
     );
     if (!user) return { error: "User not found." };
 
-    const accounts: SaveAccountInput[] = parsed.data.accounts.map((a) => ({
+    const accounts: SetupSaveAccountInput[] = parsed.data.accounts.map((a) => ({
       platform: a.platform,
-      handle: normalizeHandle(a.handle),
+      accountHolder: a.accountHolder.trim(),
       url: a.url.trim(),
-      followers: a.followers,
+      category: a.category.trim(),
+      username: a.username.trim(),
+      email: a.email.trim(),
+      accountPassword: a.accountPassword,
+      emailPassword: a.emailPassword,
+      mobileNumber: a.mobileNumber.trim(),
     }));
 
     for (const a of accounts) {
-      if (!a.handle) return { error: "Each account must have a handle." };
-      if (!isValidUrl(a.url)) return { error: "Each account must have a valid URL." };
+      if (!a.accountHolder) return { error: "Each account must have an account holder." };
+      if (!isValidAccountUrl(a.url)) {
+        return { error: "Each account must have a valid http(s) URL." };
+      }
+      if (!isPlatformAccountUrl(a.platform, a.url)) {
+        return { error: platformUrlErrorMessage(a.platform) };
+      }
+      if (!a.category) return { error: "Each account must have a category." };
+      if (!a.username) return { error: "Each account must have a username." };
+      if (!isValidAccountEmail(a.email)) return { error: "Each account must have a valid email." };
+      if (!a.accountPassword) return { error: "Each account must have an account password." };
+      if (!a.emailPassword) return { error: "Each account must have an email password." };
+      if (!a.mobileNumber) return { error: "Each account must have a mobile number." };
     }
     if (hasDuplicateAccountUrl(accounts)) {
       return { error: "You used the same account URL twice. Please change one." };
@@ -145,6 +130,16 @@ export async function saveAccountsAction(formData: FormData) {
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
+
+      await client.query(
+        `UPDATE temp_users
+         SET region = $2,
+             country = $3,
+             language = $4
+         WHERE id = $1`,
+        [userId, SETUP_REGION, parsed.data.country, parsed.data.language]
+      );
+
       await client.query(
         "DELETE FROM temp_social_media_accounts WHERE user_id = $1",
         [userId]
@@ -154,19 +149,25 @@ export async function saveAccountsAction(formData: FormData) {
       const rowsSql: string[] = [];
 
       accounts.forEach((a, idx) => {
-        const base = idx * 8;
-        const accountName = a.handle.replace(/^@/, "");
+        const base = idx * 14;
+        const accountName = a.username.replace(/^@/, "");
         rowsSql.push(
-          `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8})`
+          `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9}, $${base + 10}, $${base + 11}, $${base + 12}, $${base + 13}, $${base + 14})`
         );
         values.push(
           userId,
           a.platform,
           accountName,
-          a.handle,
+          a.accountHolder,
           a.url,
-          a.followers,
-          a.followers,
+          0,
+          0,
+          a.category,
+          a.username,
+          a.email,
+          a.accountPassword,
+          a.emailPassword,
+          a.mobileNumber,
           "active"
         );
       });
@@ -174,7 +175,7 @@ export async function saveAccountsAction(formData: FormData) {
       if (rowsSql.length) {
         await client.query(
           `INSERT INTO temp_social_media_accounts
-            (user_id, platform, account_name, account_handle, account_url, starting_followers, current_followers, status)
+            (user_id, platform, account_name, account_handle, account_url, starting_followers, current_followers, category, username, account_email, account_password, email_password, mobile_number, status)
            VALUES ${rowsSql.join(", ")}`,
           values
         );
@@ -193,4 +194,3 @@ export async function saveAccountsAction(formData: FormData) {
 
   redirect("/dashboard");
 }
-

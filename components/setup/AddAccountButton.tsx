@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { setupButtonMotion } from "@/lib/setup-motion";
+import { setupButtonSpring } from "@/lib/setup-motion";
 
 type Props = {
   disabled?: boolean;
@@ -17,8 +17,12 @@ export function AddAccountButton({ disabled, onClick, ariaLabel }: Props) {
       aria-label={ariaLabel}
       disabled={isDisabled}
       onClick={onClick}
+      layout
+      whileHover={isDisabled ? undefined : { opacity: 0.92 }}
+      whileTap={isDisabled ? undefined : { scale: 0.99 }}
+      transition={setupButtonSpring}
       className={[
-        "w-full",
+        "box-border w-full max-w-full",
         "h-12",
         "rounded-lg",
         "border border-dashed",
@@ -29,10 +33,9 @@ export function AddAccountButton({ disabled, onClick, ariaLabel }: Props) {
           : "cursor-pointer border-[rgba(16,185,129,0.3)] text-[var(--color-emerald)] hover:bg-[var(--color-emerald-tint)]",
       ].join(" ")}
       style={{ fontFamily: "var(--font-cairo)", fontWeight: 600 }}
-      {...setupButtonMotion(isDisabled)}
+      data-setup-add-account={isDisabled ? undefined : ""}
     >
       + Add account
     </motion.button>
   );
 }
-

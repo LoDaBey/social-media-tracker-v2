@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import type { TempUser } from "../types/db";
 
 dotenv.config({ path: ".env.local" });
+dotenv.config({ path: ".env" });
 
 function getTodayCairoDate() {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -123,16 +124,33 @@ async function main() {
   for (const [platform, accountName, handle, url, followers] of seededAccounts) {
     const row = await queryOne<{ id: number }>(
       `INSERT INTO temp_social_media_accounts
-        (user_id, platform, account_name, account_handle, account_url, starting_followers, current_followers, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $6, 'active')
+        (user_id, platform, account_name, account_handle, account_url, starting_followers, current_followers, category, username, account_email, account_password, email_password, mobile_number, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $6, $7, $3, $8, $9, $9, $10, 'active')
        ON CONFLICT (user_id, platform, account_url) DO UPDATE SET
          account_name = EXCLUDED.account_name,
          account_handle = EXCLUDED.account_handle,
          starting_followers = EXCLUDED.starting_followers,
          current_followers = EXCLUDED.current_followers,
+         category = EXCLUDED.category,
+         username = EXCLUDED.username,
+         account_email = EXCLUDED.account_email,
+         account_password = EXCLUDED.account_password,
+         email_password = EXCLUDED.email_password,
+         mobile_number = EXCLUDED.mobile_number,
          status = 'active'
        RETURNING id`,
-      [employee.id, platform, accountName, handle, url, followers]
+      [
+        employee.id,
+        platform,
+        accountName,
+        handle,
+        url,
+        followers,
+        "GH-G",
+        `${accountName}@temp.local`,
+        "secret123",
+        "+201000000000",
+      ]
     );
     if (row) accountIds[accountName] = row.id;
   }

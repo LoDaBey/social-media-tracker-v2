@@ -8,6 +8,7 @@ import { MissingAccountsBanner } from "@/components/dashboard/MissingAccountsBan
 import { DashboardRowsClient } from "@/components/dashboard/DashboardRowsClient";
 import { SubmissionCountdownChip } from "@/components/dashboard/SubmissionCountdownChip";
 import type { Role } from "@/types/db";
+import { isSetupProfileComplete } from "@/lib/setup-options";
 
 function getTimeOfDayWord(hour: number) {
   if (hour < 12) return "morning";
@@ -77,6 +78,7 @@ export default async function DashboardPage() {
 
   const data = await getDashboardData(userId);
   if (!data) redirect("/login");
+  if (!isSetupProfileComplete(data.user)) redirect("/setup");
 
   const accountPlatforms = PLATFORMS.filter(
     (platform) => data.accountsByPlatform[platform].length > 0
