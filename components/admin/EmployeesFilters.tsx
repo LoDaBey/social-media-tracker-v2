@@ -5,11 +5,6 @@ import Link from "next/link";
 import { useCallback, useTransition } from "react";
 import { motion } from "framer-motion";
 import { Search, UserPlus } from "lucide-react";
-import type { AdminTeamLeadOption } from "@/types/admin";
-
-type Props = {
-  teamLeads: AdminTeamLeadOption[];
-};
 
 function chipClass(active: boolean) {
   return `inline-flex cursor-pointer rounded-full px-3 py-1.5 text-[13px] font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] ${
@@ -19,12 +14,12 @@ function chipClass(active: boolean) {
   }`;
 }
 
-export function EmployeesFilters({ teamLeads }: Props) {
+export function EmployeesFilters() {
   const router = useRouter();
   const sp = useSearchParams();
   const [, startTransition] = useTransition();
   const statusNorm = sp.get("status") ?? "all";
-  const lead = sp.get("lead") ?? "";
+  const roleNorm = sp.get("role") ?? "all";
 
   const buildHref = useCallback(
     (next: Record<string, string | undefined>) => {
@@ -39,51 +34,51 @@ export function EmployeesFilters({ teamLeads }: Props) {
     [sp]
   );
 
+  const selectClass =
+    "h-10 cursor-pointer rounded-lg outline-none border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 text-[14px] font-medium text-[var(--color-ink)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]";
+
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
       <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by status">
         <Link
           href={buildHref({ status: undefined })}
           className={chipClass(statusNorm === "all")}
-          aria-label="Show all employees"
+          aria-label="Show active and inactive people"
         >
           All
         </Link>
         <Link
           href={buildHref({ status: "active" })}
           className={chipClass(statusNorm === "active")}
-          aria-label="Show active employees only"
+          aria-label="Show active people only"
         >
           Active
         </Link>
         <Link
           href={buildHref({ status: "inactive" })}
           className={chipClass(statusNorm === "inactive")}
-          aria-label="Show inactive employees only"
+          aria-label="Show inactive people only"
         >
           Inactive
         </Link>
       </div>
 
       <label className="flex min-w-0 flex-wrap items-center gap-2 text-[13px] font-semibold text-[var(--color-muted)]">
-        <span className="shrink-0">Team lead</span>
+        <span className="shrink-0">Role</span>
         <select
-          value={lead}
+          value={roleNorm === "all" ? "" : roleNorm}
           onChange={(e) => {
             const v = e.target.value;
             startTransition(() => {
-              router.push(buildHref({ lead: v || undefined }));
+              router.push(buildHref({ role: v || undefined }));
             });
           }}
-          aria-label="Filter employees by team lead"
-          className="cursor-pointer rounded outline-none border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 py-2 text-[14px] font-medium text-[var(--color-ink)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+          aria-label="Filter by role"
+          className={selectClass}
         >
-          <option value="">All team leads</option>
-          {teamLeads.map((tl) => (
-            <option key={tl.id} value={String(tl.id)}>
-              {tl.full_name}
-            </option>
-          ))}
+          <option value="">All roles</option>
+          <option value="employee">Employees</option>
+          <option value="manager">Managers</option>
         </select>
       </label>
     </div>
@@ -93,11 +88,11 @@ export function EmployeesFilters({ teamLeads }: Props) {
 export function EmployeesSearchForm({
   initialQ,
   hiddenStatus,
-  hiddenLead,
+  hiddenRole,
 }: {
   initialQ: string;
   hiddenStatus?: string;
-  hiddenLead?: string;
+  hiddenRole?: string;
 }) {
   return (
     <form
@@ -107,7 +102,7 @@ export function EmployeesSearchForm({
       role="search"
     >
       {hiddenStatus ? <input type="hidden" name="status" value={hiddenStatus} /> : null}
-      {hiddenLead ? <input type="hidden" name="lead" value={hiddenLead} /> : null}
+      {hiddenRole ? <input type="hidden" name="role" value={hiddenRole} /> : null}
       <input
         type="search"
         name="q"

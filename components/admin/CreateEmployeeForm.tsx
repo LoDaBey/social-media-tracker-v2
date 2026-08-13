@@ -1,18 +1,21 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import toast from "react-hot-toast";
 import { createEmployee } from "@/actions/admin";
+import { CountryFlag } from "@/lib/country-icons";
 import { SETUP_COUNTRIES, SETUP_REGION } from "@/lib/setup-options";
 import type { Role } from "@/types/db";
-import type { AdminTeamLeadOption } from "@/types/admin";
+import type { AdminManagerOption, AdminTeamLeadOption } from "@/types/admin";
 
 type Props = {
   teamLeads: AdminTeamLeadOption[];
+  managers: AdminManagerOption[];
 };
 
-export function CreateEmployeeForm({ teamLeads }: Props) {
+export function CreateEmployeeForm({ teamLeads, managers }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -22,8 +25,29 @@ export function CreateEmployeeForm({ teamLeads }: Props) {
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState<Role>("employee");
   const [team_lead_id, setTeamLeadId] = useState<string>("");
+  const [manager_id, setManagerId] = useState<string>("");
+  const [manager_countries, setManagerCountries] = useState<string[]>([]);
   const [base_salary, setBaseSalary] = useState("4500");
   const [country, setCountry] = useState("");
+
+  const selectedManager = useMemo(
+    () => managers.find((m) => String(m.id) === manager_id) ?? null,
+    [managers, manager_id]
+  );
+
+  const countryMismatch =
+    role === "employee" &&
+    Boolean(country) &&
+    Boolean(selectedManager) &&
+    !selectedManager!.countries.includes(country);
+
+  function toggleManagerCountry(option: string) {
+    setManagerCountries((prev) =>
+      prev.includes(option)
+        ? prev.filter((c) => c !== option)
+        : [...prev, option]
+    );
+  }
 
   function submit() {
     setError(null);
@@ -36,19 +60,41 @@ export function CreateEmployeeForm({ teamLeads }: Props) {
           phone: phone.trim() || null,
           role,
           team_lead_id:
-            role === "employee" && team_lead_id ? Number(team_lead_id) : null,
+            (role === "employee" || role === "manager") && team_lead_id
+              ? Number(team_lead_id)
+              : null,
+          manager_id:
+            role === "employee" && manager_id ? Number(manager_id) : null,
+          manager_countries: role === "manager" ? manager_countries : undefined,
           base_salary: Number(base_salary),
-          country,
+          country:
+            role === "manager"
+              ? manager_countries[0] ?? ""
+              : country,
         });
+        const roleLabel =
+          role === "manager"
+            ? "Manager"
+            : role === "team_lead"
+              ? "Team lead"
+              : role === "admin"
+                ? "Admin"
+                : "Employee";
+        toast.success(`${roleLabel} created.`);
         router.push(`/admin/employees/${id}`);
         router.refresh();
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Could not create employee.");
+        const message =
+          e instanceof Error ? e.message : "Could not create employee.";
+        setError(message);
+        toast.error(message);
       }
     });
   }
 
-  const teamLeadDisabled = role !== "employee";
+  const teamLeadDisabled = role === "team_lead" || role === "admin";
+  const managerDisabled = role !== "employee";
+  const employeeCountryDisabled = role === "manager";
 
   const fieldClass =
     "rounded outline-none border border-[var(--color-hairline)] bg-[var(--color-cream-tint)] px-3 py-2.5 text-[15px] font-medium text-[var(--color-ink)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]";
@@ -68,6 +114,16 @@ export function CreateEmployeeForm({ teamLeads }: Props) {
       {error ? (
         <p className="mt-4 rounded-lg bg-[var(--color-coral-tint)] px-4 py-3 text-[14px] text-[var(--color-coral)]">
           {error}
+        </p>
+      ) : null}
+      {countryMismatch ? (
+        <p
+          role="status"
+          className="mt-4 rounded-lg bg-[var(--color-gold)]/15 px-4 py-3 text-[14px] text-[var(--color-ink)]"
+        >
+          Warning: {country} is not in this manager&apos;s countries (
+          {selectedManager!.countries.join(", ") || "none"}). The employee will
+          stay hidden from that manager&apos;s team until countries overlap.
         </p>
       ) : null}
 
@@ -110,9 +166,10 @@ export function CreateEmployeeForm({ teamLeads }: Props) {
           Country
           <select
             value={country}
+            disabled={employeeCountryDisabled}
             onChange={(e) => setCountry(e.target.value)}
             aria-label="Assign employee country"
-            className={`cursor-pointer ${fieldClass}`}
+            className={`cursor-pointer ${fieldClass} disabled:cursor-not-allowed disabled:opacity-50`}
           >
             <option value="">Select a country</option>
             {SETUP_COUNTRIES.map((option) => (
@@ -140,6 +197,7 @@ export function CreateEmployeeForm({ teamLeads }: Props) {
             className={`cursor-pointer ${fieldClass}`}
           >
             <option value="employee">Employee</option>
+            <option value="manager">Manager</option>
             <option value="team_lead">Team lead</option>
             <option value="admin">Admin</option>
           </select>
@@ -150,6 +208,7 @@ export function CreateEmployeeForm({ teamLeads }: Props) {
             disabled={teamLeadDisabled}
             value={team_lead_id}
             onChange={(e) => setTeamLeadId(e.target.value)}
+            aria-label="Assign team lead"
             className={`cursor-pointer ${fieldClass} disabled:cursor-not-allowed disabled:opacity-50`}
           >
             <option value="">None</option>
@@ -160,6 +219,52 @@ export function CreateEmployeeForm({ teamLeads }: Props) {
             ))}
           </select>
         </label>
+        <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
+          Manager
+          <select
+            disabled={managerDisabled}
+            value={manager_id}
+            onChange={(e) => setManagerId(e.target.value)}
+            aria-label="Assign manager"
+            className={`cursor-pointer ${fieldClass} disabled:cursor-not-allowed disabled:opacity-50`}
+          >
+            <option value="">Select a manager</option>
+            {managers.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.full_name}
+                {m.countries.length ? ` (${m.countries.join(", ")})` : ""}
+              </option>
+            ))}
+          </select>
+        </label>
+        {role === "manager" ? (
+          <fieldset className="sm:col-span-2">
+            <legend className="text-[13px] font-semibold text-[var(--color-muted)]">
+              Manager countries
+            </legend>
+            <div className="mt-2 grid max-h-80 grid-cols-1 gap-2.5 overflow-y-auto rounded-lg border border-[var(--color-hairline)] bg-[var(--color-cream-tint)] p-4 sm:grid-cols-2 lg:grid-cols-3">
+              {SETUP_COUNTRIES.map((option) => {
+                const checked = manager_countries.includes(option);
+                return (
+                  <label
+                    key={option}
+                    className="flex cursor-pointer items-center gap-2.5 text-[13px] font-medium text-[var(--color-ink)]"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleManagerCountry(option)}
+                      className="rounded outline-none"
+                      aria-label={`Include ${option}`}
+                    />
+                    <CountryFlag country={option} className="h-5 w-7" />
+                    <span>{option}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+        ) : null}
         <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)] sm:col-span-2">
           Base salary (EGP / cycle)
           <span className="flex max-w-md items-center gap-2 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-cream-tint)] px-3 py-2.5">

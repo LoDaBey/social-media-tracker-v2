@@ -18,6 +18,7 @@ import { setupCardVariants, setupTransition } from "@/lib/setup-motion";
 type SectionProps = {
   platform: Platform;
   targetCount: number;
+  poolComplete: number;
   existingAccounts: TempSocialMediaAccount[];
   rows: SetupAccountRow[];
   fieldErrors: SetupRowFieldErrors;
@@ -84,6 +85,7 @@ function validCount(rows: SetupAccountRow[], platform: Platform) {
 function Section({
   platform,
   targetCount,
+  poolComplete,
   existingAccounts,
   rows,
   fieldErrors,
@@ -93,12 +95,11 @@ function Section({
 }: SectionProps) {
   const Icon = PLATFORM_ICONS[platform];
   const validAdded = validCount(rows, platform);
-  const added = rows.length;
-  const progress = targetCount === 0 ? 1 : validAdded / targetCount;
-  const atTarget = targetCount > 0 && validAdded === targetCount;
-  const over = targetCount > 0 ? Math.max(0, added - targetCount) : 0;
+  const progress = targetCount === 0 ? 1 : poolComplete / targetCount;
+  const atTarget = targetCount > 0 && poolComplete >= targetCount && validAdded > 0;
+  const over = targetCount > 0 ? Math.max(0, poolComplete - targetCount) : 0;
 
-  const canAddMore = added < targetCount;
+  const canAddMore = poolComplete < targetCount;
   const canRemove = rows.length > 1 || existingAccounts.length > 0;
 
   return (

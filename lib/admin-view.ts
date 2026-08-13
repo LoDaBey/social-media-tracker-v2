@@ -18,6 +18,7 @@ export function resolveAdminEmployeePanel(params: {
 export function adminRoleBadge(role: string) {
   if (role === "admin") return "Admin";
   if (role === "team_lead") return "Team lead";
+  if (role === "manager") return "Manager";
   return "Employee";
 }
 

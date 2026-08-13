@@ -13,10 +13,12 @@ const PROTECTED_APP_PATHS = [
   "/qc",
   "/submit",
   "/admin",
+  "/manager",
 ];
 
 const QC_ALLOWED_ROLES: Role[] = ["team_lead", "admin"];
 const ADMIN_ALLOWED_ROLES: Role[] = ["admin"];
+const MANAGER_ALLOWED_ROLES: Role[] = ["manager"];
 
 function withPathnameHeader(req: Request, pathname: string) {
   const requestHeaders = new Headers(req.headers);
@@ -50,14 +52,22 @@ export default auth((req) => {
 
   if (pathname.startsWith("/qc") && !QC_ALLOWED_ROLES.includes(role)) {
     const url = req.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = role === "manager" ? "/manager" : "/dashboard";
     url.search = "";
     return NextResponse.redirect(url);
   }
 
   if (pathname.startsWith("/admin") && !ADMIN_ALLOWED_ROLES.includes(role)) {
     const url = req.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = role === "manager" ? "/manager" : "/dashboard";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
+  if (pathname.startsWith("/manager") && !MANAGER_ALLOWED_ROLES.includes(role)) {
+    const url = req.nextUrl.clone();
+    url.pathname =
+      role === "admin" ? "/admin" : role === "team_lead" ? "/qc" : "/dashboard";
     url.search = "";
     return NextResponse.redirect(url);
   }

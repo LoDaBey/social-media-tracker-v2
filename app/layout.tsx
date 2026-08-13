@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Cairo } from "next/font/google";
+import { AppToaster } from "@/components/AppToaster";
 import "./globals.css";
 
 const cairo = Cairo({
@@ -20,7 +21,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" dir="ltr" className={`${cairo.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        <AppToaster />
+        {children}
+      </body>
     </html>
   );
 }

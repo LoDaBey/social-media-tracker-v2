@@ -5,11 +5,9 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { issueBonus } from "@/actions/admin";
 
-type Props = {
-  userId: number;
-};
+import type { IssueBonusFormProps } from "@/types/admin";
 
-export function IssueBonusForm({ userId }: Props) {
+export function IssueBonusForm({ userId, onSuccess }: IssueBonusFormProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState("");
@@ -35,6 +33,7 @@ export function IssueBonusForm({ userId }: Props) {
         setAmount("");
         setReason("");
         router.refresh();
+        onSuccess?.();
       } catch (e) {
         setError(e instanceof Error ? e.message : "Could not issue bonus.");
       }

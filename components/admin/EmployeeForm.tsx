@@ -3,27 +3,26 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import toast from "react-hot-toast";
 import { updateEmployeeProfile } from "@/actions/admin";
+import { CountryFlag } from "@/lib/country-icons";
 import { LEVEL_LABELS } from "@/lib/level-labels";
 import { SETUP_COUNTRIES, SETUP_REGION } from "@/lib/setup-options";
 import type { Role } from "@/types/db";
-import type {
-  AdminTeamLeadOption,
-  EmployeeFormInitial,
-  UpdateEmployeeProfilePayload,
-} from "@/types/admin";
-
-type Props = {
-  initial: EmployeeFormInitial;
-  teamLeads: AdminTeamLeadOption[];
-};
+import type { EmployeeFormProps, UpdateEmployeeProfilePayload } from "@/types/admin";
 
 function normalizeDate(v: string | null): string {
   if (!v) return "";
   return v.length >= 10 ? v.slice(0, 10) : v;
 }
 
-export function EmployeeForm({ initial, teamLeads }: Props) {
+export function EmployeeForm({
+  initial,
+  teamLeads,
+  managers,
+  embedded = false,
+  onSaved,
+}: EmployeeFormProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +36,8 @@ export function EmployeeForm({ initial, teamLeads }: Props) {
       is_active: initial.is_active,
       hire_date: normalizeDate(initial.hire_date),
       team_lead_id: initial.team_lead_id,
+      manager_id: initial.manager_id,
+      manager_countries: initial.manager_countries,
       base_salary: String(initial.base_salary),
       current_level: initial.current_level,
       pay_cycle_start_date: normalizeDate(initial.pay_cycle_start_date),
@@ -50,6 +51,27 @@ export function EmployeeForm({ initial, teamLeads }: Props) {
   const dirty = useMemo(() => JSON.stringify(form) !== JSON.stringify(base), [form, base]);
 
   const teamLeadDisabled = form.role === "team_lead" || form.role === "admin";
+  const managerDisabled = form.role !== "employee";
+
+  const selectedManager = useMemo(
+    () => managers.find((m) => m.id === form.manager_id) ?? null,
+    [managers, form.manager_id]
+  );
+
+  const countryMismatch =
+    form.role === "employee" &&
+    Boolean(form.country) &&
+    Boolean(selectedManager) &&
+    !selectedManager!.countries.includes(form.country);
+
+  function toggleManagerCountry(option: string) {
+    setForm((f) => ({
+      ...f,
+      manager_countries: f.manager_countries.includes(option)
+        ? f.manager_countries.filter((c) => c !== option)
+        : [...f.manager_countries, option],
+    }));
+  }
 
   function cancel() {
     setForm(base);
@@ -66,18 +88,28 @@ export function EmployeeForm({ initial, teamLeads }: Props) {
       is_active: form.is_active,
       hire_date: form.hire_date,
       team_lead_id: teamLeadDisabled ? null : form.team_lead_id,
+      manager_id: managerDisabled ? null : form.manager_id,
+      manager_countries:
+        form.role === "manager" ? form.manager_countries : undefined,
       base_salary: Number(form.base_salary),
       current_level: form.current_level,
       pay_cycle_start_date: form.pay_cycle_start_date === "" ? null : form.pay_cycle_start_date,
-      country: form.country.trim(),
+      country:
+        form.role === "manager"
+          ? form.manager_countries[0] ?? form.country
+          : form.country.trim(),
     };
 
     startTransition(async () => {
       try {
         await updateEmployeeProfile(initial.id, payload);
+        toast.success("Profile saved.");
         router.refresh();
+        onSaved?.();
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Save failed.");
+        const message = e instanceof Error ? e.message : "Save failed.";
+        setError(message);
+        toast.error(message);
       }
     });
   }
@@ -90,6 +122,16 @@ export function EmployeeForm({ initial, teamLeads }: Props) {
       {error ? (
         <p className="rounded-lg bg-[var(--color-coral-tint)] px-4 py-2 text-[14px] text-[var(--color-coral)]">
           {error}
+        </p>
+      ) : null}
+      {countryMismatch ? (
+        <p
+          role="status"
+          className="rounded-lg bg-[var(--color-gold)]/15 px-4 py-2 text-[14px] text-[var(--color-ink)]"
+        >
+          Warning: {form.country} is not in this manager&apos;s countries (
+          {selectedManager!.countries.join(", ") || "none"}). The employee will
+          stay hidden from that manager until countries overlap.
         </p>
       ) : null}
 
@@ -126,9 +168,10 @@ export function EmployeeForm({ initial, teamLeads }: Props) {
           Country
           <select
             value={form.country}
+            disabled={form.role === "manager"}
             onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
             aria-label="Employee country"
-            className={`cursor-pointer ${fieldClass}`}
+            className={`cursor-pointer ${fieldClass} disabled:cursor-not-allowed disabled:opacity-50`}
           >
             <option value="">Select a country</option>
             {SETUP_COUNTRIES.map((option) => (
@@ -162,35 +205,17 @@ export function EmployeeForm({ initial, teamLeads }: Props) {
                   e.target.value === "team_lead" || e.target.value === "admin"
                     ? null
                     : f.team_lead_id,
+                manager_id: e.target.value === "employee" ? f.manager_id : null,
               }))
             }
             className={`cursor-pointer ${fieldClass}`}
           >
             <option value="employee">Employee</option>
+            <option value="manager">Manager</option>
             <option value="team_lead">Team lead</option>
             <option value="admin">Admin</option>
           </select>
         </label>
-
-        <div className="flex flex-col gap-2">
-          <span className="text-[13px] font-semibold text-[var(--color-muted)]">Active</span>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={form.is_active}
-            aria-label={form.is_active ? "Employee is active" : "Employee is inactive"}
-            onClick={() => setForm((f) => ({ ...f, is_active: !f.is_active }))}
-            className={`relative h-9 w-16 cursor-pointer rounded-full outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] ${
-              form.is_active ? "bg-[var(--color-emerald)]" : "bg-[var(--color-hairline)]"
-            }`}
-          >
-            <span
-              className={`absolute top-1 h-7 w-7 rounded-full bg-white shadow transition-transform ${
-                form.is_active ? "left-8" : "left-1"
-              }`}
-            />
-          </button>
-        </div>
 
         <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
           Hire date
@@ -213,6 +238,7 @@ export function EmployeeForm({ initial, teamLeads }: Props) {
                 team_lead_id: e.target.value ? Number(e.target.value) : null,
               }))
             }
+            aria-label="Assign team lead"
             className={`cursor-pointer ${fieldClass} disabled:cursor-not-allowed disabled:opacity-50`}
           >
             <option value="">None</option>
@@ -223,6 +249,59 @@ export function EmployeeForm({ initial, teamLeads }: Props) {
             ))}
           </select>
         </label>
+
+        <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
+          Manager
+          <select
+            disabled={managerDisabled}
+            value={form.manager_id ?? ""}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                manager_id: e.target.value ? Number(e.target.value) : null,
+              }))
+            }
+            aria-label="Assign manager"
+            className={`cursor-pointer ${fieldClass} disabled:cursor-not-allowed disabled:opacity-50`}
+          >
+            <option value="">Select a manager</option>
+            {managers.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.full_name}
+                {m.countries.length ? ` (${m.countries.join(", ")})` : ""}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {form.role === "manager" ? (
+          <fieldset className="lg:col-span-2">
+            <legend className="text-[13px] font-semibold text-[var(--color-muted)]">
+              Manager countries
+            </legend>
+            <div className="mt-2 grid max-h-80 grid-cols-1 gap-2.5 overflow-y-auto rounded-lg border border-[var(--color-hairline)] bg-[var(--color-cream-tint)] p-4 sm:grid-cols-2 lg:grid-cols-3">
+              {SETUP_COUNTRIES.map((option) => {
+                const checked = form.manager_countries.includes(option);
+                return (
+                  <label
+                    key={option}
+                    className="flex cursor-pointer items-center gap-2.5 text-[13px] font-medium text-[var(--color-ink)]"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleManagerCountry(option)}
+                      className="rounded outline-none"
+                      aria-label={`Include ${option}`}
+                    />
+                    <CountryFlag country={option} className="h-5 w-7" />
+                    <span>{option}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+        ) : null}
 
         <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
           Base salary
@@ -256,7 +335,7 @@ export function EmployeeForm({ initial, teamLeads }: Props) {
           </select>
         </label>
 
-        <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)] lg:col-span-2">
+        <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
           Pay cycle start date
           <input
             type="date"
@@ -264,7 +343,7 @@ export function EmployeeForm({ initial, teamLeads }: Props) {
             onChange={(e) =>
               setForm((f) => ({ ...f, pay_cycle_start_date: e.target.value }))
             }
-            className={`max-w-xs ${fieldClass}`}
+            className={fieldClass}
           />
           <span className="text-[12px] font-normal text-[var(--color-muted)]">
             Changing this will reset the cycle for this employee.
@@ -272,7 +351,13 @@ export function EmployeeForm({ initial, teamLeads }: Props) {
         </label>
       </div>
 
-      <div className="sticky bottom-0 z-20 -mx-4 flex flex-wrap gap-3 border-t border-[var(--color-hairline)] bg-[var(--color-cream)] px-4 py-4 sm:-mx-8">
+      <div
+        className={
+          embedded
+            ? "sticky bottom-0 z-20 flex flex-wrap gap-3 border-t border-[var(--color-hairline)] bg-[var(--color-surface)] py-4"
+            : "sticky bottom-0 z-20 -mx-4 flex flex-wrap gap-3 border-t border-[var(--color-hairline)] bg-[var(--color-cream)] px-4 py-4 sm:-mx-8"
+        }
+      >
         <motion.button
           type="button"
           layout

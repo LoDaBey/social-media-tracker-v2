@@ -2,13 +2,16 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getDashboardData } from "@/lib/dashboard-data";
 import { PLATFORMS } from "@/lib/platform-config";
-// import { WalletPreviewCard } from "@/components/dashboard/WalletPreviewCard";
-// import { LevelCard } from "@/components/dashboard/LevelCard";
 import { MissingAccountsBanner } from "@/components/dashboard/MissingAccountsBanner";
 import { DashboardRowsClient } from "@/components/dashboard/DashboardRowsClient";
 import { SubmissionCountdownChip } from "@/components/dashboard/SubmissionCountdownChip";
+import { WaitingForManagerSetup } from "@/components/dashboard/WaitingForManagerSetup";
 import type { Role } from "@/types/db";
-import { isSetupProfileComplete } from "@/lib/setup-options";
+import {
+  homePathForRole,
+  isEmployeeSetupComplete,
+  targetsFromCounts,
+} from "@/lib/setup-complete";
 
 function getTimeOfDayWord(hour: number) {
   if (hour < 12) return "morning";
@@ -70,15 +73,23 @@ export default async function DashboardPage() {
   if (!session) redirect("/login");
 
   const role = (session.user.role ?? "employee") as Role;
-  if (role === "admin") redirect("/admin");
-  if (role === "team_lead") redirect("/qc");
+  if (role !== "employee") redirect(homePathForRole(role));
 
   const userId = Number(session.user.id);
   if (!Number.isFinite(userId)) redirect("/login");
 
   const data = await getDashboardData(userId);
   if (!data) redirect("/login");
-  if (!isSetupProfileComplete(data.user)) redirect("/setup");
+
+  const setupComplete = isEmployeeSetupComplete({
+    country: data.user.country,
+    language: data.user.language,
+    targets: targetsFromCounts(data.user),
+    accountsByPlatform: data.accountsByPlatform,
+  });
+  if (!setupComplete) {
+    return <WaitingForManagerSetup />;
+  }
 
   const accountPlatforms = PLATFORMS.filter(
     (platform) => data.accountsByPlatform[platform].length > 0

@@ -1,6 +1,11 @@
 import { PLATFORM_LABELS, type Platform } from "@/lib/platform-config";
 import { platformsForSetupStep } from "@/lib/setup-steps";
 import {
+  FACEBOOK_PLATFORMS,
+  facebookRequiredTarget,
+  isFacebookPlatform,
+} from "@/lib/setup-facebook";
+import {
   isPlatformAccountUrl,
   isValidAccountUrl,
   setupAccountFieldsSchemaFor,
@@ -33,6 +38,38 @@ export function isSetupAccountRowComplete(row: SetupAccountRow, platform: Platfo
   return setupAccountFieldsSchemaFor(platform).safeParse(row).success;
 }
 
+export function facebookCompleteRowCount(
+  rowsByPlatform: Record<Platform, SetupAccountRow[]>
+) {
+  return FACEBOOK_PLATFORMS.reduce(
+    (sum, platform) =>
+      sum +
+      (rowsByPlatform[platform] ?? []).filter((row) =>
+        isSetupAccountRowComplete(row, platform)
+      ).length,
+    0
+  );
+}
+
+/** Incomplete Facebook rows are optional once the shared Facebook quota is met. */
+export function ignoredFacebookRowIds(
+  rowsByPlatform: Record<Platform, SetupAccountRow[]>,
+  targets: Record<Platform, number>
+) {
+  const required = facebookRequiredTarget(targets);
+  if (facebookCompleteRowCount(rowsByPlatform) < required) {
+    return new Set<string>();
+  }
+
+  const ids = new Set<string>();
+  for (const platform of FACEBOOK_PLATFORMS) {
+    for (const row of rowsByPlatform[platform] ?? []) {
+      if (!isSetupAccountRowComplete(row, platform)) ids.add(row.id);
+    }
+  }
+  return ids;
+}
+
 function fieldErrorsFromZod(
   issues: { path: PropertyKey[]; message: string }[]
 ): SetupAccountFieldErrors {
@@ -48,13 +85,18 @@ function fieldErrorsFromZod(
 
 export function getSetupRowFieldErrors(
   assignedPlatforms: Platform[],
-  rowsByPlatform: Record<Platform, SetupAccountRow[]>
+  rowsByPlatform: Record<Platform, SetupAccountRow[]>,
+  targets?: Record<Platform, number>
 ): SetupRowFieldErrors {
   const errors: SetupRowFieldErrors = {};
   const seenUrls = new Map<string, string>();
+  const ignored = targets
+    ? ignoredFacebookRowIds(rowsByPlatform, targets)
+    : new Set<string>();
 
   for (const platform of assignedPlatforms) {
     for (const row of rowsByPlatform[platform] ?? []) {
+      if (ignored.has(row.id)) continue;
       const parsed = setupAccountFieldsSchemaFor(platform).safeParse(row);
       const fieldErrors = parsed.success
         ? {}
@@ -128,6 +170,23 @@ export function missingAccountsForSetupStep(
   rowsByPlatform: Record<Platform, SetupAccountRow[]>,
   targets: Record<Platform, number>
 ) {
+  if (stepId === "facebook") {
+    const required = facebookRequiredTarget(targets);
+    if (required <= 0) return [];
+    const missing = Math.max(
+      0,
+      required - facebookCompleteRowCount(rowsByPlatform)
+    );
+    if (missing <= 0) return [];
+    const personalRows = rowsByPlatform.facebook_personal?.length ?? 0;
+    const umbrellaRows = rowsByPlatform.facebook_umbrella?.length ?? 0;
+    const platform: Platform =
+      personalRows <= umbrellaRows
+        ? "facebook_personal"
+        : "facebook_umbrella";
+    return [{ platform, missing }];
+  }
+
   return platformsForSetupStep(stepId)
     .filter((platform) => targets[platform] > 0)
     .map((platform) => ({
@@ -175,8 +234,25 @@ export function setupStepHasErrors(
     return Object.keys(profileErrors).length > 0;
   }
 
+  if (stepId === "facebook") {
+    const required = facebookRequiredTarget(targets);
+    const complete = facebookCompleteRowCount(rowsByPlatform);
+    if (complete !== required) return true;
+    const ignored = ignoredFacebookRowIds(rowsByPlatform, targets);
+    for (const platform of FACEBOOK_PLATFORMS) {
+      for (const row of rowsByPlatform[platform] ?? []) {
+        if (ignored.has(row.id)) continue;
+        if (rowErrors[row.id] && Object.keys(rowErrors[row.id]).length > 0) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   const platforms = platformsForSetupStep(stepId).filter((p) => targets[p] > 0);
   for (const platform of platforms) {
+    if (isFacebookPlatform(platform)) continue;
     if ((rowsByPlatform[platform]?.length ?? 0) !== targets[platform]) {
       return true;
     }

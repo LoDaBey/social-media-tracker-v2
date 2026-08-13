@@ -16,6 +16,7 @@ export function SetupProfileFields({
   language,
   fieldErrors = {},
   onChange,
+  hint,
 }: SetupProfileFieldsProps) {
   return (
     <motion.section
@@ -46,7 +47,9 @@ export function SetupProfileFields({
             className="text-[13px] text-[var(--color-muted)]"
             style={{ fontFamily: "var(--font-cairo)", fontWeight: 500 }}
           >
-            Region is {SETUP_REGION}. Country is assigned by your admin — choose your language.
+            Region is {SETUP_REGION}.{" "}
+            {hint ??
+              "Country is assigned by your admin — choose your language."}
           </p>
         </div>
       </div>

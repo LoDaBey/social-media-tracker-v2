@@ -1,4 +1,4 @@
-export type Role = "employee" | "team_lead" | "admin";
+export type Role = "employee" | "team_lead" | "admin" | "manager";
 
 export type Platform =
   | "x"
@@ -24,6 +24,7 @@ export type TempUser = {
   current_level: number;
 
   team_lead_id: number | null;
+  manager_id: number | null;
 
   target_x_count: number;
   target_facebook_personal_count: number;

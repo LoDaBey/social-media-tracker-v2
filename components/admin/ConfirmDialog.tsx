@@ -2,17 +2,7 @@
 
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-
-type Props = {
-  open: boolean;
-  title: string;
-  description: string;
-  confirmLabel?: string;
-  cancelLabel?: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-  pending?: boolean;
-};
+import type { ConfirmDialogProps } from "@/types/admin";
 
 export function ConfirmDialog({
   open,
@@ -23,7 +13,8 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
   pending = false,
-}: Props) {
+  tone = "default",
+}: ConfirmDialogProps) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -32,6 +23,11 @@ export function ConfirmDialog({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onCancel]);
+
+  const confirmClass =
+    tone === "danger"
+      ? "cursor-pointer rounded-lg bg-[var(--color-coral)] px-4 py-2 text-[13px] font-semibold text-white outline-none hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--color-coral)] disabled:opacity-50"
+      : "cursor-pointer rounded-lg bg-[var(--color-emerald)] px-4 py-2 text-[13px] font-semibold text-white outline-none hover:bg-[var(--color-emerald-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] disabled:opacity-50";
 
   return (
     <AnimatePresence>
@@ -92,7 +88,7 @@ export function ConfirmDialog({
                 disabled={pending}
                 onClick={onConfirm}
                 aria-label={confirmLabel}
-                className="cursor-pointer rounded-lg bg-[var(--color-emerald)] px-4 py-2 text-[13px] font-semibold text-white outline-none hover:bg-[var(--color-emerald-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] disabled:opacity-50"
+                className={confirmClass}
               >
                 {pending ? "Working…" : confirmLabel}
               </motion.button>

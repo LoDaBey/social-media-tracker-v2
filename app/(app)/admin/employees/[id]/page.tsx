@@ -1,7 +1,12 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { queryOne } from "@/lib/db";
-import { fetchActiveAccountCountsByPlatform, fetchTeamLeadOptions } from "@/lib/admin-data";
+import {
+  fetchActiveAccountCountsByPlatform,
+  fetchManagerCountriesForUser,
+  fetchTeamLeadOptions,
+} from "@/lib/admin-data";
+import { fetchManagerOptions } from "@/lib/manager-data";
 import { normalizePgDateColumn } from "@/lib/cairo-date";
 import type { TempUser } from "@/types/db";
 import type { EmployeeFormInitial } from "@/types/admin";
@@ -37,7 +42,13 @@ export default async function AdminEmployeeDetailPage({
   const user = await queryOne<TempUser>(`SELECT * FROM temp_users WHERE id = $1`, [id]);
   if (!user) notFound();
 
-  const teamLeads = await fetchTeamLeadOptions();
+  const [teamLeads, managers, managerCountries] = await Promise.all([
+    fetchTeamLeadOptions(),
+    fetchManagerOptions(),
+    user.role === "manager"
+      ? fetchManagerCountriesForUser(id)
+      : Promise.resolve([] as string[]),
+  ]);
   const counts =
     panel === "targets"
       ? await fetchActiveAccountCountsByPlatform(id)
@@ -52,6 +63,8 @@ export default async function AdminEmployeeDetailPage({
     is_active: user.is_active,
     hire_date: normalizePgDateColumn(user.hire_date) ?? "",
     team_lead_id: user.team_lead_id,
+    manager_id: user.manager_id,
+    manager_countries: managerCountries,
     base_salary: user.base_salary,
     current_level: user.current_level,
     pay_cycle_start_date: normalizePgDateColumn(user.pay_cycle_start_date),
@@ -77,7 +90,12 @@ export default async function AdminEmployeeDetailPage({
       })}
     >
       {panel === "profile" ? (
-        <EmployeeForm key={initial.updated_at} initial={initial} teamLeads={teamLeads} />
+        <EmployeeForm
+          key={initial.updated_at}
+          initial={initial}
+          teamLeads={teamLeads}
+          managers={managers}
+        />
       ) : null}
 
       {panel === "targets" ? (

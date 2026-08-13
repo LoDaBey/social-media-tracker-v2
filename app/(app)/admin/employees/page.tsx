@@ -1,4 +1,4 @@
-import { fetchAdminEmployeesList, fetchTeamLeadOptions } from "@/lib/admin-data";
+import { fetchAdminEmployeesList } from "@/lib/admin-data";
 import { EmployeesTable } from "@/components/admin/EmployeesTable";
 import {
   EmployeesCreateButton,
@@ -20,18 +20,15 @@ export default async function AdminEmployeesPage({
   const statusRaw = typeof sp.status === "string" ? sp.status : "all";
   const status =
     statusRaw === "active" || statusRaw === "inactive" ? statusRaw : "all";
-  const leadRaw = typeof sp.lead === "string" ? sp.lead : "";
-  const teamLeadId =
-    leadRaw && /^\d+$/.test(leadRaw) ? Number(leadRaw) : null;
+  const roleRaw = typeof sp.role === "string" ? sp.role : "all";
+  const role =
+    roleRaw === "employee" || roleRaw === "manager" ? roleRaw : "all";
 
-  const [rows, teamLeads] = await Promise.all([
-    fetchAdminEmployeesList({
-      q,
-      status: status === "all" ? undefined : status,
-      teamLeadId: teamLeadId ?? undefined,
-    }),
-    fetchTeamLeadOptions(),
-  ]);
+  const rows = await fetchAdminEmployeesList({
+    q,
+    status: status === "all" ? undefined : status,
+    role: role === "all" ? undefined : role,
+  });
 
   return (
     <AdminWorkspace view={adminViewEmployees()}>
@@ -40,12 +37,12 @@ export default async function AdminEmployeesPage({
           <EmployeesSearchForm
             initialQ={q}
             hiddenStatus={status === "all" ? undefined : status}
-            hiddenLead={leadRaw || undefined}
+            hiddenRole={role === "all" ? undefined : role}
           />
           <EmployeesCreateButton />
         </div>
 
-        <EmployeesFilters teamLeads={teamLeads} />
+        <EmployeesFilters />
 
         <EmployeesTable rows={rows} />
       </div>

@@ -1,5 +1,6 @@
 import type { Role } from "@/types/db";
 import type { ReactNode } from "react";
+import type { WalletSummary, WalletTransactionListRow } from "@/types/wallet";
 
 export type AdminEmployeeCycleStatus = "pending" | "mid-cycle" | "payable";
 
@@ -11,6 +12,8 @@ export type AdminEmployeeListRow = {
   is_active: boolean;
   team_lead_id: number | null;
   team_lead_name: string | null;
+  manager_id: number | null;
+  manager_name: string | null;
   current_level: number;
   target_accounts_sum: number;
   cycle_status: AdminEmployeeCycleStatus;
@@ -40,6 +43,9 @@ export type CreateEmployeePayload = {
   phone?: string | null;
   role?: Role;
   team_lead_id?: number | null;
+  manager_id?: number | null;
+  /** Required when role is manager — one or more countries this manager owns. */
+  manager_countries?: string[];
   base_salary?: number;
   hire_date?: string;
   pay_cycle_start_date?: string | null;
@@ -55,6 +61,8 @@ export type UpdateEmployeeProfilePayload = {
   is_active: boolean;
   hire_date: string;
   team_lead_id: number | null;
+  manager_id: number | null;
+  manager_countries?: string[];
   base_salary: number;
   current_level: number;
   pay_cycle_start_date: string | null;
@@ -108,6 +116,8 @@ export type EmployeeFormInitial = {
   is_active: boolean;
   hire_date: string;
   team_lead_id: number | null;
+  manager_id: number | null;
+  manager_countries: string[];
   base_salary: string;
   current_level: number;
   pay_cycle_start_date: string | null;
@@ -119,6 +129,12 @@ export type EmployeeFormInitial = {
 export type AdminTeamLeadOption = {
   id: number;
   full_name: string;
+};
+
+export type AdminManagerOption = {
+  id: number;
+  full_name: string;
+  countries: string[];
 };
 
 export type AdminKpiTileProps = {
@@ -133,4 +149,107 @@ export type AdminOverviewAction = {
   ariaLabel: string;
   icon: "userPlus" | "users" | "userCog" | "banknote";
   variant: "primary" | "secondary";
+};
+
+export type EmployeeActivityItem = {
+  kind: string;
+  created_at: string;
+  description: string;
+};
+
+export type AdminEmployeeEditorBundle = {
+  fullName: string;
+  role: Role;
+  profile: EmployeeFormInitial;
+  teamLeads: AdminTeamLeadOption[];
+  managers: AdminManagerOption[];
+  targets: UpdateEmployeeTargetsPayload;
+  activeCounts: Record<string, number>;
+  wallet: WalletSummary;
+  transactions: WalletTransactionListRow[];
+  activity: EmployeeActivityItem[];
+};
+
+export type ConfirmDialogProps = {
+  open: boolean;
+  title: string;
+  description: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  pending?: boolean;
+  tone?: "default" | "danger";
+};
+
+export type EmployeeFormProps = {
+  initial: EmployeeFormInitial;
+  teamLeads: AdminTeamLeadOption[];
+  managers: AdminManagerOption[];
+  embedded?: boolean;
+  onSaved?: () => void;
+};
+
+export type EmployeeTargetsFormProps = {
+  userId: number;
+  initial: UpdateEmployeeTargetsPayload;
+  activeCounts: Record<string, number>;
+  embedded?: boolean;
+  onSaved?: () => void;
+};
+
+export type EmployeeTableRowProps = {
+  row: AdminEmployeeListRow;
+};
+
+export type EmployeeViewButtonProps = {
+  employeeId: number;
+  fullName: string;
+  role: Role;
+};
+
+export type EmployeeEditModalProps = {
+  userId: number;
+  fullName: string;
+  role: Role;
+  open: boolean;
+  onClose: () => void;
+  bundle: AdminEmployeeEditorBundle | null;
+  loading: boolean;
+  error: string | null;
+  onReload: () => void;
+};
+
+export type EmployeeEditModalTabsProps = {
+  panel: AdminEmployeePanel;
+  onChange: (panel: AdminEmployeePanel) => void;
+};
+
+export type EmployeeDeleteButtonProps = {
+  userId: number;
+  fullName: string;
+};
+
+export type AdminEmployeeWalletViewProps = {
+  userId: number;
+  fullName: string;
+  wallet: WalletSummary;
+  transactions: WalletTransactionListRow[];
+  onWalletChanged?: () => void;
+};
+
+export type AdminEmployeeActivityListProps = {
+  items: EmployeeActivityItem[];
+};
+
+export type IssueBonusFormProps = {
+  userId: number;
+  onSuccess?: () => void;
+};
+
+export type ProcessPayoutBarProps = {
+  userId: number;
+  daysToPayout: number;
+  canForce: boolean;
+  onSuccess?: () => void;
 };
