@@ -53,7 +53,7 @@ export function CreateEmployeeForm({ teamLeads, managers }: Props) {
     setError(null);
     startTransition(async () => {
       try {
-        const { id } = await createEmployee({
+        const result = await createEmployee({
           full_name,
           email,
           password,
@@ -72,6 +72,12 @@ export function CreateEmployeeForm({ teamLeads, managers }: Props) {
               ? manager_countries[0] ?? ""
               : country,
         });
+        if ("error" in result) {
+          setError(result.error);
+          toast.error(result.error);
+          return;
+        }
+        const { id } = result;
         const roleLabel =
           role === "manager"
             ? "Manager"

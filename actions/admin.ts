@@ -21,10 +21,12 @@ import { recordBaseSalary, recordBonus, recordPayout } from "@/lib/wallet-events
 import type {
   AdminEmployeeEditorBundle,
   CreateEmployeePayload,
+  CreateEmployeeResult,
   UpdateEmployeeProfilePayload,
   UpdateEmployeeTargetsPayload,
 } from "@/types/admin";
 import type { Role } from "@/types/db";
+import { publicAdminMutationError } from "@/lib/admin-action-error";
 
 const CYCLE_LENGTH_DAYS = 30;
 
@@ -119,39 +121,50 @@ async function replaceManagerCountries(
 
 export async function createEmployee(
   payload: CreateEmployeePayload
-): Promise<{ id: number }> {
-  await requireAdminSession();
-  const p = createEmployeeSchema.parse(payload);
-  const today = getTodayCairoDate();
-  const password_hash = await bcrypt.hash(p.password, 10);
-  const role: Role = p.role ?? "employee";
-  const hire = p.hire_date ?? today;
-  const cycleStart = p.pay_cycle_start_date ?? today;
-  const baseSalary = p.base_salary ?? 0;
-  const level = p.current_level ?? 2;
-  let teamLeadId: number | null = p.team_lead_id ?? null;
-  let managerId: number | null = p.manager_id ?? null;
-  // Employees and managers can report to a team lead; only employees get a manager.
-  if (role === "team_lead" || role === "admin") {
-    teamLeadId = null;
-  }
-  if (role !== "employee") {
-    managerId = null;
-  }
-  if (role === "employee" && !managerId) {
-    throw new Error("Select a manager for this employee.");
-  }
-
-  let managerCountries: string[] = [];
-  if (role === "manager") {
-    managerCountries = managerCountriesSchema.parse(p.manager_countries ?? []);
-  }
-
-  const primaryCountry =
-    role === "manager" ? managerCountries[0]! : p.country;
-
-  const client = await pool.connect();
+): Promise<CreateEmployeeResult> {
+  let client: PoolClient | undefined;
   try {
+    await requireAdminSession();
+    const parsed = createEmployeeSchema.safeParse(payload);
+    if (!parsed.success) {
+      return { error: publicAdminMutationError(parsed.error) };
+    }
+    const p = parsed.data;
+    const today = getTodayCairoDate();
+    const password_hash = await bcrypt.hash(p.password, 10);
+    const role: Role = p.role ?? "employee";
+    const hire = p.hire_date ?? today;
+    const cycleStart = p.pay_cycle_start_date ?? today;
+    const baseSalary = p.base_salary ?? 0;
+    const level = p.current_level ?? 2;
+    let teamLeadId: number | null = p.team_lead_id ?? null;
+    let managerId: number | null = p.manager_id ?? null;
+    // Employees and managers can report to a team lead; only employees get a manager.
+    if (role === "team_lead" || role === "admin") {
+      teamLeadId = null;
+    }
+    if (role !== "employee") {
+      managerId = null;
+    }
+    if (role === "employee" && !managerId) {
+      return { error: "Select a manager for this employee." };
+    }
+
+    let managerCountries: string[] = [];
+    if (role === "manager") {
+      const countriesParsed = managerCountriesSchema.safeParse(
+        p.manager_countries ?? []
+      );
+      if (!countriesParsed.success) {
+        return { error: publicAdminMutationError(countriesParsed.error) };
+      }
+      managerCountries = countriesParsed.data;
+    }
+
+    const primaryCountry =
+      role === "manager" ? managerCountries[0]! : p.country;
+
+    client = await pool.connect();
     await client.query("BEGIN");
 
     if (managerId) {
@@ -159,7 +172,10 @@ export async function createEmployee(
         `SELECT id FROM temp_users WHERE id = $1 AND role = 'manager' AND is_active = TRUE`,
         [managerId]
       );
-      if (!mgr.rows[0]) throw new Error("Selected manager is invalid.");
+      if (!mgr.rows[0]) {
+        await client.query("ROLLBACK");
+        return { error: "Selected manager is invalid." };
+      }
     }
 
     if (teamLeadId) {
@@ -167,7 +183,10 @@ export async function createEmployee(
         `SELECT id FROM temp_users WHERE id = $1 AND role = 'team_lead' AND is_active = TRUE`,
         [teamLeadId]
       );
-      if (!tl.rows[0]) throw new Error("Selected team lead is invalid.");
+      if (!tl.rows[0]) {
+        await client.query("ROLLBACK");
+        return { error: "Selected team lead is invalid." };
+      }
     }
 
     const ins = await client.query<{ id: number }>(
@@ -200,7 +219,10 @@ export async function createEmployee(
       ]
     );
     const id = ins.rows[0]?.id;
-    if (!id) throw new Error("Insert failed.");
+    if (!id) {
+      await client.query("ROLLBACK");
+      return { error: "Insert failed." };
+    }
 
     if (role === "manager") {
       await replaceManagerCountries(client, id, managerCountries);
@@ -216,18 +238,10 @@ export async function createEmployee(
     revalidateAdminEmployee(id);
     return { id };
   } catch (e) {
-    await client.query("ROLLBACK").catch(() => {});
-    if (
-      typeof e === "object" &&
-      e !== null &&
-      "code" in e &&
-      (e as { code?: string }).code === "23505"
-    ) {
-      throw new Error("Email already exists.");
-    }
-    throw e;
+    if (client) await client.query("ROLLBACK").catch(() => {});
+    return { error: publicAdminMutationError(e) };
   } finally {
-    client.release();
+    client?.release();
   }
 }
 

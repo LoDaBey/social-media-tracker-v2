@@ -53,6 +53,8 @@ export type CreateEmployeePayload = {
   country: string;
 };
 
+export type CreateEmployeeResult = { id: number } | { error: string };
+
 export type UpdateEmployeeProfilePayload = {
   full_name: string;
   email: string;
