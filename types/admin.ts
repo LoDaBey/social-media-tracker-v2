@@ -53,6 +53,41 @@ export type CreateEmployeePayload = {
   country: string;
 };
 
+export type CreateEmployeeResult = { id: number } | { error: string };
+
+export type CreateEmployeeFieldKey =
+  | "full_name"
+  | "email"
+  | "password"
+  | "country"
+  | "manager_id"
+  | "manager_countries";
+
+export type CreateEmployeeFieldErrors = Partial<
+  Record<CreateEmployeeFieldKey, string>
+>;
+
+export type ValidateCreateEmployeeInput = {
+  full_name: string;
+  email: string;
+  password: string;
+  role: Role;
+  country: string;
+  manager_id: string;
+  manager_countries: string[];
+};
+
+export type AdminFieldErrorProps = {
+  id: string;
+  message?: string;
+};
+
+export type ManagerCountriesFieldProps = {
+  selected: string[];
+  error?: string;
+  onToggle: (country: string) => void;
+};
+
 export type UpdateEmployeeProfilePayload = {
   full_name: string;
   email: string;
