@@ -1,6 +1,7 @@
 "use client";
 
 import { adminRoleBadge } from "@/lib/admin-view";
+import { EmployeeCountryCell } from "@/components/admin/EmployeeCountryCell";
 import { EmployeeActiveToggle } from "@/components/admin/EmployeeActiveToggle";
 import { EmployeeDeleteButton } from "@/components/admin/EmployeeDeleteButton";
 import { EmployeeViewButton } from "@/components/admin/EmployeeViewButton";
@@ -36,6 +37,9 @@ export function EmployeeTableRow({ row }: EmployeeTableRowProps) {
             <p className="truncate text-[13px] text-[var(--color-muted)]">{row.email}</p>
           </div>
         </div>
+      </td>
+      <td className="px-4 py-3 align-top">
+        <EmployeeCountryCell countries={row.countries} />
       </td>
       <td className="px-4 py-3 text-[14px] text-[var(--color-ink)]">
         {adminRoleBadge(row.role)}

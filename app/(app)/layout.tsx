@@ -2,10 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Sparkles, ChevronDown } from "lucide-react";
 import { auth } from "@/auth";
-import { signOutAction } from "@/actions/auth";
 import type { Role } from "@/types/db";
 import { DateBadge } from "@/components/dashboard/DateBadge";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { SignOutButton } from "@/components/layout/SignOutButton";
 import { fetchPendingCountForReviewer } from "@/lib/qc-data";
 
 function roleBadgeLabel(role: Role) {
@@ -159,15 +159,7 @@ export default async function AppLayout({
                   {email}
                 </div>
                 <div className="my-1 h-px bg-[var(--color-hairline)]" />
-                <form action={signOutAction}>
-                  <button
-                    type="submit"
-                    aria-label="Sign out"
-                    className="cursor-pointer rounded-lg w-full px-3 py-2 text-left text-[13px] font-semibold text-[var(--color-ink)] hover:bg-[var(--color-cream-tint)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
-                  >
-                    Sign out
-                  </button>
-                </form>
+                <SignOutButton />
               </div>
             </details>
           </div>

@@ -239,6 +239,15 @@ export async function fetchAdminEmployeesList(
       tl.full_name AS team_lead_name,
       u.manager_id,
       mgr.full_name AS manager_name,
+      u.country,
+      COALESCE(
+        (
+          SELECT ARRAY_AGG(mc.country ORDER BY mc.country)
+            FROM temp_manager_countries mc
+           WHERE mc.user_id = u.id
+        ),
+        ARRAY[]::varchar[]
+      ) AS manager_countries,
       u.current_level,
       (u.target_x_count + GREATEST(u.target_facebook_personal_count, u.target_facebook_umbrella_count)
         + u.target_instagram_count + u.target_tiktok_count)::int AS target_accounts_sum,
@@ -260,25 +269,39 @@ export async function fetchAdminEmployeesList(
     team_lead_name: string | null;
     manager_id: number | null;
     manager_name: string | null;
+    country: string | null;
+    manager_countries: string[] | null;
     current_level: number;
     target_accounts_sum: number;
     pay_cycle_start_date: string | null;
   }>(sql, params);
 
-  return rows.map((r) => ({
-    id: r.id,
-    full_name: r.full_name,
-    email: r.email,
-    role: r.role,
-    is_active: r.is_active,
-    team_lead_id: r.team_lead_id,
-    team_lead_name: r.team_lead_name,
-    manager_id: r.manager_id,
-    manager_name: r.manager_name,
-    current_level: r.current_level,
-    target_accounts_sum: r.target_accounts_sum,
-    cycle_status: mapCycleStatus(r.pay_cycle_start_date, today),
-  }));
+  return rows.map((r) => {
+    const country = r.country?.trim() || null;
+    const managerCountries = r.manager_countries ?? [];
+    const countries =
+      r.role === "manager" && managerCountries.length > 0
+        ? managerCountries
+        : country
+          ? [country]
+          : [];
+    return {
+      id: r.id,
+      full_name: r.full_name,
+      email: r.email,
+      role: r.role,
+      is_active: r.is_active,
+      team_lead_id: r.team_lead_id,
+      team_lead_name: r.team_lead_name,
+      manager_id: r.manager_id,
+      manager_name: r.manager_name,
+      country,
+      countries,
+      current_level: r.current_level,
+      target_accounts_sum: r.target_accounts_sum,
+      cycle_status: mapCycleStatus(r.pay_cycle_start_date, today),
+    };
+  });
 }
 
 export async function fetchAdminTeamLeads(): Promise<AdminTeamLeadRow[]> {
