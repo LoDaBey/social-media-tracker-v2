@@ -249,7 +249,7 @@ export async function fetchAdminEmployeesList(
         ARRAY[]::varchar[]
       ) AS manager_countries,
       u.current_level,
-      (u.target_x_count + GREATEST(u.target_facebook_personal_count, u.target_facebook_umbrella_count)
+      (u.target_x_count + u.target_facebook_personal_count + u.target_facebook_umbrella_count
         + u.target_instagram_count + u.target_tiktok_count)::int AS target_accounts_sum,
       u.pay_cycle_start_date::text AS pay_cycle_start_date
     FROM temp_users u
