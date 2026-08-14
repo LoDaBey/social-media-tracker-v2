@@ -14,6 +14,8 @@ export type AdminEmployeeListRow = {
   team_lead_name: string | null;
   manager_id: number | null;
   manager_name: string | null;
+  country: string | null;
+  countries: string[];
   current_level: number;
   target_accounts_sum: number;
   cycle_status: AdminEmployeeCycleStatus;
@@ -235,6 +237,14 @@ export type EmployeeTargetsFormProps = {
 
 export type EmployeeTableRowProps = {
   row: AdminEmployeeListRow;
+};
+
+export type EmployeesTableProps = {
+  rows: AdminEmployeeListRow[];
+};
+
+export type EmployeeCountryCellProps = {
+  countries: string[];
 };
 
 export type EmployeeViewButtonProps = {
