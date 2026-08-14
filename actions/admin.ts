@@ -86,21 +86,49 @@ const managerCountriesSchema = z
   .array(setupCountrySchema)
   .min(1, "Select at least one country for this manager.");
 
-const createEmployeeSchema = z.object({
-  full_name: z.string().trim().min(1).max(255),
-  email: z.string().trim().email().max(255),
-  password: z.string().min(8).max(128),
-  phone: z.string().trim().max(50).optional().nullable(),
-  role: z.enum(["employee", "team_lead", "admin", "manager"]).optional(),
-  team_lead_id: z.number().int().positive().nullable().optional(),
-  manager_id: z.number().int().positive().nullable().optional(),
-  manager_countries: z.array(z.string()).optional(),
-  base_salary: z.number().min(0).max(10_000_000).optional(),
-  hire_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  pay_cycle_start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
-  current_level: z.number().int().min(1).max(6).optional(),
-  country: setupCountrySchema,
-});
+const createEmployeeSchema = z
+  .object({
+    full_name: z.string().trim().min(1, "Enter a full name.").max(255),
+    email: z.string().trim().email("Enter a valid email.").max(255),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters.")
+      .max(128, "Password is too long."),
+    phone: z.string().trim().max(50).optional().nullable(),
+    role: z.enum(["employee", "team_lead", "admin", "manager"]).optional(),
+    team_lead_id: z.number().int().positive().nullable().optional(),
+    manager_id: z.number().int().positive().nullable().optional(),
+    manager_countries: z.array(z.string()).optional(),
+    base_salary: z.number().min(0).max(10_000_000).optional(),
+    hire_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    pay_cycle_start_date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .nullable()
+      .optional(),
+    current_level: z.number().int().min(1).max(6).optional(),
+    country: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    const role = data.role ?? "employee";
+    if (role === "manager") return;
+    const country = data.country?.trim() ?? "";
+    if (!country) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["country"],
+        message: "Select a country.",
+      });
+      return;
+    }
+    if (!(SETUP_COUNTRIES as readonly string[]).includes(country)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["country"],
+        message: "Select a valid country.",
+      });
+    }
+  });
 
 async function replaceManagerCountries(
   client: PoolClient,
@@ -162,7 +190,9 @@ export async function createEmployee(
     }
 
     const primaryCountry =
-      role === "manager" ? managerCountries[0]! : p.country;
+      role === "manager"
+        ? managerCountries[0]!
+        : (p.country ?? "").trim();
 
     client = await pool.connect();
     await client.query("BEGIN");

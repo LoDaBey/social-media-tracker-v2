@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { updateEmployeeProfile } from "@/actions/admin";
-import { CountryFlag } from "@/lib/country-icons";
 import { LEVEL_LABELS } from "@/lib/level-labels";
 import { SETUP_COUNTRIES, SETUP_REGION } from "@/lib/setup-options";
 import type { Role } from "@/types/db";
 import type { EmployeeFormProps, UpdateEmployeeProfilePayload } from "@/types/admin";
+import { ManagerCountriesField } from "@/components/admin/ManagerCountriesField";
 
 function normalizeDate(v: string | null): string {
   if (!v) return "";
@@ -164,23 +164,24 @@ export function EmployeeForm({
           />
         </label>
 
-        <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
-          Country
-          <select
-            value={form.country}
-            disabled={form.role === "manager"}
-            onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
-            aria-label="Employee country"
-            className={`cursor-pointer ${fieldClass} disabled:cursor-not-allowed disabled:opacity-50`}
-          >
-            <option value="">Select a country</option>
-            {SETUP_COUNTRIES.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </label>
+        {form.role === "manager" ? null : (
+          <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
+            Country
+            <select
+              value={form.country}
+              onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
+              aria-label="Employee country"
+              className={`cursor-pointer ${fieldClass}`}
+            >
+              <option value="">Select a country</option>
+              {SETUP_COUNTRIES.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
 
         <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
           Region
@@ -250,57 +251,36 @@ export function EmployeeForm({
           </select>
         </label>
 
-        <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
-          Manager
-          <select
-            disabled={managerDisabled}
-            value={form.manager_id ?? ""}
-            onChange={(e) =>
-              setForm((f) => ({
-                ...f,
-                manager_id: e.target.value ? Number(e.target.value) : null,
-              }))
-            }
-            aria-label="Assign manager"
-            className={`cursor-pointer ${fieldClass} disabled:cursor-not-allowed disabled:opacity-50`}
-          >
-            <option value="">Select a manager</option>
-            {managers.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.full_name}
-                {m.countries.length ? ` (${m.countries.join(", ")})` : ""}
-              </option>
-            ))}
-          </select>
-        </label>
+        {form.role === "employee" ? (
+          <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
+            Manager
+            <select
+              value={form.manager_id ?? ""}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  manager_id: e.target.value ? Number(e.target.value) : null,
+                }))
+              }
+              aria-label="Assign manager"
+              className={`cursor-pointer ${fieldClass}`}
+            >
+              <option value="">Select a manager</option>
+              {managers.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.full_name}
+                  {m.countries.length ? ` (${m.countries.join(", ")})` : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
 
         {form.role === "manager" ? (
-          <fieldset className="lg:col-span-2">
-            <legend className="text-[13px] font-semibold text-[var(--color-muted)]">
-              Manager countries
-            </legend>
-            <div className="mt-2 grid max-h-80 grid-cols-1 gap-2.5 overflow-y-auto rounded-lg border border-[var(--color-hairline)] bg-[var(--color-cream-tint)] p-4 sm:grid-cols-2 lg:grid-cols-3">
-              {SETUP_COUNTRIES.map((option) => {
-                const checked = form.manager_countries.includes(option);
-                return (
-                  <label
-                    key={option}
-                    className="flex cursor-pointer items-center gap-2.5 text-[13px] font-medium text-[var(--color-ink)]"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleManagerCountry(option)}
-                      className="rounded outline-none"
-                      aria-label={`Include ${option}`}
-                    />
-                    <CountryFlag country={option} className="h-5 w-7" />
-                    <span>{option}</span>
-                  </label>
-                );
-              })}
-            </div>
-          </fieldset>
+          <ManagerCountriesField
+            selected={form.manager_countries}
+            onToggle={toggleManagerCountry}
+          />
         ) : null}
 
         <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">

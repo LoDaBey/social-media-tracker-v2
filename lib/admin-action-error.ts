@@ -12,7 +12,14 @@ function postgresCode(error: unknown): string | null {
 
 export function publicAdminMutationError(error: unknown): string {
   if (error instanceof z.ZodError) {
-    return error.issues[0]?.message ?? "Please review the form and try again.";
+    const messages = [
+      ...new Set(
+        error.issues
+          .map((issue) => issue.message.trim())
+          .filter((message) => message.length > 0)
+      ),
+    ];
+    return messages.join(" ") || "Please review the form and try again.";
   }
 
   const code = postgresCode(error);
