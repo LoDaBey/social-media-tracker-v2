@@ -12,14 +12,12 @@ export function isFacebookPlatform(platform: Platform) {
 }
 
 /**
- * Personal and Umbrella share one Facebook quota. Completing either type
- * counts. When both columns are set (e.g. 1 and 1), only the higher number
- * is required so one Facebook account is enough.
+ * Personal and Umbrella are separate assigned slots.
+ * 1 personal + 1 umbrella means 2 Facebook accounts.
  */
 export function facebookRequiredTarget(targets: Record<Platform, number>) {
-  return Math.max(
-    targets.facebook_personal ?? 0,
-    targets.facebook_umbrella ?? 0
+  return (
+    (targets.facebook_personal ?? 0) + (targets.facebook_umbrella ?? 0)
   );
 }
 
@@ -30,11 +28,10 @@ export function facebookAssignedCount(counts: Record<Platform, number>) {
 }
 
 export function totalAssignedAccountTarget(targets: Record<Platform, number>) {
-  const other = PLATFORMS.filter((platform) => !isFacebookPlatform(platform)).reduce(
+  return PLATFORMS.reduce(
     (sum, platform) => sum + (targets[platform] ?? 0),
     0
   );
-  return other + facebookRequiredTarget(targets);
 }
 
 export function accountsMeetTargets(

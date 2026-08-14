@@ -51,7 +51,7 @@ export function facebookCompleteRowCount(
   );
 }
 
-/** Incomplete Facebook rows are optional once the shared Facebook quota is met. */
+/** Incomplete Facebook rows are optional once the Facebook quota is met. */
 export function ignoredFacebookRowIds(
   rowsByPlatform: Record<Platform, SetupAccountRow[]>,
   targets: Record<Platform, number>
