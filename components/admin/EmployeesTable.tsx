@@ -1,7 +1,7 @@
 import type { EmployeesTableProps } from "@/types/admin";
 import { EmployeeTableRow } from "@/components/admin/EmployeeTableRow";
 
-export function EmployeesTable({ rows }: EmployeesTableProps) {
+export function EmployeesTable({ rows, holders }: EmployeesTableProps) {
   return (
     <div className="overflow-x-auto rounded-[16px] border border-[var(--color-hairline)] bg-[var(--color-surface)]">
         <table className="w-full min-w-[1160px] border-collapse text-left">
@@ -47,7 +47,9 @@ export function EmployeesTable({ rows }: EmployeesTableProps) {
               </td>
             </tr>
           ) : (
-            rows.map((row) => <EmployeeTableRow key={row.id} row={row} />)
+              rows.map((row) => (
+                <EmployeeTableRow key={row.id} row={row} holders={holders} />
+              ))
           )}
         </tbody>
       </table>

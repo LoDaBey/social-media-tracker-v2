@@ -35,6 +35,7 @@ export type TempUser = {
   region: string;
   country: string | null;
   language: string | null;
+  setup_needs_review: boolean;
 
   created_at: string;
   updated_at: string;

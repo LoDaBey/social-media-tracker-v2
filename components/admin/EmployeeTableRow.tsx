@@ -17,7 +17,7 @@ const cycleLabel: Record<AdminEmployeeListRow["cycle_status"], string> = {
   payable: "Payable",
 };
 
-export function EmployeeTableRow({ row }: EmployeeTableRowProps) {
+export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
   const [expanded, setExpanded] = useState(false);
   const initial = (row.full_name.trim()[0] ?? "?").toUpperCase();
   const canExpand = row.role === "employee";
@@ -137,9 +137,12 @@ export function EmployeeTableRow({ row }: EmployeeTableRowProps) {
             <EmployeeAccountsPanel
               userId={row.id}
               fullName={row.full_name}
+              country={row.country}
+              language={row.language}
               accounts={row.accounts}
               assignedCount={row.target_accounts_sum}
               canAdd
+              holders={holders}
             />
           </td>
         </tr>

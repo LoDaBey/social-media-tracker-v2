@@ -9,6 +9,7 @@ export function ManagerAccountsTable({
   country,
   language,
   accounts,
+  holderOptions,
 }: ManagerAccountsTableProps) {
   return (
     <div className="overflow-x-auto rounded-[16px] border border-[var(--color-hairline)] bg-[var(--color-surface)]">
@@ -53,6 +54,7 @@ export function ManagerAccountsTable({
               country={country}
               language={language}
               account={account}
+              holderOptions={holderOptions}
             />
           ))}
         </tbody>

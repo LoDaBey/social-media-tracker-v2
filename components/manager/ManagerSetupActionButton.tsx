@@ -8,6 +8,7 @@ import type { ManagerSetupActionButtonProps } from "@/types/manager";
 export function ManagerSetupActionButton({
   href,
   setupComplete,
+  setupNeedsReview,
   fullName,
 }: ManagerSetupActionButtonProps) {
   if (setupComplete) {
@@ -34,8 +35,16 @@ export function ManagerSetupActionButton({
     >
       <Link
         href={href}
-        aria-label={`Add accounts for ${fullName}`}
-        title={`Add accounts for ${fullName}`}
+        aria-label={
+          setupNeedsReview
+            ? `Review imported accounts for ${fullName}`
+            : `Add accounts for ${fullName}`
+        }
+        title={
+          setupNeedsReview
+            ? `Review imported accounts for ${fullName}`
+            : `Add accounts for ${fullName}`
+        }
         className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-[var(--color-emerald)] outline-none hover:bg-[var(--color-emerald-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
         onClick={(event) => event.stopPropagation()}
       >

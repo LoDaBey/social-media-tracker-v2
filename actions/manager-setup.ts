@@ -28,6 +28,7 @@ export type ManagerEmployeeSetupBundle = {
     email: string;
     country: string;
     language: string | null;
+    setupNeedsReview: boolean;
     targets: Record<Platform, number>;
   };
   existingByPlatform: Record<Platform, TempSocialMediaAccount[]>;
@@ -52,6 +53,7 @@ export async function getManagerEmployeeSetupBundle(
       | "email"
       | "country"
       | "language"
+      | "setup_needs_review"
       | "target_x_count"
       | "target_facebook_personal_count"
       | "target_facebook_umbrella_count"
@@ -59,7 +61,7 @@ export async function getManagerEmployeeSetupBundle(
       | "target_tiktok_count"
     >
   >(
-    `SELECT id, full_name, email, country, language,
+    `SELECT id, full_name, email, country, language, setup_needs_review,
             target_x_count, target_facebook_personal_count, target_facebook_umbrella_count,
             target_instagram_count, target_tiktok_count
        FROM temp_users
@@ -83,6 +85,7 @@ export async function getManagerEmployeeSetupBundle(
       email: user.email,
       country: user.country,
       language: user.language,
+      setupNeedsReview: Boolean(user.setup_needs_review),
       targets: targetsFromCounts(user),
     },
     existingByPlatform: groupAccountsByPlatform(accounts),
@@ -230,7 +233,8 @@ export async function saveEmployeeAccountsAsManager(input: {
       `UPDATE temp_users
        SET region = $2,
            country = $3,
-           language = $4
+           language = $4,
+           setup_needs_review = FALSE
        WHERE id = $1`,
       [input.employeeId, SETUP_REGION, assignedCountry, languageParsed.data]
     );

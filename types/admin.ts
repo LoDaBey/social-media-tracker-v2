@@ -15,6 +15,7 @@ export type AdminEmployeeListRow = {
   manager_id: number | null;
   manager_name: string | null;
   country: string | null;
+  language: string | null;
   countries: string[];
   current_level: number;
   target_accounts_sum: number;
@@ -228,10 +229,12 @@ export type EmployeeTargetsFormProps = {
 
 export type EmployeeTableRowProps = {
   row: AdminEmployeeListRow;
+  holders: BulkImportHolderOption[];
 };
 
 export type EmployeesTableProps = {
   rows: AdminEmployeeListRow[];
+  holders: BulkImportHolderOption[];
 };
 
 export type EmployeeCountryCellProps = {
@@ -322,9 +325,16 @@ export type AdminSocialAccountListItem = {
   status: "active" | "archived" | "suspended";
 };
 
+export type AccountHolderOption = {
+  id: number;
+  full_name: string;
+  country: string;
+};
+
 export type AdminSocialAccountInput = {
   platform: Platform;
   accountHolder: string;
+  holderUserId?: number;
   url: string;
   category: string;
   username: string;
@@ -340,9 +350,12 @@ export type AdminAccountMutationResult = { error?: string };
 export type EmployeeAccountsPanelProps = {
   userId: number;
   fullName: string;
+  country: string | null;
+  language: string | null;
   accounts: AdminSocialAccountListItem[];
   assignedCount: number;
   canAdd: boolean;
+  holders: BulkImportHolderOption[];
   onChanged?: () => void;
 };
 
@@ -362,10 +375,18 @@ export type AccountRowProps = {
   readOnly?: boolean;
 };
 
+export type AccountHolderSelectProps = {
+  value: AdminSocialAccountInput;
+  options: AccountHolderOption[];
+  error?: string;
+  onChange: (patch: Partial<AdminSocialAccountInput>) => void;
+};
+
 export type AccountFormFieldsProps = {
   value: AdminSocialAccountInput;
   fieldErrors: Partial<Record<keyof AdminSocialAccountInput, string>>;
   platformLocked?: boolean;
+  holderOptions?: AccountHolderOption[];
   onChange: (patch: Partial<AdminSocialAccountInput>) => void;
 };
 
@@ -376,6 +397,7 @@ export type AccountEditModalProps = {
   holderName: string;
   initial: AdminSocialAccountInput;
   accountId?: number;
+  holderOptions?: AccountHolderOption[];
   onClose: () => void;
   onSaved?: () => void;
   save?: (
@@ -400,4 +422,83 @@ export type AccountStatusBadgeProps = {
 export type AccountUrlCellProps = {
   url: string;
   label: string;
+};
+
+export type BulkImportHolderOption = {
+  id: number;
+  full_name: string;
+  country: string | null;
+  language: string | null;
+};
+
+export type BulkImportAccountDraft = {
+  id: string;
+  platform: Platform | "";
+  accountHolder: string;
+  url: string;
+  category: string;
+  username: string;
+  email: string;
+  accountPassword: string;
+  emailPassword: string;
+  mobileNumber: string;
+  status: "active" | "archived" | "suspended";
+};
+
+export type BulkImportParseResult = {
+  language: string;
+  warnings: string[];
+  rows: BulkImportAccountDraft[];
+};
+
+export type BulkImportParseSuccess = BulkImportParseResult;
+export type BulkImportMutationResult =
+  | { error: string }
+  | BulkImportParseResult
+  | { imported: number };
+
+export type EmployeesBulkImportButtonProps = {
+  holders: BulkImportHolderOption[];
+  initialHolderId?: number;
+  variant?: "icon" | "button";
+};
+
+export type BulkImportModalProps = {
+  open: boolean;
+  holders: BulkImportHolderOption[];
+  initialHolderId?: number;
+  onClose: () => void;
+};
+
+export type BulkImportHolderStepProps = {
+  holders: BulkImportHolderOption[];
+  holderId: string;
+  country: string;
+  onHolderIdChange: (holderId: string) => void;
+  onCountryChange: (country: string) => void;
+};
+
+export type BulkImportUploadStepProps = {
+  fileName: string | null;
+  error: string | null;
+  pending: boolean;
+  onFile: (file: File) => void;
+};
+
+export type BulkImportReviewTableProps = {
+  holderName: string;
+  language: string;
+  rows: BulkImportAccountDraft[];
+  rowErrors: Record<string, string>;
+  onLanguageChange: (language: string) => void;
+  onRowChange: (id: string, patch: Partial<BulkImportAccountDraft>) => void;
+  onRemoveRow: (id: string) => void;
+  onAddRow: () => void;
+};
+
+export type BulkImportReviewRowProps = {
+  row: BulkImportAccountDraft;
+  error?: string;
+  onChange: (patch: Partial<BulkImportAccountDraft>) => void;
+  onRemove: () => void;
 };

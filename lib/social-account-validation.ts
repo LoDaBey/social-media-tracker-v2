@@ -20,6 +20,7 @@ const platformSchema = z.enum([
 const inputSchema = z.object({
   platform: platformSchema,
   accountHolder: z.string().trim().min(1, "Add an account holder."),
+  holderUserId: z.number().int().positive().optional(),
   url: z.string().trim().min(1, "Add a URL."),
   category: z.string().trim().min(1, "Select a category."),
   username: z.string().trim().min(1, "Add a username."),

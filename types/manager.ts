@@ -1,3 +1,4 @@
+import type { AccountHolderOption } from "@/types/admin";
 import type { Platform } from "@/types/db";
 
 export type ManagerOption = {
@@ -28,6 +29,7 @@ export type ManagerHolderRow = {
   country: string;
   language: string | null;
   setupComplete: boolean;
+  setupNeedsReview: boolean;
   targetAccountsSum: number;
   accountTotal: number;
   accounts: ManagerAccountListItem[];
@@ -44,6 +46,7 @@ export type ManagerHomeTableProps = {
 
 export type ManagerTeamRowProps = {
   row: ManagerHolderRow;
+  holderOptions: AccountHolderOption[];
 };
 
 export type ManagerAccountsPanelProps = {
@@ -53,6 +56,7 @@ export type ManagerAccountsPanelProps = {
   language: string | null;
   accounts: ManagerAccountListItem[];
   assignedCount: number;
+  holderOptions: AccountHolderOption[];
 };
 
 export type ManagerAccountsTableProps = {
@@ -61,6 +65,7 @@ export type ManagerAccountsTableProps = {
   country: string;
   language: string | null;
   accounts: ManagerAccountListItem[];
+  holderOptions: AccountHolderOption[];
 };
 
 export type ManagerAccountRowProps = {
@@ -69,6 +74,7 @@ export type ManagerAccountRowProps = {
   country: string;
   language: string | null;
   account: ManagerAccountListItem;
+  holderOptions: AccountHolderOption[];
 };
 
 export type ManagerAccountDeleteButtonProps = {
@@ -99,5 +105,11 @@ export type ManagerTeamHeaderProps = {
 export type ManagerSetupActionButtonProps = {
   href: string;
   setupComplete: boolean;
+  setupNeedsReview: boolean;
   fullName: string;
+};
+
+export type ManagerSetupStatusBadgeProps = {
+  setupComplete: boolean;
+  setupNeedsReview: boolean;
 };

@@ -39,11 +39,14 @@ export function adminSocialAccountToInput(
 }
 
 export function managerAccountToInput(
-  account: ManagerAccountListItem
+  account: ManagerAccountListItem,
+  holderId: number,
+  holderName: string
 ): AdminSocialAccountInput {
   return {
     platform: account.platform,
-    accountHolder: account.account_handle ?? "",
+    accountHolder: account.account_handle?.trim() || holderName,
+    holderUserId: holderId,
     url: account.account_url,
     category: account.category ?? "",
     username: account.username ?? "",

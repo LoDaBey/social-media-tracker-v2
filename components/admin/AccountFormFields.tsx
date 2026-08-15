@@ -5,6 +5,7 @@ import { PLATFORMS, PLATFORM_LABELS } from "@/lib/platform-config";
 import { platformUrlPlaceholder } from "@/lib/setup-schema";
 import { SetupSelect } from "@/components/setup/SetupSelect";
 import { SetupTextField } from "@/components/setup/SetupTextField";
+import { AccountHolderSelect } from "@/components/admin/AccountHolderSelect";
 import type { AccountFormFieldsProps } from "@/types/admin";
 
 const fieldClass =
@@ -14,6 +15,7 @@ export function AccountFormFields({
   value,
   fieldErrors,
   platformLocked = false,
+  holderOptions,
   onChange,
 }: AccountFormFieldsProps) {
   return (
@@ -57,14 +59,23 @@ export function AccountFormFields({
           <option value="suspended">Suspended</option>
         </select>
       </label>
-      <SetupTextField
-        label="Account holder"
-        value={value.accountHolder}
-        ariaLabel="Account holder"
-        error={fieldErrors.accountHolder}
-        ariaInvalid={Boolean(fieldErrors.accountHolder)}
-        onChange={(accountHolder) => onChange({ accountHolder })}
-      />
+      {holderOptions && holderOptions.length > 0 ? (
+        <AccountHolderSelect
+          value={value}
+          options={holderOptions}
+          error={fieldErrors.accountHolder}
+          onChange={onChange}
+        />
+      ) : (
+        <SetupTextField
+          label="Account holder"
+          value={value.accountHolder}
+          ariaLabel="Account holder"
+          error={fieldErrors.accountHolder}
+          ariaInvalid={Boolean(fieldErrors.accountHolder)}
+          onChange={(accountHolder) => onChange({ accountHolder })}
+        />
+      )}
       <SetupTextField
         label="Username"
         value={value.username}
@@ -113,18 +124,18 @@ export function AccountFormFields({
       />
       <SetupTextField
         label="Account password"
-        type="password"
         value={value.accountPassword}
         ariaLabel="Account password"
+        autoComplete="off"
         error={fieldErrors.accountPassword}
         ariaInvalid={Boolean(fieldErrors.accountPassword)}
         onChange={(accountPassword) => onChange({ accountPassword })}
       />
       <SetupTextField
         label="Email password"
-        type="password"
         value={value.emailPassword}
         ariaLabel="Email password"
+        autoComplete="off"
         error={fieldErrors.emailPassword}
         ariaInvalid={Boolean(fieldErrors.emailPassword)}
         onChange={(emailPassword) => onChange({ emailPassword })}

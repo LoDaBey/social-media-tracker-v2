@@ -14,6 +14,11 @@ export function ManagerHomeTable({ groups }: ManagerHomeTableProps) {
     }),
     { added: 0, assigned: 0 }
   );
+  const holderOptions = rows.map((holder) => ({
+    id: holder.id,
+    full_name: holder.full_name,
+    country: holder.country,
+  }));
   const countries = groups.map((group) => ({
     country: group.country,
     added: group.holders.reduce((sum, holder) => sum + holder.accountTotal, 0),
@@ -70,7 +75,13 @@ export function ManagerHomeTable({ groups }: ManagerHomeTableProps) {
                 </td>
               </tr>
             ) : (
-              rows.map((row) => <ManagerTeamRow key={row.id} row={row} />)
+              rows.map((row) => (
+                <ManagerTeamRow
+                  key={row.id}
+                  row={row}
+                  holderOptions={holderOptions}
+                />
+              ))
             )}
           </tbody>
         </table>
