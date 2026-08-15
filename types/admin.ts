@@ -378,10 +378,26 @@ export type AccountEditModalProps = {
   accountId?: number;
   onClose: () => void;
   onSaved?: () => void;
+  save?: (
+    payload: AdminSocialAccountInput
+  ) => Promise<AdminAccountMutationResult>;
 };
 
 export type AccountDeleteButtonProps = {
   accountId: number;
   accountName: string;
   onDeleted?: () => void;
+};
+
+export type AccountCategoryBadgeProps = {
+  category: string | null;
+};
+
+export type AccountStatusBadgeProps = {
+  status: AdminSocialAccountListItem["status"];
+};
+
+export type AccountUrlCellProps = {
+  url: string;
+  label: string;
 };

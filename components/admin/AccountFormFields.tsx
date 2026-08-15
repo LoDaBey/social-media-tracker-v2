@@ -52,9 +52,9 @@ export function AccountFormFields({
           }
           className={`cursor-pointer ${fieldClass}`}
         >
-          <option value="active">active</option>
-          <option value="archived">archived</option>
-          <option value="suspended">suspended</option>
+          <option value="active">Active</option>
+          <option value="archived">Temp locked</option>
+          <option value="suspended">Suspended</option>
         </select>
       </label>
       <SetupTextField

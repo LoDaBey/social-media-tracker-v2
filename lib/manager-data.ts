@@ -143,8 +143,13 @@ export async function fetchManagerHomeGroups(
         id: account.id,
         platform: account.platform,
         account_name: account.account_name,
+        account_handle: account.account_handle,
         username: account.username,
         account_url: account.account_url,
+        account_email: account.account_email,
+        account_password: account.account_password,
+        email_password: account.email_password,
+        mobile_number: account.mobile_number,
         category: account.category,
         status: account.status,
       })

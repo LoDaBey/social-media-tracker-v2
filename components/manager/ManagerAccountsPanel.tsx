@@ -4,7 +4,10 @@ import { ManagerAccountsTable } from "@/components/manager/ManagerAccountsTable"
 import type { ManagerAccountsPanelProps } from "@/types/manager";
 
 export function ManagerAccountsPanel({
+  holderId,
   fullName,
+  country,
+  language,
   accounts,
   assignedCount,
 }: ManagerAccountsPanelProps) {
@@ -22,7 +25,13 @@ export function ManagerAccountsPanel({
           No social accounts have been added for {fullName} yet.
         </p>
       ) : (
-        <ManagerAccountsTable accounts={accounts} />
+        <ManagerAccountsTable
+          holderId={holderId}
+          fullName={fullName}
+          country={country}
+          language={language}
+          accounts={accounts}
+        />
       )}
     </div>
   );

@@ -26,6 +26,7 @@ export function AccountEditModal({
   accountId,
   onClose,
   onSaved,
+  save,
 }: AccountEditModalProps) {
   return (
     <AnimatePresence>
@@ -38,6 +39,7 @@ export function AccountEditModal({
           accountId={accountId}
           onClose={onClose}
           onSaved={onSaved}
+          save={save}
         />
       ) : null}
     </AnimatePresence>
@@ -52,6 +54,7 @@ function AccountEditModalDialog({
   accountId,
   onClose,
   onSaved,
+  save,
 }: Omit<AccountEditModalProps, "open">) {
   const router = useRouter();
   const [value, setValue] = useState<AdminSocialAccountInput>(initial);
@@ -103,8 +106,9 @@ function AccountEditModalDialog({
     setFieldErrors({});
 
     startTransition(async () => {
-      const result =
-        mode === "create"
+      const result = save
+        ? await save(value)
+        : mode === "create"
           ? await createAdminSocialAccount(holderId, value)
           : await updateAdminSocialAccount(accountId!, value);
       if (result.error) {

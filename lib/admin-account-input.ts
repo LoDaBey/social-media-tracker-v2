@@ -2,6 +2,7 @@ import type {
   AdminSocialAccountInput,
   AdminSocialAccountListItem,
 } from "@/types/admin";
+import type { ManagerAccountListItem } from "@/types/manager";
 
 export function emptyAdminSocialAccountInput(
   holderName: string
@@ -22,6 +23,23 @@ export function emptyAdminSocialAccountInput(
 
 export function adminSocialAccountToInput(
   account: AdminSocialAccountListItem
+): AdminSocialAccountInput {
+  return {
+    platform: account.platform,
+    accountHolder: account.account_handle ?? "",
+    url: account.account_url,
+    category: account.category ?? "",
+    username: account.username ?? "",
+    email: account.account_email ?? "",
+    accountPassword: account.account_password ?? "",
+    emailPassword: account.email_password ?? "",
+    mobileNumber: account.mobile_number ?? "",
+    status: account.status,
+  };
+}
+
+export function managerAccountToInput(
+  account: ManagerAccountListItem
 ): AdminSocialAccountInput {
   return {
     platform: account.platform,

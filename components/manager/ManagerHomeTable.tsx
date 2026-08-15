@@ -1,28 +1,36 @@
 "use client";
 
+import { ManagerTeamHeader } from "@/components/manager/ManagerTeamHeader";
 import { ManagerTeamRow } from "@/components/manager/ManagerTeamRow";
 import type { ManagerHomeTableProps } from "@/types/manager";
 
 export function ManagerHomeTable({ groups }: ManagerHomeTableProps) {
   const rows = groups.flatMap((group) => group.holders);
   const pending = rows.filter((h) => !h.setupComplete).length;
+  const overall = rows.reduce(
+    (sum, holder) => ({
+      added: sum.added + holder.accountTotal,
+      assigned: sum.assigned + holder.targetAccountsSum,
+    }),
+    { added: 0, assigned: 0 }
+  );
+  const countries = groups.map((group) => ({
+    country: group.country,
+    added: group.holders.reduce((sum, holder) => sum + holder.accountTotal, 0),
+    assigned: group.holders.reduce(
+      (sum, holder) => sum + holder.targetAccountsSum,
+      0
+    ),
+  }));
 
   return (
     <div className="w-full">
-      <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-[32px] font-extrabold tracking-tight text-[var(--color-ink)]">
-            Your team
-          </h1>
-          <p className="mt-2 text-[15px] text-[var(--color-muted)]">
-            Account holders in your countries. Expand a row to see saved accounts,
-            or use + to continue setup.
-          </p>
-        </div>
-        <p className="text-[13px] font-semibold text-[var(--color-muted)]">
-          {rows.length} holders · {pending} setup pending
-        </p>
-      </header>
+      <ManagerTeamHeader
+        holderCount={rows.length}
+        pendingCount={pending}
+        overall={overall}
+        countries={countries}
+      />
 
       <div className="mt-8 overflow-x-auto rounded-[16px] border border-[var(--color-hairline)] bg-[var(--color-surface)]">
         <table className="w-full min-w-[880px] border-collapse text-left">

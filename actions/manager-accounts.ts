@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { pool, queryOne } from "@/lib/db";
+import { assertManagerCanEditEmployee } from "@/lib/manager-data";
 import { publicAdminMutationError } from "@/lib/admin-action-error";
 import {
   uniqueAccountUrlError,
@@ -13,74 +14,29 @@ import type {
   AdminSocialAccountInput,
 } from "@/types/admin";
 
-async function requireAdmin() {
+async function requireManager() {
   const session = await auth();
-  const adminId = Number(session?.user?.id);
+  const managerId = Number(session?.user?.id);
   const role = session?.user?.role;
-  if (!Number.isFinite(adminId) || role !== "admin") {
-    throw new Error("Unauthorized — admin only.");
+  if (!Number.isFinite(managerId) || role !== "manager") {
+    throw new Error("Unauthorized — manager only.");
   }
+  return managerId;
 }
 
-function revalidateAccounts(userId?: number) {
-  revalidatePath("/admin/employees");
-  if (userId) revalidatePath(`/admin/employees/${userId}`);
+function revalidateManagerAccounts(userId: number) {
   revalidatePath("/manager");
   revalidatePath("/dashboard");
+  revalidatePath("/admin/employees");
+  revalidatePath(`/admin/employees/${userId}`);
 }
 
-export async function createAdminSocialAccount(
-  userId: number,
-  payload: AdminSocialAccountInput
-): Promise<AdminAccountMutationResult> {
-  try {
-    await requireAdmin();
-    if (!Number.isFinite(userId)) return { error: "Invalid employee." };
-    const checked = validateSocialAccountInput(payload);
-    if ("error" in checked) return checked;
-    const data = checked.data;
-
-    const user = await queryOne<{ id: number }>(
-      `SELECT id FROM temp_users WHERE id = $1 AND role = 'employee'`,
-      [userId]
-    );
-    if (!user) return { error: "Employee not found." };
-
-    const accountName = data.username.replace(/^@/, "");
-    await pool.query(
-      `INSERT INTO temp_social_media_accounts
-        (user_id, platform, account_name, account_handle, account_url,
-         starting_followers, current_followers, category, username,
-         account_email, account_password, email_password, mobile_number, status)
-       VALUES ($1, $2, $3, $4, $5, 0, 0, $6, $7, $8, $9, $10, $11, $12)`,
-      [
-        userId,
-        data.platform,
-        accountName,
-        data.accountHolder,
-        data.url,
-        data.category,
-        data.username,
-        data.email,
-        data.accountPassword,
-        data.emailPassword,
-        data.mobileNumber,
-        data.status ?? "active",
-      ]
-    );
-    revalidateAccounts(userId);
-    return {};
-  } catch (error) {
-    return { error: uniqueAccountUrlError(error) };
-  }
-}
-
-export async function updateAdminSocialAccount(
+export async function updateManagerSocialAccount(
   accountId: number,
   payload: AdminSocialAccountInput
 ): Promise<AdminAccountMutationResult> {
   try {
-    await requireAdmin();
+    const managerId = await requireManager();
     if (!Number.isFinite(accountId)) return { error: "Invalid account." };
     const checked = validateSocialAccountInput(payload);
     if ("error" in checked) return checked;
@@ -91,6 +47,12 @@ export async function updateAdminSocialAccount(
       [accountId]
     );
     if (!existing) return { error: "Account not found." };
+
+    const allowed = await assertManagerCanEditEmployee(
+      managerId,
+      existing.user_id
+    );
+    if (!allowed) return { error: "You cannot edit this account." };
 
     const accountName = data.username.replace(/^@/, "");
     await pool.query(
@@ -122,28 +84,35 @@ export async function updateAdminSocialAccount(
         data.status ?? "active",
       ]
     );
-    revalidateAccounts(existing.user_id);
+    revalidateManagerAccounts(existing.user_id);
     return {};
   } catch (error) {
     return { error: uniqueAccountUrlError(error) };
   }
 }
 
-export async function deleteAdminSocialAccount(
+export async function deleteManagerSocialAccount(
   accountId: number
 ): Promise<AdminAccountMutationResult> {
   try {
-    await requireAdmin();
+    const managerId = await requireManager();
     if (!Number.isFinite(accountId)) return { error: "Invalid account." };
     const existing = await queryOne<{ user_id: number }>(
       `SELECT user_id FROM temp_social_media_accounts WHERE id = $1`,
       [accountId]
     );
     if (!existing) return { error: "Account not found." };
+
+    const allowed = await assertManagerCanEditEmployee(
+      managerId,
+      existing.user_id
+    );
+    if (!allowed) return { error: "You cannot delete this account." };
+
     await pool.query(`DELETE FROM temp_social_media_accounts WHERE id = $1`, [
       accountId,
     ]);
-    revalidateAccounts(existing.user_id);
+    revalidateManagerAccounts(existing.user_id);
     return {};
   } catch (error) {
     return { error: publicAdminMutationError(error) };
