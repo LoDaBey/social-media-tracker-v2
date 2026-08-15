@@ -169,8 +169,71 @@ export type AdminManagerOption = {
 export type AdminKpiTileProps = {
   title: string;
   value: string;
-  icon: "users" | "clipboard" | "wallet" | "refresh";
+  icon: "users" | "clipboard" | "wallet" | "refresh" | "globe" | "layers";
   subtitle?: string;
+};
+
+export type AdminCountryPlan = {
+  country: string;
+  language: string;
+  resources: number;
+  xPersonal: number;
+  facebookPersonal: number;
+  xUmbrella: number;
+  facebookUmbrella: number;
+  instagram: number;
+  tiktok: number;
+  totalAccounts: number;
+};
+
+export type AdminCoverageCount = {
+  actual: number;
+  target: number;
+};
+
+export type AdminCountryCoverageRow = {
+  country: string;
+  language: string;
+  onPlan: boolean;
+  resources: AdminCoverageCount;
+  x: AdminCoverageCount;
+  facebookPersonal: AdminCoverageCount;
+  facebookUmbrella: AdminCoverageCount;
+  instagram: AdminCoverageCount;
+  tiktok: AdminCoverageCount;
+  totalAccounts: AdminCoverageCount;
+};
+
+export type AdminCountryCoverageTotals = Omit<
+  AdminCountryCoverageRow,
+  "country" | "language" | "onPlan"
+>;
+
+export type AdminCountryCoverage = {
+  rows: AdminCountryCoverageRow[];
+  totals: AdminCountryCoverageTotals;
+};
+
+export type AdminCoverageKpisProps = {
+  coverage: AdminCountryCoverage;
+};
+
+export type AdminCountryCoverageSectionProps = {
+  coverage: AdminCountryCoverage;
+};
+
+export type AdminCountryCoverageTableProps = {
+  rows: AdminCountryCoverageRow[];
+  totals: AdminCountryCoverageTotals;
+};
+
+export type AdminCountryCoverageRowProps = {
+  row: AdminCountryCoverageRow;
+};
+
+export type AdminCoverageCountCellProps = {
+  count: AdminCoverageCount;
+  label: string;
 };
 
 export type AdminOverviewAction = {
