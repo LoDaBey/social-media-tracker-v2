@@ -12,12 +12,12 @@ import type {
   AdminEmployeeEditorBundle,
   AdminEmployeeListRow,
   AdminPayoutRow,
-  AdminTeamLeadRow,
   EmployeeActivityItem,
   EmployeeFormInitial,
 } from "@/types/admin";
 import { computeWallet } from "@/lib/wallet";
 import { fetchWalletTransactionsThisCycle } from "@/lib/wallet-page-data";
+import { fetchAdminAccountsByUserIds } from "@/lib/admin-accounts-data";
 import { fetchManagerOptions } from "@/lib/manager-data";
 import type { TempUser } from "@/types/db";
 
@@ -195,7 +195,8 @@ function mapCycleStatus(
 export type AdminEmployeeListFilters = {
   q?: string;
   status?: "all" | "active" | "inactive";
-  role?: "all" | "employee" | "manager";
+  role?: "all" | "employee" | "manager" | "team_lead";
+  country?: string;
   teamLeadId?: number | null;
 };
 
@@ -206,19 +207,51 @@ export async function fetchAdminEmployeesList(
   const q = filters.q?.trim() ?? "";
   const status = filters.status ?? "all";
   const role = filters.role ?? "all";
+  const country = filters.country?.trim() ?? "";
   const teamLeadId = filters.teamLeadId;
 
   const params: unknown[] = [];
-  const where: string[] = [`u.role IN ('employee', 'manager')`];
+  const where: string[] = [`u.role IN ('employee', 'manager', 'team_lead')`];
 
-  if (role === "employee" || role === "manager") {
+  if (role === "employee" || role === "manager" || role === "team_lead") {
     params.push(role);
     where.push(`u.role = $${params.length}`);
   }
+  if (country) {
+    params.push(country);
+    const i = params.length;
+    where.push(
+      `(u.country = $${i} OR EXISTS (
+          SELECT 1 FROM temp_manager_countries mc
+           WHERE mc.user_id = u.id AND mc.country = $${i}
+        ))`
+    );
+  }
   if (q) {
     params.push(`%${q}%`);
+    const i = params.length;
     where.push(
-      `(u.full_name ILIKE $${params.length} OR u.email ILIKE $${params.length})`
+      `(u.full_name ILIKE $${i}
+        OR u.email ILIKE $${i}
+        OR COALESCE(u.country, '') ILIKE $${i}
+        OR REPLACE(u.role::text, '_', ' ') ILIKE $${i}
+        OR EXISTS (
+            SELECT 1 FROM temp_manager_countries mc
+             WHERE mc.user_id = u.id AND mc.country ILIKE $${i}
+          )
+        OR EXISTS (
+            SELECT 1
+              FROM temp_social_media_accounts s
+             WHERE s.user_id = u.id
+               AND (
+                 s.account_name ILIKE $${i}
+                 OR COALESCE(s.account_handle, '') ILIKE $${i}
+                 OR s.account_url ILIKE $${i}
+                 OR COALESCE(s.username, '') ILIKE $${i}
+                 OR COALESCE(s.account_email, '') ILIKE $${i}
+                 OR s.platform::text ILIKE $${i}
+               )
+          ))`
     );
   }
   if (status === "active") where.push(`u.is_active = TRUE`);
@@ -276,6 +309,11 @@ export async function fetchAdminEmployeesList(
     pay_cycle_start_date: string | null;
   }>(sql, params);
 
+  const employeeIds = rows
+    .filter((r) => r.role === "employee")
+    .map((r) => r.id);
+  const accountsByUser = await fetchAdminAccountsByUserIds(employeeIds);
+
   return rows.map((r) => {
     const country = r.country?.trim() || null;
     const managerCountries = r.manager_countries ?? [];
@@ -300,23 +338,9 @@ export async function fetchAdminEmployeesList(
       current_level: r.current_level,
       target_accounts_sum: r.target_accounts_sum,
       cycle_status: mapCycleStatus(r.pay_cycle_start_date, today),
+      accounts: r.role === "employee" ? (accountsByUser.get(r.id) ?? []) : [],
     };
   });
-}
-
-export async function fetchAdminTeamLeads(): Promise<AdminTeamLeadRow[]> {
-  return query<AdminTeamLeadRow>(
-    `SELECT
-        u.id,
-        u.full_name,
-        u.email,
-        u.is_active,
-        (SELECT COUNT(*)::int FROM temp_users e
-          WHERE e.team_lead_id = u.id AND e.role = 'employee') AS employee_count
-       FROM temp_users u
-      WHERE u.role = 'team_lead'
-      ORDER BY u.full_name ASC`
-  );
 }
 
 export async function fetchTeamLeadOptions(): Promise<
@@ -443,18 +467,25 @@ export async function fetchAdminEmployeeEditorBundle(
   if (!user) return null;
 
   const cycleStartStr = normalizePgDateColumn(user.pay_cycle_start_date);
-  const [teamLeads, managers, managerCountries, activeCounts, wallet, transactions, activity] =
-    await Promise.all([
-      fetchTeamLeadOptions(),
-      fetchManagerOptions(),
-      user.role === "manager"
-        ? fetchManagerCountriesForUser(userId)
-        : Promise.resolve([] as string[]),
-      fetchActiveAccountCountsByPlatform(userId),
-      computeWallet(user),
-      fetchWalletTransactionsThisCycle(userId, cycleStartStr),
-      fetchEmployeeActivityTimeline(userId),
-    ]);
+  const [
+    teamLeads,
+    managers,
+    managerCountries,
+    activeCounts,
+    wallet,
+    transactions,
+    activity,
+  ] = await Promise.all([
+    fetchTeamLeadOptions(),
+    fetchManagerOptions(),
+    user.role === "manager"
+      ? fetchManagerCountriesForUser(userId)
+      : Promise.resolve([] as string[]),
+    fetchActiveAccountCountsByPlatform(userId),
+    computeWallet(user),
+    fetchWalletTransactionsThisCycle(userId, cycleStartStr),
+    fetchEmployeeActivityTimeline(userId),
+  ]);
 
   const profile: EmployeeFormInitial = {
     id: user.id,

@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useCallback, useTransition } from "react";
 import { motion } from "framer-motion";
 import { Search, UserPlus } from "lucide-react";
+import { CountryFilterSelect } from "@/components/admin/CountryFilterSelect";
+import { SETUP_COUNTRIES } from "@/lib/setup-options";
+import type { EmployeesSearchFormProps } from "@/types/admin";
 
 function chipClass(active: boolean) {
   return `inline-flex cursor-pointer rounded-full px-3 py-1.5 text-[13px] font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] ${
@@ -20,6 +23,10 @@ export function EmployeesFilters() {
   const [, startTransition] = useTransition();
   const statusNorm = sp.get("status") ?? "all";
   const roleNorm = sp.get("role") ?? "all";
+  const countryRaw = sp.get("country") ?? "";
+  const country = (SETUP_COUNTRIES as readonly string[]).includes(countryRaw)
+    ? countryRaw
+    : "";
 
   const buildHref = useCallback(
     (next: Record<string, string | undefined>) => {
@@ -63,24 +70,38 @@ export function EmployeesFilters() {
         </Link>
       </div>
 
-      <label className="flex min-w-0 flex-wrap items-center gap-2 text-[13px] font-semibold text-[var(--color-muted)]">
-        <span className="shrink-0">Role</span>
-        <select
-          value={roleNorm === "all" ? "" : roleNorm}
-          onChange={(e) => {
-            const v = e.target.value;
-            startTransition(() => {
-              router.push(buildHref({ role: v || undefined }));
-            });
-          }}
-          aria-label="Filter by role"
-          className={selectClass}
-        >
-          <option value="">All roles</option>
-          <option value="employee">Employees</option>
-          <option value="manager">Managers</option>
-        </select>
-      </label>
+      <div className="flex min-w-0 flex-wrap items-center gap-3">
+        <label className="flex min-w-0 flex-wrap items-center gap-2 text-[13px] font-semibold text-[var(--color-muted)]">
+          <span className="shrink-0">Country</span>
+          <CountryFilterSelect
+            value={country}
+            onChange={(next) => {
+              startTransition(() => {
+                router.push(buildHref({ country: next || undefined }));
+              });
+            }}
+          />
+        </label>
+        <label className="flex min-w-0 flex-wrap items-center gap-2 text-[13px] font-semibold text-[var(--color-muted)]">
+          <span className="shrink-0">Role</span>
+          <select
+            value={roleNorm === "all" ? "" : roleNorm}
+            onChange={(e) => {
+              const v = e.target.value;
+              startTransition(() => {
+                router.push(buildHref({ role: v || undefined }));
+              });
+            }}
+            aria-label="Filter by role"
+            className={selectClass}
+          >
+            <option value="">All roles</option>
+            <option value="employee">Employees</option>
+            <option value="manager">Managers</option>
+            <option value="team_lead">Team leads</option>
+          </select>
+        </label>
+      </div>
     </div>
   );
 }
@@ -89,11 +110,8 @@ export function EmployeesSearchForm({
   initialQ,
   hiddenStatus,
   hiddenRole,
-}: {
-  initialQ: string;
-  hiddenStatus?: string;
-  hiddenRole?: string;
-}) {
+  hiddenCountry,
+}: EmployeesSearchFormProps) {
   return (
     <form
       action="/admin/employees"
@@ -103,13 +121,16 @@ export function EmployeesSearchForm({
     >
       {hiddenStatus ? <input type="hidden" name="status" value={hiddenStatus} /> : null}
       {hiddenRole ? <input type="hidden" name="role" value={hiddenRole} /> : null}
+      {hiddenCountry ? (
+        <input type="hidden" name="country" value={hiddenCountry} />
+      ) : null}
       <input
         type="search"
         name="q"
         defaultValue={initialQ}
-        placeholder="Search name or email..."
-        aria-label="Search employees by name or email"
-        className="min-w-0 w-full rounded outline-none border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 py-2 text-[14px] font-medium text-[var(--color-ink)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+        placeholder="Search name, email, country, role, or account..."
+        aria-label="Search by name, email, country, role, or connected account"
+        className="min-w-0 w-full appearance-none rounded-lg outline-none border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 py-2 text-[14px] font-medium text-[var(--color-ink)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
       />
       <motion.button
         type="submit"

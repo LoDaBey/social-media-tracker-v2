@@ -15,8 +15,8 @@ export function ManagerHomeTable({ groups }: ManagerHomeTableProps) {
             Your team
           </h1>
           <p className="mt-2 text-[15px] text-[var(--color-muted)]">
-            Account holders in your countries. Click anyone to complete their SMD
-            setup.
+            Account holders in your countries. Expand a row to see saved accounts,
+            or use + to continue setup.
           </p>
         </div>
         <p className="text-[13px] font-semibold text-[var(--color-muted)]">
@@ -25,7 +25,7 @@ export function ManagerHomeTable({ groups }: ManagerHomeTableProps) {
       </header>
 
       <div className="mt-8 overflow-x-auto rounded-[16px] border border-[var(--color-hairline)] bg-[var(--color-surface)]">
-        <table className="w-full min-w-[720px] border-collapse text-left">
+        <table className="w-full min-w-[880px] border-collapse text-left">
           <thead className="sticky top-0 z-10 bg-[var(--color-surface)] shadow-[0_1px_0_var(--color-hairline)]">
             <tr className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
               <th scope="col" className="px-4 py-3">
@@ -41,6 +41,9 @@ export function ManagerHomeTable({ groups }: ManagerHomeTableProps) {
                 Assigned accounts
               </th>
               <th scope="col" className="px-4 py-3">
+                Account total
+              </th>
+              <th scope="col" className="px-4 py-3">
                 Setup
               </th>
               <th scope="col" className="px-4 py-3">
@@ -52,7 +55,7 @@ export function ManagerHomeTable({ groups }: ManagerHomeTableProps) {
             {rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="px-4 py-12 text-center text-[14px] text-[var(--color-muted)]"
                 >
                   No account holders in your countries yet.

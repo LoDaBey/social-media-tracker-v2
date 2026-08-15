@@ -3,7 +3,9 @@ import type { AdminEmployeePanel, AdminView } from "@/types/admin";
 export function normalizeAdminEmployeePanel(
   raw: string | undefined
 ): AdminEmployeePanel {
-  if (raw === "targets" || raw === "wallet" || raw === "activity") return raw;
+  if (raw === "targets" || raw === "wallet" || raw === "activity") {
+    return raw;
+  }
   return "profile";
 }
 
@@ -50,10 +52,6 @@ export function adminViewEmployee(input: {
   };
 }
 
-export function adminViewTeamLeads(): AdminView {
-  return { kind: "team_leads", title: "Team leads" };
-}
-
 export function adminViewPayouts(): AdminView {
   return { kind: "payouts", title: "Payouts" };
 }
@@ -63,7 +61,6 @@ export function adminWorkspaceBackHref(view: AdminView): string | null {
     case "overview":
       return null;
     case "employees":
-    case "team_leads":
     case "payouts":
       return "/admin";
     case "employee_new":

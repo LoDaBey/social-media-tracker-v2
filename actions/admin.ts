@@ -475,7 +475,6 @@ export async function deleteEmployee(user_id: number): Promise<void> {
   revalidatePath("/admin");
   revalidatePath("/admin/employees");
   revalidatePath("/admin/payouts");
-  revalidatePath("/admin/team-leads");
   revalidatePath("/manager");
   revalidatePath("/dashboard");
 }

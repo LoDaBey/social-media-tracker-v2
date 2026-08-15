@@ -265,6 +265,30 @@ export function setupStepHasErrors(
   return false;
 }
 
+export function resumeSetupStepIndex(
+  steps: SetupStep[],
+  profileErrors: SetupProfileFieldErrors,
+  rowErrors: SetupRowFieldErrors,
+  rowsByPlatform: Record<Platform, SetupAccountRow[]>,
+  targets: Record<Platform, number>
+) {
+  for (let index = 0; index < steps.length; index += 1) {
+    const step = steps[index];
+    if (
+      setupStepHasErrors(
+        step.id,
+        profileErrors,
+        rowErrors,
+        rowsByPlatform,
+        targets
+      )
+    ) {
+      return index;
+    }
+  }
+  return Math.max(0, steps.length - 1);
+}
+
 export function getFirstErrorSetupStepIndex(
   steps: SetupStep[],
   profileErrors: SetupProfileFieldErrors,

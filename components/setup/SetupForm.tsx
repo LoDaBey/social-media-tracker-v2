@@ -49,6 +49,7 @@ import {
   isSetupAccountRowComplete,
   facebookCompleteRowCount,
   missingAccountsForSetupStep,
+  resumeSetupStepIndex,
   setupStepHasErrors,
   setupStepMissingAccountsMessage,
 } from "@/lib/setup-validation";
@@ -253,6 +254,18 @@ export function SetupForm({
     return () => window.clearTimeout(timer);
   }, [draftReady, persistDraft, profile, rowsByPlatform, stepIndex]);
 
+  useEffect(() => {
+    if (!draftReady) return;
+    function flush() {
+      persistDraft(profile, rowsByPlatform, stepIndex);
+    }
+    window.addEventListener("pagehide", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      flush();
+    };
+  }, [draftReady, persistDraft, profile, rowsByPlatform, stepIndex]);
+
   const rowFieldErrors = useMemo(
     () => getSetupRowFieldErrors(assignedPlatforms, rowsByPlatform, targets),
     [assignedPlatforms, rowsByPlatform, targets]
@@ -299,28 +312,50 @@ export function SetupForm({
 
   if (isClient && hydratedUserId !== userId) {
     const draft = readSetupDraft(userId);
-    if (
-      draft &&
-      isSetupDraftReusable(draft, { userId, targets, existingSignature })
-    ) {
-      setProfile({ ...draft.profile, country: initialProfile.country });
-      setRowsByPlatform(draft.rowsByPlatform);
-      setStepIndex(Math.min(draft.stepIndex, Math.max(0, steps.length - 1)));
-    } else {
-      if (draft) clearSetupDraft(userId);
-      if (hydratedUserId !== null) {
-        setProfile(initialProfile);
-        setRowsByPlatform(
-          buildInitialRowsByPlatform(
+    const reusableDraft =
+      draft && isSetupDraftReusable(draft, { userId, targets, existingSignature })
+        ? draft
+        : null;
+    const nextProfile = reusableDraft
+      ? { ...reusableDraft.profile, country: initialProfile.country }
+      : hydratedUserId !== null
+        ? initialProfile
+        : profile;
+    const nextRows = reusableDraft
+      ? reusableDraft.rowsByPlatform
+      : hydratedUserId !== null
+        ? buildInitialRowsByPlatform(
             fullName,
             assignedPlatforms,
             targets,
             existingByPlatform
           )
-        );
-        setStepIndex(0);
+        : rowsByPlatform;
+    const nextProfileErrors = getSetupProfileFieldErrors(nextProfile);
+    const nextRowErrors = getSetupRowFieldErrors(
+      assignedPlatforms,
+      nextRows,
+      targets
+    );
+    const nextStepIndex = resumeSetupStepIndex(
+      steps,
+      nextProfileErrors,
+      nextRowErrors,
+      nextRows,
+      targets
+    );
+
+    if (reusableDraft) {
+      setProfile(nextProfile);
+      setRowsByPlatform(nextRows);
+    } else {
+      if (draft) clearSetupDraft(userId);
+      if (hydratedUserId !== null) {
+        setProfile(nextProfile);
+        setRowsByPlatform(nextRows);
       }
     }
+    setStepIndex(nextStepIndex);
     setHydratedUserId(userId);
   }
 

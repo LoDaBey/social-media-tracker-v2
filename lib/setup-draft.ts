@@ -43,11 +43,18 @@ function isProfile(value: unknown): value is SetupProfile {
   return typeof profile.country === "string" && typeof profile.language === "string";
 }
 
+function asTargetCount(value: unknown) {
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) ? n : NaN;
+}
+
 function sameTargets(
   left: Record<Platform, number>,
   right: Record<Platform, number>
 ) {
-  return PLATFORMS.every((platform) => left[platform] === right[platform]);
+  return PLATFORMS.every(
+    (platform) => asTargetCount(left[platform]) === asTargetCount(right[platform])
+  );
 }
 
 export function readSetupDraft(userId: number): SetupDraft | null {

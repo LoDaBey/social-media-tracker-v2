@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getManagerEmployeeSetupBundle } from "@/actions/manager-setup";
 import { SetupForm } from "@/components/setup/SetupForm";
-import { homePathForRole } from "@/lib/setup-complete";
+import { homePathForRole, isEmployeeSetupComplete } from "@/lib/setup-complete";
 import type { Role } from "@/types/db";
 
 type SearchParams = {
@@ -27,6 +27,17 @@ export default async function ManagerSetupPage({
 
   const bundle = await getManagerEmployeeSetupBundle(employeeIdRaw);
   if (!bundle) redirect("/manager");
+
+  if (
+    isEmployeeSetupComplete({
+      country: bundle.employee.country,
+      language: bundle.employee.language,
+      targets: bundle.employee.targets,
+      accountsByPlatform: bundle.existingByPlatform,
+    })
+  ) {
+    redirect("/manager");
+  }
 
   return (
     <main className="w-full">

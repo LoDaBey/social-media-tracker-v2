@@ -7,6 +7,7 @@ import {
 } from "@/components/admin/EmployeesFilters";
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import { adminViewEmployees } from "@/lib/admin-view";
+import { SETUP_COUNTRIES } from "@/lib/setup-options";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -22,12 +23,20 @@ export default async function AdminEmployeesPage({
     statusRaw === "active" || statusRaw === "inactive" ? statusRaw : "all";
   const roleRaw = typeof sp.role === "string" ? sp.role : "all";
   const role =
-    roleRaw === "employee" || roleRaw === "manager" ? roleRaw : "all";
+    roleRaw === "employee" || roleRaw === "manager" || roleRaw === "team_lead"
+      ? roleRaw
+      : "all";
+
+  const countryRaw = typeof sp.country === "string" ? sp.country : "";
+  const country = (SETUP_COUNTRIES as readonly string[]).includes(countryRaw)
+    ? countryRaw
+    : "";
 
   const rows = await fetchAdminEmployeesList({
     q,
     status: status === "all" ? undefined : status,
     role: role === "all" ? undefined : role,
+    country: country || undefined,
   });
 
   return (
@@ -38,6 +47,7 @@ export default async function AdminEmployeesPage({
             initialQ={q}
             hiddenStatus={status === "all" ? undefined : status}
             hiddenRole={role === "all" ? undefined : role}
+            hiddenCountry={country || undefined}
           />
           <EmployeesCreateButton />
         </div>

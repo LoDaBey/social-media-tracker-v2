@@ -4,7 +4,6 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   Banknote,
-  UserCog,
   UserPlus,
   Users,
   type LucideIcon,
@@ -14,7 +13,6 @@ import type { AdminOverviewAction } from "@/types/admin";
 const ICONS: Record<AdminOverviewAction["icon"], LucideIcon> = {
   userPlus: UserPlus,
   users: Users,
-  userCog: UserCog,
   banknote: Banknote,
 };
 
@@ -32,12 +30,6 @@ const ACTIONS: AdminOverviewAction[] = [
     variant: "secondary",
   },
   {
-    href: "/admin/team-leads",
-    ariaLabel: "Open team leads list",
-    icon: "userCog",
-    variant: "secondary",
-  },
-  {
     href: "/admin/payouts",
     ariaLabel: "Open payouts to run a payout cycle",
     icon: "banknote",
@@ -47,7 +39,7 @@ const ACTIONS: AdminOverviewAction[] = [
 
 export function AdminOverviewActions() {
   return (
-    <div className="grid grid-cols-4 gap-2 sm:gap-3">
+    <div className="grid grid-cols-3 gap-2 sm:gap-3">
       {ACTIONS.map((action) => {
         const Icon = ICONS[action.icon];
         const isPrimary = action.variant === "primary";
