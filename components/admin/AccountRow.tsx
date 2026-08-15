@@ -7,6 +7,9 @@ import { PLATFORM_LABELS } from "@/lib/platform-config";
 import { adminSocialAccountToInput } from "@/lib/admin-account-input";
 import { AccountDeleteButton } from "@/components/admin/AccountDeleteButton";
 import { AccountEditModal } from "@/components/admin/AccountEditModal";
+import { AccountCategoryBadge } from "@/components/admin/AccountCategoryBadge";
+import { AccountStatusBadge } from "@/components/admin/AccountStatusBadge";
+import { AccountUrlCell } from "@/components/admin/AccountUrlCell";
 import type { AccountRowProps } from "@/types/admin";
 
 export function AccountRow({
@@ -28,21 +31,13 @@ export function AccountRow({
         {account.username || "—"}
       </td>
       <td className="px-4 py-2.5 text-[13px]">
-        <a
-          href={account.account_url}
-          target="_blank"
-          rel="noreferrer"
-          aria-label={`Open ${displayName} profile`}
-          className="rounded-lg text-[var(--color-emerald)] outline-none hover:underline focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
-        >
-          {account.account_url}
-        </a>
+        <AccountUrlCell url={account.account_url} label={displayName} />
       </td>
-      <td className="px-4 py-2.5 text-[13px] text-[var(--color-ink)]">
-        {account.category || "—"}
+      <td className="px-4 py-2.5">
+        <AccountCategoryBadge category={account.category} />
       </td>
-      <td className="px-4 py-2.5 text-[13px] capitalize text-[var(--color-ink)]">
-        {account.status}
+      <td className="px-4 py-2.5">
+        <AccountStatusBadge status={account.status} />
       </td>
       <td className="px-4 py-2.5">
         <div className="flex items-center gap-1.5">

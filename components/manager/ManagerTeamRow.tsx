@@ -109,7 +109,10 @@ export function ManagerTeamRow({ row }: ManagerTeamRowProps) {
             onClick={(event) => event.stopPropagation()}
           >
             <ManagerAccountsPanel
+              holderId={row.id}
               fullName={row.full_name}
+              country={row.country}
+              language={row.language}
               accounts={row.accounts}
               assignedCount={row.targetAccountsSum}
             />
