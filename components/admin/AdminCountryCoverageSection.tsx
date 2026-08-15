@@ -16,8 +16,9 @@ export function AdminCountryCoverageSection({
         </h2>
         <p className="mt-1 text-[13px] text-[var(--color-muted)] sm:text-[14px]">
           How many employees and accounts each country should have. Each cell is
-          current / planned. X combines Twitter personal and umbrella slots from
-          the Africa plan.
+          current / planned. Open a country to see which account holders still
+          have gaps. X combines Twitter personal and umbrella slots from the
+          Africa plan.
         </p>
       </div>
       <AdminCountryCoverageTable rows={coverage.rows} totals={coverage.totals} />

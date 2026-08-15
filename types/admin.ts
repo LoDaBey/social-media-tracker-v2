@@ -173,6 +173,15 @@ export type AdminKpiTileProps = {
   subtitle?: string;
 };
 
+export type AdminCountrySeatQuota = {
+  x: number;
+  facebookPersonal: number;
+  facebookUmbrella: number;
+  instagram: number;
+  tiktok: number;
+  totalAccounts: number;
+};
+
 export type AdminCountryPlan = {
   country: string;
   language: string;
@@ -191,6 +200,19 @@ export type AdminCoverageCount = {
   target: number;
 };
 
+export type AdminCountryCoverageHolder = {
+  id: number | null;
+  fullName: string;
+  email: string | null;
+  vacant: boolean;
+  x: AdminCoverageCount;
+  facebookPersonal: AdminCoverageCount;
+  facebookUmbrella: AdminCoverageCount;
+  instagram: AdminCoverageCount;
+  tiktok: AdminCoverageCount;
+  totalAccounts: AdminCoverageCount;
+};
+
 export type AdminCountryCoverageRow = {
   country: string;
   language: string;
@@ -202,11 +224,12 @@ export type AdminCountryCoverageRow = {
   instagram: AdminCoverageCount;
   tiktok: AdminCoverageCount;
   totalAccounts: AdminCoverageCount;
+  holders: AdminCountryCoverageHolder[];
 };
 
 export type AdminCountryCoverageTotals = Omit<
   AdminCountryCoverageRow,
-  "country" | "language" | "onPlan"
+  "country" | "language" | "onPlan" | "holders"
 >;
 
 export type AdminCountryCoverage = {
@@ -229,6 +252,17 @@ export type AdminCountryCoverageTableProps = {
 
 export type AdminCountryCoverageRowProps = {
   row: AdminCountryCoverageRow;
+};
+
+export type AdminCountryHolderGapRowProps = {
+  holder: AdminCountryCoverageHolder;
+  country: string;
+};
+
+export type AdminCountryHolderGapsTableProps = {
+  country: string;
+  holders: AdminCountryCoverageHolder[];
+  missingEmployees: number;
 };
 
 export type AdminCoverageCountCellProps = {
