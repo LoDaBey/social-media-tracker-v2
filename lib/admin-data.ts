@@ -6,7 +6,6 @@ import {
   getTodayCairoDate,
   normalizePgDateColumn,
 } from "@/lib/cairo-date";
-import { getCairoMonthStartDate, getCairoNextMonthStartDate } from "@/lib/cairo-month";
 import type {
   AdminEmployeeCycleStatus,
   AdminEmployeeEditorBundle,
@@ -20,121 +19,6 @@ import { fetchWalletTransactionsThisCycle } from "@/lib/wallet-page-data";
 import { fetchAdminAccountsByUserIds } from "@/lib/admin-accounts-data";
 import { fetchManagerOptions } from "@/lib/manager-data";
 import type { TempUser } from "@/types/db";
-
-export type AdminOverviewKpis = {
-  activeEmployees: number;
-  pendingQc: number;
-  deductionsThisMonth: number;
-  autoResetsThisWeek: number;
-};
-
-export async function fetchAdminOverviewKpis(): Promise<AdminOverviewKpis> {
-  const today = getTodayCairoDate();
-  const weekStart = addDaysToIsoDate(today, -7);
-  const monthStart = getCairoMonthStartDate(today);
-  const monthEndExcl = getCairoNextMonthStartDate(today);
-
-  const [activeRow, pendingRow, dedRow, resetRow] = await Promise.all([
-    queryOne<{ c: string }>(
-      `SELECT COUNT(*)::text AS c FROM temp_users WHERE role = 'employee' AND is_active = TRUE`
-    ),
-    queryOne<{ c: string }>(
-      `SELECT COUNT(*)::text AS c FROM temp_growth WHERE qc_status = 'pending'`
-    ),
-    queryOne<{ t: string | null }>(
-      `SELECT ABS(COALESCE(SUM(amount), 0))::text AS t
-         FROM temp_wallet_transactions
-        WHERE type = 'deduction'
-          AND created_at::date >= $1::date
-          AND created_at::date < $2::date`,
-      [monthStart, monthEndExcl]
-    ),
-    queryOne<{ c: string }>(
-      `SELECT COUNT(*)::text AS c
-         FROM temp_growth
-        WHERE is_auto_reset = TRUE
-          AND submission_date::date >= $1::date`,
-      [weekStart]
-    ),
-  ]);
-
-  return {
-    activeEmployees: Number(activeRow?.c ?? 0),
-    pendingQc: Number(pendingRow?.c ?? 0),
-    deductionsThisMonth: Number(dedRow?.t ?? 0),
-    autoResetsThisWeek: Number(resetRow?.c ?? 0),
-  };
-}
-
-export type AdminActivityFeedItem = {
-  kind: string;
-  created_at: string;
-  description: string;
-  actor_label: string;
-};
-
-export async function fetchAdminRecentActivity(): Promise<AdminActivityFeedItem[]> {
-  const rows = await query<{
-    kind: string;
-    created_at: string;
-    description: string;
-    actor_label: string;
-  }>(
-    `SELECT * FROM (
-       SELECT
-         'submission'::text AS kind,
-         g.submitted_at::text AS created_at,
-         ('Submission: ' || a.account_name)::text AS description,
-         u.full_name::text AS actor_label
-         FROM temp_growth g
-         JOIN temp_users u ON u.id = g.user_id
-         JOIN temp_social_media_accounts a ON a.id = g.social_media_account_id
-        WHERE g.submitted_at IS NOT NULL
-       UNION ALL
-       SELECT
-         'approval',
-         g.qc_reviewed_at::text,
-         ('Approved: ' || a.account_name)::text,
-         COALESCE(r.full_name, 'Reviewer')::text
-         FROM temp_growth g
-         JOIN temp_users u ON u.id = g.user_id
-         JOIN temp_social_media_accounts a ON a.id = g.social_media_account_id
-         LEFT JOIN temp_users r ON r.id = g.qc_reviewed_by
-        WHERE g.qc_status = 'approved' AND g.qc_reviewed_at IS NOT NULL
-       UNION ALL
-       SELECT
-         'rejection',
-         g.qc_reviewed_at::text,
-         ('Rejected: ' || a.account_name)::text,
-         COALESCE(r.full_name, 'Reviewer')::text
-         FROM temp_growth g
-         JOIN temp_users u ON u.id = g.user_id
-         JOIN temp_social_media_accounts a ON a.id = g.social_media_account_id
-         LEFT JOIN temp_users r ON r.id = g.qc_reviewed_by
-        WHERE g.qc_status IN ('rejected_with_deduction', 'rejected_no_deduction')
-          AND g.qc_reviewed_at IS NOT NULL
-       UNION ALL
-       SELECT
-         'bonus',
-         twt.created_at::text,
-         ('Manual bonus: ' || twt.reason)::text,
-         COALESCE(c.full_name, 'Admin')::text
-         FROM temp_wallet_transactions twt
-         LEFT JOIN temp_users c ON c.id = twt.created_by
-        WHERE twt.type = 'bonus' AND twt.created_by IS NOT NULL
-     ) q
-     WHERE q.created_at IS NOT NULL
-     ORDER BY q.created_at DESC
-     LIMIT 10`
-  );
-
-  return rows.map((r) => ({
-    kind: r.kind,
-    created_at: r.created_at,
-    description: r.description,
-    actor_label: r.actor_label,
-  }));
-}
 
 export type AdminHealthMetrics = {
   avgQcTurnaroundHours: number | null;

@@ -1,5 +1,7 @@
 import {
   ClipboardCheck,
+  Globe,
+  Layers,
   RefreshCw,
   Users,
   Wallet,
@@ -12,6 +14,8 @@ const ICONS: Record<AdminKpiTileProps["icon"], LucideIcon> = {
   clipboard: ClipboardCheck,
   wallet: Wallet,
   refresh: RefreshCw,
+  globe: Globe,
+  layers: Layers,
 };
 
 export function AdminKpiTile({ title, value, icon, subtitle }: AdminKpiTileProps) {
