@@ -15,7 +15,7 @@ export function setupExistingSignature(
   return JSON.stringify(
     PLATFORMS.map((platform) =>
       (existingByPlatform[platform] ?? []).map(
-        (account) => `${account.id}:${account.account_url}`
+        (account) => `${account.id}:${account.account_url ?? ""}`
       )
     )
   );

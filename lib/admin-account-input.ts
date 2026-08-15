@@ -27,7 +27,7 @@ export function adminSocialAccountToInput(
   return {
     platform: account.platform,
     accountHolder: account.account_handle ?? "",
-    url: account.account_url,
+    url: account.account_url ?? "",
     category: account.category ?? "",
     username: account.username ?? "",
     email: account.account_email ?? "",
@@ -47,7 +47,7 @@ export function managerAccountToInput(
     platform: account.platform,
     accountHolder: account.account_handle?.trim() || holderName,
     holderUserId: holderId,
-    url: account.account_url,
+    url: account.account_url ?? "",
     category: account.category ?? "",
     username: account.username ?? "",
     email: account.account_email ?? "",

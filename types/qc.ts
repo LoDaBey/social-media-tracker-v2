@@ -16,7 +16,7 @@ export type QcQueueRow = {
   account_platform: Platform;
   account_name: string;
   account_handle: string | null;
-  account_url: string;
+  account_url: string | null;
 
   submission_date: string;
 

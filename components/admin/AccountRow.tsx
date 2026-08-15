@@ -20,7 +20,7 @@ export function AccountRow({
 }: AccountRowProps) {
   const [editOpen, setEditOpen] = useState(false);
   const displayName =
-    account.account_name || account.username || account.account_url;
+    account.account_name || account.username || account.account_url || "Account";
 
   return (
     <tr className="border-t border-[var(--color-hairline)]">

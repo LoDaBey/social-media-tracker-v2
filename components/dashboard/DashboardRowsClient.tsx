@@ -96,7 +96,7 @@ export function DashboardRowsClient({
                 if (!raw) return account.account_handle?.trim() || "Account";
                 return raw.startsWith("@") ? raw : `@${raw}`;
               })(),
-              url: account.account_url,
+              url: account.account_url ?? "",
               current_followers: account.current_followers,
             }))}
             existingSubmissions={submissionsByPlatform[openPlatform]}

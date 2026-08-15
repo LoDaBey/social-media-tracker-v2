@@ -9,8 +9,7 @@ import {
   importBulkEmployeeAccounts,
   parseBulkImportWorkbook,
 } from "@/actions/admin-bulk-import";
-import { isSetupLanguage } from "@/lib/setup-options";
-import { validateBulkImportDraftRow } from "@/lib/bulk-import-parse";
+import { bulkImportRowWarnings } from "@/lib/bulk-import-parse";
 import { BulkImportHolderStep } from "@/components/admin/BulkImportHolderStep";
 import { BulkImportUploadStep } from "@/components/admin/BulkImportUploadStep";
 import { BulkImportReviewTable } from "@/components/admin/BulkImportReviewTable";
@@ -128,20 +127,24 @@ function BulkImportModalDialog({
       setFormError("Select an account holder.");
       return;
     }
-    if (!isSetupLanguage(language)) {
-      setFormError("Select a language.");
+    if (!country) {
+      setFormError("Select the country for this account holder.");
       return;
     }
-    const nextErrors: Record<string, string> = {};
-    for (const row of rows) {
-      const error = validateBulkImportDraftRow(row);
-      if (error) nextErrors[row.id] = error;
-    }
-    setRowErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) {
-      setFormError("Fix the highlighted rows before importing.");
+    if (!rows.some((row) => row.platform)) {
+      setFormError("Add at least one row with a platform.");
       return;
     }
+    const rowWarnings = rows.flatMap((row) =>
+      bulkImportRowWarnings(row).map(
+        (warning) => `${row.username || row.url || "A row"}: ${warning}`
+      )
+    );
+    setWarnings((prev) => {
+      const merged = [...prev.filter((item) => !item.includes("will be saved empty")), ...rowWarnings];
+      return [...new Set(merged)];
+    });
+    setRowErrors({});
 
     startTransition(async () => {
       const result = await importBulkEmployeeAccounts({
@@ -199,7 +202,7 @@ function BulkImportModalDialog({
                 ? "Choose the account holder and country first."
                 : step === "upload"
                   ? "Upload the Excel template."
-                  : "Review the extracted accounts, then accept to import. This replaces any accounts already saved for this person."}
+                  : "Review the extracted accounts, then accept to import. Invalid cells are warnings only and import empty so the manager can finish them. This replaces any accounts already saved for this person."}
             </p>
           </div>
           <motion.button

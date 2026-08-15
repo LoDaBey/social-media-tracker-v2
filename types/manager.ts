@@ -13,7 +13,7 @@ export type ManagerAccountListItem = {
   account_name: string;
   account_handle: string | null;
   username: string | null;
-  account_url: string;
+  account_url: string | null;
   account_email: string | null;
   account_password: string | null;
   email_password: string | null;

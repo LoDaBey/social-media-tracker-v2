@@ -8,7 +8,7 @@ import { publicAdminMutationError } from "@/lib/admin-action-error";
 import {
   countBulkImportTargets,
   parseAfricaTemplateSheet,
-  validateBulkImportDraftRow,
+  sanitizeBulkImportRow,
 } from "@/lib/bulk-import-parse";
 import { uniqueAccountUrlError } from "@/lib/social-account-validation";
 import {
@@ -75,10 +75,6 @@ export async function parseBulkImportWorkbook(
   }
 }
 
-function validateDraftRow(row: BulkImportAccountDraft): string | null {
-  return validateBulkImportDraftRow(row);
-}
-
 export async function importBulkEmployeeAccounts(input: {
   holderId: number;
   country: string;
@@ -92,31 +88,27 @@ export async function importBulkEmployeeAccounts(input: {
     const country = input.country.trim();
     const language = input.language.trim();
     if (!isSetupCountry(country)) return { error: "Select a valid country." };
-    if (!isSetupLanguage(language)) return { error: "Select a valid language." };
+    const savedLanguage = isSetupLanguage(language) ? language : null;
     if (!input.rows.length) return { error: "Add at least one account before importing." };
 
-    const rows = input.rows.map((row) => ({
-      ...row,
-      accountHolder: row.accountHolder.trim(),
-      url: row.url.trim(),
-      category: row.category.trim(),
-      username: row.username.trim(),
-      email: row.email.trim(),
-      mobileNumber: row.mobileNumber.trim(),
-    }));
+    const holderName =
+      input.rows[0]?.accountHolder.trim() || "Account holder";
+    const seenUrls = new Set<string>();
+    const rows = input.rows
+      .map((row) => sanitizeBulkImportRow(row, holderName))
+      .filter((row) => row.platform)
+      .map((row) => {
+        if (!row.url) return row;
+        const key = `${row.platform}:${row.url.replace(/\/+$/, "").toLowerCase()}`;
+        if (seenUrls.has(key)) {
+          return { ...row, url: "" };
+        }
+        seenUrls.add(key);
+        return row;
+      });
 
-    for (const row of rows) {
-      const error = validateDraftRow(row);
-      if (error) return { error };
-    }
-
-    const seen = new Set<string>();
-    for (const row of rows) {
-      const key = `${row.platform}:${row.url.replace(/\/+$/, "").toLowerCase()}`;
-      if (seen.has(key)) {
-        return { error: "You used the same account URL twice. Please change one." };
-      }
-      seen.add(key);
+    if (!rows.length) {
+      return { error: "No rows had a platform to import." };
     }
 
     const employee = await queryOne<{ id: number }>(
@@ -145,7 +137,7 @@ export async function importBulkEmployeeAccounts(input: {
           holderId,
           country,
           SETUP_REGION,
-          language,
+          savedLanguage,
           targets.x,
           targets.facebook_personal,
           targets.facebook_umbrella,
@@ -166,20 +158,22 @@ export async function importBulkEmployeeAccounts(input: {
         sqlRows.push(
           `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9}, $${base + 10}, $${base + 11}, $${base + 12}, $${base + 13}, $${base + 14})`
         );
+        const accountName =
+          row.username.replace(/^@/, "") || row.accountHolder || "Pending";
         values.push(
           holderId,
           row.platform,
-          row.username.replace(/^@/, ""),
-          row.accountHolder,
-          row.url,
+          accountName,
+          row.accountHolder || null,
+          row.url || null,
           0,
           0,
-          row.category,
-          row.username,
-          row.email,
-          row.accountPassword,
-          row.emailPassword,
-          row.mobileNumber,
+          row.category || null,
+          row.username || null,
+          row.email || null,
+          row.accountPassword || null,
+          row.emailPassword || null,
+          row.mobileNumber || null,
           row.status
         );
       });
