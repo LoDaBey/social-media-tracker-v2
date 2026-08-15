@@ -31,10 +31,40 @@ function headerIndex(headers: string[], aliases: string[]) {
   return -1;
 }
 
-function truthyFlag(value: string) {
-  const v = value.trim().toLowerCase();
-  if (!v) return false;
-  return !["0", "no", "n", "false", "off", "-"].includes(v);
+function compactToken(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFKC")
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+function isCheckmarkFlag(value: string) {
+  return /[✓✔✅☑]/.test(value);
+}
+
+function isExplicitFalseFlag(value: string) {
+  const token = compactToken(value);
+  return !token || ["0", "no", "n", "false", "off", "none"].includes(token);
+}
+
+function isExplicitTrueFlag(value: string, extraTokens: string[]) {
+  if (!value.trim() || isExplicitFalseFlag(value)) return false;
+  if (isCheckmarkFlag(value)) return true;
+  const token = compactToken(value);
+  return ["yes", "y", "true", "1", "ok", ...extraTokens].includes(token);
+}
+
+/** Personal / Umbrella cells: Yes/No, checkmarks, P/U, any case. */
+function parseColumnFlag(
+  value: string,
+  kind: "personal" | "umbrella"
+): boolean {
+  const extra = kind === "personal" ? ["p", "personal"] : ["u", "umbrella"];
+  const other = kind === "personal" ? ["u", "umbrella"] : ["p", "personal"];
+  const token = compactToken(value);
+  if (other.includes(token)) return false;
+  return isExplicitTrueFlag(value, extra);
 }
 
 function parsePlatform(
@@ -43,8 +73,8 @@ function parsePlatform(
   umbrellaRaw: string
 ): Platform | "" {
   const platform = platformRaw.trim().toLowerCase();
-  const personal = truthyFlag(personalRaw);
-  const umbrella = truthyFlag(umbrellaRaw);
+  const personal = parseColumnFlag(personalRaw, "personal");
+  const umbrella = parseColumnFlag(umbrellaRaw, "umbrella");
 
   if (
     platform.includes("umbrella") ||
@@ -60,7 +90,7 @@ function parsePlatform(
     return "facebook_personal";
   }
   if (platform.includes("facebook") || platform === "fb") {
-    if (umbrella && !personal) return "facebook_umbrella";
+    if (umbrella) return "facebook_umbrella";
     return "facebook_personal";
   }
   if (
@@ -95,10 +125,12 @@ function parseStatus(value: string): BulkImportAccountDraft["status"] {
 }
 
 function parseCategory(value: string) {
-  const v = value.trim().toUpperCase().replace(/\s+/g, "-");
-  if (v === "GHG" || v === "GH-G") return "GH-G";
-  if (v === "GHR" || v === "GH-R") return "GH-R";
-  return isSetupCategory(value.trim()) ? value.trim() : value.trim();
+  const token = compactToken(value);
+  if (!token) return "";
+  if (["g", "green", "ghg"].includes(token)) return "GH-G";
+  if (["r", "red", "ghr"].includes(token)) return "GH-R";
+  const spaced = value.trim();
+  return isSetupCategory(spaced) ? spaced : "";
 }
 
 function rowHasData(values: string[]) {
@@ -118,7 +150,13 @@ export function parseAfricaTemplateSheet(
   const handlerIdx = headerIndex(headerRow, ["handler name", "handler", "account holder"]);
   const countryIdx = headerIndex(headerRow, ["country"]);
   const platformIdx = headerIndex(headerRow, ["platforms", "platform"]);
-  const categoryIdx = headerIndex(headerRow, ["categories", "category"]);
+  const categoryIdx = (() => {
+    const found = headerIndex(headerRow, ["categories", "category"]);
+    if (found >= 0) return found;
+    // Official template puts category in column D even when the header is blank.
+    return headerRow.length > 3 ? 3 : -1;
+  })();
+  const directionIdx = headerIndex(headerRow, ["direction"]);
   const accountNameIdx = headerIndex(headerRow, [
     "acount name",
     "account name",
@@ -126,7 +164,11 @@ export function parseAfricaTemplateSheet(
   ]);
   const urlIdx = headerIndex(headerRow, ["url", "profile url", "link"]);
   const personalIdx = headerIndex(headerRow, ["personal"]);
-  const umbrellaIdx = headerIndex(headerRow, ["umbrella"]);
+  const umbrellaIdx = headerIndex(headerRow, [
+    "umbrella",
+    "umberlla",
+    "umbrellla",
+  ]);
   const statusIdx = headerIndex(headerRow, ["status"]);
   const languageIdx = headerIndex(headerRow, ["language1", "language"]);
   const usernameIdx = headerIndex(headerRow, ["username"]);
@@ -180,7 +222,8 @@ export function parseAfricaTemplateSheet(
       platform: parsePlatform(take(platformIdx), take(personalIdx), take(umbrellaIdx)),
       accountHolder: holderName,
       url,
-      category: parseCategory(take(categoryIdx)),
+      category:
+        parseCategory(take(categoryIdx)) || parseCategory(take(directionIdx)),
       username,
       email: take(emailIdx),
       accountPassword: password,
