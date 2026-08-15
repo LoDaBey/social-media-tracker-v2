@@ -119,7 +119,7 @@ function emptyRowFromExisting(
   return {
     id: `existing-${a.id}`,
     accountHolder: a.account_handle?.trim() || fullName,
-    url: a.account_url,
+    url: a.account_url ?? "",
     category: a.category ?? "",
     username: a.username ?? "",
     email: a.account_email ?? "",
@@ -201,7 +201,7 @@ export function SetupForm({
   const [profile, setProfile] = useState<SetupProfile>(initialProfile);
   const [stepIndex, setStepIndex] = useState(0);
   const [state, setState] = useState<FormState>({ error: null });
-  const [showFieldErrors, setShowFieldErrors] = useState(false);
+  const [showFieldErrors, setShowFieldErrors] = useState(isManager);
   const [errorScrollToken, setErrorScrollToken] = useState(0);
   const [pending, startTransition] = useTransition();
   const [hydratedUserId, setHydratedUserId] = useState<number | null>(null);
@@ -265,6 +265,12 @@ export function SetupForm({
       flush();
     };
   }, [draftReady, persistDraft, profile, rowsByPlatform, stepIndex]);
+
+  useEffect(() => {
+    if (!isManager || !draftReady) return;
+    setShowFieldErrors(true);
+    setErrorScrollToken((token) => token + 1);
+  }, [isManager, draftReady]);
 
   const rowFieldErrors = useMemo(
     () => getSetupRowFieldErrors(assignedPlatforms, rowsByPlatform, targets),
@@ -356,6 +362,7 @@ export function SetupForm({
       }
     }
     setStepIndex(nextStepIndex);
+    if (isManager) setShowFieldErrors(true);
     setHydratedUserId(userId);
   }
 
@@ -722,7 +729,7 @@ export function SetupForm({
           variants={setupFadeUpChild}
         >
           {isManager
-            ? "Follow each step to add their work profile and social accounts."
+            ? "Complete every red field before you can save. Imported empty or invalid values stay marked until you fill them."
             : "Follow each step to add your profile and social accounts."}
         </motion.p>
 

@@ -132,16 +132,18 @@ export function QcDetailPanel({ row }: Props) {
           </div>
         </div>
 
-        <a
-          href={row.account_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={`Open ${handle} in a new tab`}
-          className="inline-flex h-10 cursor-pointer items-center gap-2 self-start rounded-lg px-3 text-[13px] font-semibold text-[var(--color-emerald)] outline-none hover:bg-[var(--color-emerald-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
-        >
-          View account
-          <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-        </a>
+        {row.account_url ? (
+          <a
+            href={row.account_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Open ${handle} in a new tab`}
+            className="inline-flex h-10 cursor-pointer items-center gap-2 self-start rounded-lg px-3 text-[13px] font-semibold text-[var(--color-emerald)] outline-none hover:bg-[var(--color-emerald-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+          >
+            View account
+            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+          </a>
+        ) : null}
       </header>
 
       <div className="my-6 h-px bg-[var(--color-hairline)]" aria-hidden="true" />

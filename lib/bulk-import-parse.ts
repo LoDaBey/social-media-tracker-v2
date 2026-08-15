@@ -217,13 +217,16 @@ export function parseAfricaTemplateSheet(
     const language = take(languageIdx);
     if (language) languages.push(language);
 
+    const rawCategory = take(categoryIdx) || take(directionIdx);
+    const parsedCategory =
+      parseCategory(take(categoryIdx)) || parseCategory(take(directionIdx));
+
     rows.push({
       id: `import-${i}`,
       platform: parsePlatform(take(platformIdx), take(personalIdx), take(umbrellaIdx)),
       accountHolder: holderName,
       url,
-      category:
-        parseCategory(take(categoryIdx)) || parseCategory(take(directionIdx)),
+      category: parsedCategory || rawCategory,
       username,
       email: take(emailIdx),
       accountPassword: password,
@@ -244,8 +247,13 @@ export function parseAfricaTemplateSheet(
     );
   }
 
-  const language =
-    languages.find((value) => isSetupLanguage(value)) ?? languages[0] ?? "";
+  const language = languages.find((value) => isSetupLanguage(value)) ?? "";
+  const unrecognizedLanguage = languages.find((value) => value && !isSetupLanguage(value));
+  if (unrecognizedLanguage) {
+    warnings.push(
+      `Language "${unrecognizedLanguage}" is not recognized and will be left empty.`
+    );
+  }
 
   if (!rows.length) {
     warnings.push("No account rows were found in the spreadsheet.");
@@ -257,21 +265,68 @@ export function parseAfricaTemplateSheet(
 export function validateBulkImportDraftRow(
   row: BulkImportAccountDraft
 ): string | null {
+  const warnings = bulkImportRowWarnings(row);
+  return warnings[0] ?? null;
+}
+
+export function bulkImportRowWarnings(row: BulkImportAccountDraft): string[] {
+  const warnings: string[] = [];
   if (!row.platform || !PLATFORMS.includes(row.platform)) {
-    return "Select a platform.";
+    warnings.push("Select a platform.");
   }
-  if (!row.accountHolder.trim()) return "Add an account holder.";
-  if (!row.username.trim()) return "Add a username.";
-  if (!isValidAccountUrl(row.url)) return "Use a valid http(s) URL.";
-  if (!isPlatformAccountUrl(row.platform, row.url)) {
-    return platformUrlErrorMessage(row.platform);
+  if (row.url.trim()) {
+    if (!isValidAccountUrl(row.url)) {
+      warnings.push("URL is invalid and will be saved empty.");
+    } else if (
+      row.platform &&
+      PLATFORMS.includes(row.platform) &&
+      !isPlatformAccountUrl(row.platform, row.url)
+    ) {
+      warnings.push(
+        `${platformUrlErrorMessage(row.platform)} It will be saved empty.`
+      );
+    }
   }
-  if (!isSetupCategory(row.category)) return "Select a category.";
-  if (!isValidAccountEmail(row.email)) return "Use a valid email.";
-  if (!row.accountPassword) return "Add an account password.";
-  if (!row.emailPassword) return "Add an email password.";
-  if (!row.mobileNumber.trim()) return "Add a mobile number.";
-  return null;
+  if (row.category.trim() && !isSetupCategory(row.category.trim())) {
+    warnings.push("Category is invalid and will be saved empty.");
+  }
+  if (row.email.trim() && !isValidAccountEmail(row.email)) {
+    warnings.push("Email is invalid and will be saved empty.");
+  }
+  return warnings;
+}
+
+export function sanitizeBulkImportRow(
+  row: BulkImportAccountDraft,
+  holderName: string
+): BulkImportAccountDraft {
+  const platform =
+    row.platform && PLATFORMS.includes(row.platform) ? row.platform : "";
+  let url = row.url.trim();
+  if (
+    url &&
+    (!isValidAccountUrl(url) ||
+      (platform && !isPlatformAccountUrl(platform, url)))
+  ) {
+    url = "";
+  }
+  const category = isSetupCategory(row.category.trim())
+    ? row.category.trim()
+    : "";
+  const email = isValidAccountEmail(row.email) ? row.email.trim() : "";
+
+  return {
+    ...row,
+    platform,
+    accountHolder: row.accountHolder.trim() || holderName,
+    url,
+    category,
+    username: row.username.trim(),
+    email,
+    accountPassword: row.accountPassword,
+    emailPassword: row.emailPassword,
+    mobileNumber: row.mobileNumber.trim(),
+  };
 }
 
 export function countBulkImportTargets(rows: BulkImportAccountDraft[]) {

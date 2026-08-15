@@ -1,6 +1,14 @@
 import type { AccountUrlCellProps } from "@/types/admin";
 
 export function AccountUrlCell({ url, label }: AccountUrlCellProps) {
+  if (!url) {
+    return (
+      <span className="text-[13px] text-[var(--color-muted)]" aria-label={`${label} has no profile URL yet`}>
+        —
+      </span>
+    );
+  }
+
   return (
     <a
       href={url}

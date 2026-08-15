@@ -48,7 +48,7 @@ export type TempSocialMediaAccount = {
   platform: Platform;
   account_name: string;
   account_handle: string | null;
-  account_url: string;
+  account_url: string | null;
 
   starting_followers: number;
   current_followers: number;

@@ -315,7 +315,7 @@ export type AdminSocialAccountListItem = {
   platform: Platform;
   account_name: string;
   account_handle: string | null;
-  account_url: string;
+  account_url: string | null;
   category: string | null;
   username: string | null;
   account_email: string | null;
@@ -420,7 +420,7 @@ export type AccountStatusBadgeProps = {
 };
 
 export type AccountUrlCellProps = {
-  url: string;
+  url: string | null;
   label: string;
 };
 

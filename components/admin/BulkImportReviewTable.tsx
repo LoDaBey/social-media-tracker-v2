@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
-import { SETUP_LANGUAGES } from "@/lib/setup-options";
+import { SETUP_LANGUAGES, isSetupLanguage } from "@/lib/setup-options";
 import { BulkImportReviewRow } from "@/components/admin/BulkImportReviewRow";
 import type { BulkImportReviewTableProps } from "@/types/admin";
 
@@ -25,10 +25,14 @@ export function BulkImportReviewTable({
         <label className="flex min-w-[200px] flex-col gap-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-muted)]">
           Language
           <select
-            value={language}
+            value={isSetupLanguage(language) ? language : ""}
             aria-label="Account holder language"
             onChange={(event) => onLanguageChange(event.target.value)}
-            className="cursor-pointer rounded-lg outline-none border border-[var(--color-hairline)] bg-[var(--color-cream-tint)] px-3 py-2.5 text-[14px] font-medium text-[var(--color-ink)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+            className={`cursor-pointer rounded-lg outline-none border bg-[var(--color-cream-tint)] px-3 py-2.5 text-[14px] font-medium text-[var(--color-ink)] ${
+              language && isSetupLanguage(language)
+                ? "border-[var(--color-hairline)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+                : "border-[#E08A2C] focus-visible:ring-2 focus-visible:ring-[#E08A2C]"
+            }`}
           >
             <option value="">Select a language</option>
             {SETUP_LANGUAGES.map((item) => (
