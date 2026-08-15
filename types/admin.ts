@@ -1,4 +1,4 @@
-import type { Role } from "@/types/db";
+import type { Platform, Role } from "@/types/db";
 import type { ReactNode } from "react";
 import type { WalletSummary, WalletTransactionListRow } from "@/types/wallet";
 
@@ -19,14 +19,7 @@ export type AdminEmployeeListRow = {
   current_level: number;
   target_accounts_sum: number;
   cycle_status: AdminEmployeeCycleStatus;
-};
-
-export type AdminTeamLeadRow = {
-  id: number;
-  full_name: string;
-  email: string;
-  is_active: boolean;
-  employee_count: number;
+  accounts: AdminSocialAccountListItem[];
 };
 
 export type AdminPayoutRow = {
@@ -119,7 +112,6 @@ export type AdminViewKind =
   | "employees"
   | "employee_new"
   | "employee"
-  | "team_leads"
   | "payouts";
 
 export type AdminEmployeePanel = "profile" | "targets" | "wallet" | "activity";
@@ -136,7 +128,6 @@ export type AdminView =
       roleBadge: string;
       panel: AdminEmployeePanel;
     }
-  | { kind: "team_leads"; title: string }
   | { kind: "payouts"; title: string };
 
 export type AdminWorkspaceProps = {
@@ -184,7 +175,7 @@ export type AdminKpiTileProps = {
 export type AdminOverviewAction = {
   href: string;
   ariaLabel: string;
-  icon: "userPlus" | "users" | "userCog" | "banknote";
+  icon: "userPlus" | "users" | "banknote";
   variant: "primary" | "secondary";
 };
 
@@ -247,6 +238,23 @@ export type EmployeeCountryCellProps = {
   countries: string[];
 };
 
+export type AccountTotalsCellProps = {
+  added: number;
+  assigned: number;
+};
+
+export type CountryFilterSelectProps = {
+  value: string;
+  onChange: (country: string) => void;
+};
+
+export type EmployeesSearchFormProps = {
+  initialQ: string;
+  hiddenStatus?: string;
+  hiddenRole?: string;
+  hiddenCountry?: string;
+};
+
 export type EmployeeViewButtonProps = {
   employeeId: number;
   fullName: string;
@@ -297,4 +305,83 @@ export type ProcessPayoutBarProps = {
   daysToPayout: number;
   canForce: boolean;
   onSuccess?: () => void;
+};
+
+export type AdminSocialAccountListItem = {
+  id: number;
+  platform: Platform;
+  account_name: string;
+  account_handle: string | null;
+  account_url: string;
+  category: string | null;
+  username: string | null;
+  account_email: string | null;
+  account_password: string | null;
+  email_password: string | null;
+  mobile_number: string | null;
+  status: "active" | "archived" | "suspended";
+};
+
+export type AdminSocialAccountInput = {
+  platform: Platform;
+  accountHolder: string;
+  url: string;
+  category: string;
+  username: string;
+  email: string;
+  accountPassword: string;
+  emailPassword: string;
+  mobileNumber: string;
+  status?: "active" | "archived" | "suspended";
+};
+
+export type AdminAccountMutationResult = { error?: string };
+
+export type EmployeeAccountsPanelProps = {
+  userId: number;
+  fullName: string;
+  accounts: AdminSocialAccountListItem[];
+  assignedCount: number;
+  canAdd: boolean;
+  onChanged?: () => void;
+};
+
+export type EmployeeAccountsTableProps = {
+  userId: number;
+  fullName: string;
+  accounts: AdminSocialAccountListItem[];
+  onChanged?: () => void;
+  readOnly?: boolean;
+};
+
+export type AccountRowProps = {
+  holderId: number;
+  holderName: string;
+  account: AdminSocialAccountListItem;
+  onChanged?: () => void;
+  readOnly?: boolean;
+};
+
+export type AccountFormFieldsProps = {
+  value: AdminSocialAccountInput;
+  fieldErrors: Partial<Record<keyof AdminSocialAccountInput, string>>;
+  platformLocked?: boolean;
+  onChange: (patch: Partial<AdminSocialAccountInput>) => void;
+};
+
+export type AccountEditModalProps = {
+  open: boolean;
+  mode: "create" | "edit";
+  holderId: number;
+  holderName: string;
+  initial: AdminSocialAccountInput;
+  accountId?: number;
+  onClose: () => void;
+  onSaved?: () => void;
+};
+
+export type AccountDeleteButtonProps = {
+  accountId: number;
+  accountName: string;
+  onDeleted?: () => void;
 };

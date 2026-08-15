@@ -7,6 +7,7 @@ import {
 import { totalAssignedAccountTarget } from "@/lib/setup-facebook";
 import type { TempSocialMediaAccount } from "@/types/db";
 import type {
+  ManagerAccountListItem,
   ManagerCountryGroup,
   ManagerHolderRow,
   ManagerOption,
@@ -106,7 +107,6 @@ export async function fetchManagerHomeGroups(
     `SELECT *
        FROM temp_social_media_accounts
       WHERE user_id = ANY($1::int[])
-        AND status = 'active'
       ORDER BY user_id ASC, platform ASC, id ASC`,
     [holders.map((h) => h.id)]
   );
@@ -126,16 +126,29 @@ export async function fetchManagerHomeGroups(
   for (const holder of holders) {
     const country = holder.country ?? "";
     if (!groups.has(country)) continue;
-    const targets = targetsFromCounts(holder);
-    const accountsByPlatform = groupAccountsByPlatform(
-      accountsByUser.get(holder.id) ?? []
+    const holderAccounts = accountsByUser.get(holder.id) ?? [];
+    const activeAccounts = holderAccounts.filter(
+      (account) => account.status === "active"
     );
+    const targets = targetsFromCounts(holder);
+    const accountsByPlatform = groupAccountsByPlatform(activeAccounts);
     const setupComplete = isEmployeeSetupComplete({
       country: holder.country,
       language: holder.language,
       targets,
       accountsByPlatform,
     });
+    const publicAccounts: ManagerAccountListItem[] = holderAccounts.map(
+      (account) => ({
+        id: account.id,
+        platform: account.platform,
+        account_name: account.account_name,
+        username: account.username,
+        account_url: account.account_url,
+        category: account.category,
+        status: account.status,
+      })
+    );
     groups.get(country)!.push({
       id: holder.id,
       full_name: holder.full_name,
@@ -144,6 +157,8 @@ export async function fetchManagerHomeGroups(
       language: holder.language,
       setupComplete,
       targetAccountsSum: totalAssignedAccountTarget(targets),
+      accountTotal: publicAccounts.length,
+      accounts: publicAccounts,
     });
   }
 
