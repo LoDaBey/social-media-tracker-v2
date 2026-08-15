@@ -17,12 +17,17 @@ export function ManagerTeamHeader({
         <h1 className="text-[32px] font-extrabold tracking-tight text-[var(--color-ink)]">
           Your team
         </h1>
-        <span
-          className="inline-flex rounded-lg bg-[var(--color-emerald)] px-3 py-1.5 text-[14px] font-bold tabular-nums text-white"
-          aria-label={`${overall.added} of ${overall.assigned} assigned accounts across all countries`}
-        >
-          {overall.added} / {overall.assigned}
-        </span>
+        <div className="inline-flex items-center gap-2">
+          <span className="text-[14px] font-semibold text-[var(--color-ink)]">
+            Total accounts
+          </span>
+          <span
+            className="inline-flex rounded-lg bg-[var(--color-emerald)] px-3 py-1.5 text-[14px] font-bold tabular-nums text-white"
+            aria-label={`${overall.added} of ${overall.assigned} assigned accounts across all countries`}
+          >
+            {overall.added} / {overall.assigned}
+          </span>
+        </div>
       </div>
       {showCountries ? (
         <div className="flex flex-wrap gap-2" aria-label="Account totals by country">

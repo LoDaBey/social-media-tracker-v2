@@ -10,6 +10,7 @@ export function ManagerAccountsPanel({
   language,
   accounts,
   assignedCount,
+  holderOptions,
 }: ManagerAccountsPanelProps) {
   const total = accounts.length;
 
@@ -31,6 +32,7 @@ export function ManagerAccountsPanel({
           country={country}
           language={language}
           accounts={accounts}
+          holderOptions={holderOptions}
         />
       )}
     </div>

@@ -1,6 +1,9 @@
 import { fetchAdminEmployeesList } from "@/lib/admin-data";
 import { EmployeesTable } from "@/components/admin/EmployeesTable";
 import {
+  EmployeesBulkImportButton,
+} from "@/components/admin/EmployeesBulkImportButton";
+import {
   EmployeesCreateButton,
   EmployeesFilters,
   EmployeesSearchForm,
@@ -38,6 +41,14 @@ export default async function AdminEmployeesPage({
     role: role === "all" ? undefined : role,
     country: country || undefined,
   });
+  const holders = rows
+    .filter((row) => row.role === "employee" && row.is_active)
+    .map((row) => ({
+      id: row.id,
+      full_name: row.full_name,
+      country: row.country,
+      language: row.language,
+    }));
 
   return (
     <AdminWorkspace view={adminViewEmployees()}>
@@ -49,12 +60,13 @@ export default async function AdminEmployeesPage({
             hiddenRole={role === "all" ? undefined : role}
             hiddenCountry={country || undefined}
           />
+          <EmployeesBulkImportButton holders={holders} />
           <EmployeesCreateButton />
         </div>
 
         <EmployeesFilters />
 
-        <EmployeesTable rows={rows} />
+        <EmployeesTable rows={rows} holders={holders} />
       </div>
     </AdminWorkspace>
   );

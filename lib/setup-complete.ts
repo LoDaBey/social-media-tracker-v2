@@ -40,7 +40,9 @@ export function isEmployeeSetupComplete(input: {
   language: string | null | undefined;
   targets: SetupCompleteTargets;
   accountsByPlatform: Record<Platform, TempSocialMediaAccount[]>;
+  setupNeedsReview?: boolean;
 }): boolean {
+  if (input.setupNeedsReview) return false;
   const counts: SetupCompleteTargets = {
     x: input.accountsByPlatform.x?.length ?? 0,
     facebook_personal: input.accountsByPlatform.facebook_personal?.length ?? 0,

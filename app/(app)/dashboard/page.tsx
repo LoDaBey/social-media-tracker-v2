@@ -86,6 +86,7 @@ export default async function DashboardPage() {
     language: data.user.language,
     targets: targetsFromCounts(data.user),
     accountsByPlatform: data.accountsByPlatform,
+    setupNeedsReview: Boolean(data.user.setup_needs_review),
   });
   if (!setupComplete) {
     return <WaitingForManagerSetup />;

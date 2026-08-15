@@ -63,6 +63,7 @@ type HolderQueryRow = {
   email: string;
   country: string | null;
   language: string | null;
+  setup_needs_review: boolean;
   target_x_count: number;
   target_facebook_personal_count: number;
   target_facebook_umbrella_count: number;
@@ -82,6 +83,7 @@ export async function fetchManagerHomeGroups(
             email,
             country,
             language,
+            setup_needs_review,
             target_x_count,
             target_facebook_personal_count,
             target_facebook_umbrella_count,
@@ -132,11 +134,13 @@ export async function fetchManagerHomeGroups(
     );
     const targets = targetsFromCounts(holder);
     const accountsByPlatform = groupAccountsByPlatform(activeAccounts);
+    const setupNeedsReview = Boolean(holder.setup_needs_review);
     const setupComplete = isEmployeeSetupComplete({
       country: holder.country,
       language: holder.language,
       targets,
       accountsByPlatform,
+      setupNeedsReview,
     });
     const publicAccounts: ManagerAccountListItem[] = holderAccounts.map(
       (account) => ({
@@ -161,6 +165,7 @@ export async function fetchManagerHomeGroups(
       country,
       language: holder.language,
       setupComplete,
+      setupNeedsReview,
       targetAccountsSum: totalAssignedAccountTarget(targets),
       accountTotal: publicAccounts.length,
       accounts: publicAccounts,

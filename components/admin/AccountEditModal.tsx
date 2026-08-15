@@ -24,6 +24,7 @@ export function AccountEditModal({
   holderName,
   initial,
   accountId,
+  holderOptions,
   onClose,
   onSaved,
   save,
@@ -37,6 +38,7 @@ export function AccountEditModal({
           holderName={holderName}
           initial={initial}
           accountId={accountId}
+          holderOptions={holderOptions}
           onClose={onClose}
           onSaved={onSaved}
           save={save}
@@ -52,6 +54,7 @@ function AccountEditModalDialog({
   holderName,
   initial,
   accountId,
+  holderOptions,
   onClose,
   onSaved,
   save,
@@ -159,7 +162,7 @@ function AccountEditModalDialog({
               {mode === "create" ? "Add account" : "Edit account"}
             </h2>
             <p className="mt-1 text-[14px] text-[var(--color-muted)]">
-              {holderName}
+              {value.accountHolder || holderName}
               {mode === "edit"
                 ? ` · ${PLATFORM_LABELS[value.platform]}`
                 : ""}
@@ -189,6 +192,7 @@ function AccountEditModalDialog({
             value={value}
             fieldErrors={fieldErrors}
             platformLocked={mode === "edit"}
+            holderOptions={holderOptions}
             onChange={(patch) => setValue((prev) => ({ ...prev, ...patch }))}
           />
         </div>

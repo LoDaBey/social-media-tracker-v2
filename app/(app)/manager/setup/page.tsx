@@ -34,6 +34,7 @@ export default async function ManagerSetupPage({
       language: bundle.employee.language,
       targets: bundle.employee.targets,
       accountsByPlatform: bundle.existingByPlatform,
+      setupNeedsReview: bundle.employee.setupNeedsReview,
     })
   ) {
     redirect("/manager");

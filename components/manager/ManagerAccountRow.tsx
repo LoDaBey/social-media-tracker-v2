@@ -19,6 +19,7 @@ export function ManagerAccountRow({
   country,
   language,
   account,
+  holderOptions,
 }: ManagerAccountRowProps) {
   const [editOpen, setEditOpen] = useState(false);
   const displayName =
@@ -75,7 +76,8 @@ export function ManagerAccountRow({
           holderId={holderId}
           holderName={fullName}
           accountId={account.id}
-          initial={managerAccountToInput(account)}
+          initial={managerAccountToInput(account, holderId, fullName)}
+          holderOptions={holderOptions}
           onClose={() => setEditOpen(false)}
           save={(payload) => updateManagerSocialAccount(account.id, payload)}
         />

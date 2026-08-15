@@ -273,6 +273,7 @@ export async function fetchAdminEmployeesList(
       u.manager_id,
       mgr.full_name AS manager_name,
       u.country,
+      u.language,
       COALESCE(
         (
           SELECT ARRAY_AGG(mc.country ORDER BY mc.country)
@@ -303,6 +304,7 @@ export async function fetchAdminEmployeesList(
     manager_id: number | null;
     manager_name: string | null;
     country: string | null;
+    language: string | null;
     manager_countries: string[] | null;
     current_level: number;
     target_accounts_sum: number;
@@ -334,6 +336,7 @@ export async function fetchAdminEmployeesList(
       manager_id: r.manager_id,
       manager_name: r.manager_name,
       country,
+      language: r.language,
       countries,
       current_level: r.current_level,
       target_accounts_sum: r.target_accounts_sum,

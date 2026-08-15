@@ -6,10 +6,11 @@ import { ChevronDown } from "lucide-react";
 import { CountryFlag } from "@/lib/country-icons";
 import { AccountTotalsCell } from "@/components/admin/AccountTotalsCell";
 import { ManagerSetupActionButton } from "@/components/manager/ManagerSetupActionButton";
+import { ManagerSetupStatusBadge } from "@/components/manager/ManagerSetupStatusBadge";
 import { ManagerAccountsPanel } from "@/components/manager/ManagerAccountsPanel";
 import type { ManagerTeamRowProps } from "@/types/manager";
 
-export function ManagerTeamRow({ row }: ManagerTeamRowProps) {
+export function ManagerTeamRow({ row, holderOptions }: ManagerTeamRowProps) {
   const [expanded, setExpanded] = useState(false);
   const setupHref = `/manager/setup?employeeId=${row.id}`;
   const canOpenSetup = !row.setupComplete;
@@ -82,20 +83,16 @@ export function ManagerTeamRow({ row }: ManagerTeamRowProps) {
           />
         </td>
         <td className="px-4 py-3">
-          <span
-            className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.04em] ${
-              row.setupComplete
-                ? "bg-[var(--color-emerald-tint)] text-[var(--color-emerald)]"
-                : "bg-[var(--color-coral-tint)] text-[var(--color-coral)]"
-            }`}
-          >
-            {row.setupComplete ? "Complete" : "Needs setup"}
-          </span>
+          <ManagerSetupStatusBadge
+            setupComplete={row.setupComplete}
+            setupNeedsReview={row.setupNeedsReview}
+          />
         </td>
         <td className="px-4 py-3">
           <ManagerSetupActionButton
             href={setupHref}
             setupComplete={row.setupComplete}
+            setupNeedsReview={row.setupNeedsReview}
             fullName={row.full_name}
           />
         </td>
@@ -115,6 +112,7 @@ export function ManagerTeamRow({ row }: ManagerTeamRowProps) {
               language={row.language}
               accounts={row.accounts}
               assignedCount={row.targetAccountsSum}
+              holderOptions={holderOptions}
             />
           </td>
         </tr>

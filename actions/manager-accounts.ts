@@ -54,23 +54,40 @@ export async function updateManagerSocialAccount(
     );
     if (!allowed) return { error: "You cannot edit this account." };
 
+    let nextUserId = existing.user_id;
+    if (
+      data.holderUserId != null &&
+      data.holderUserId !== existing.user_id
+    ) {
+      const canMove = await assertManagerCanEditEmployee(
+        managerId,
+        data.holderUserId
+      );
+      if (!canMove) {
+        return { error: "You cannot move this account to that person." };
+      }
+      nextUserId = data.holderUserId;
+    }
+
     const accountName = data.username.replace(/^@/, "");
     await pool.query(
       `UPDATE temp_social_media_accounts
-          SET platform = $2,
-              account_name = $3,
-              account_handle = $4,
-              account_url = $5,
-              category = $6,
-              username = $7,
-              account_email = $8,
-              account_password = $9,
-              email_password = $10,
-              mobile_number = $11,
-              status = $12
+          SET user_id = $2,
+              platform = $3,
+              account_name = $4,
+              account_handle = $5,
+              account_url = $6,
+              category = $7,
+              username = $8,
+              account_email = $9,
+              account_password = $10,
+              email_password = $11,
+              mobile_number = $12,
+              status = $13
         WHERE id = $1`,
       [
         accountId,
+        nextUserId,
         data.platform,
         accountName,
         data.accountHolder,
@@ -85,6 +102,9 @@ export async function updateManagerSocialAccount(
       ]
     );
     revalidateManagerAccounts(existing.user_id);
+    if (nextUserId !== existing.user_id) {
+      revalidateManagerAccounts(nextUserId);
+    }
     return {};
   } catch (error) {
     return { error: uniqueAccountUrlError(error) };
