@@ -1,4 +1,4 @@
-import type { AdminCountryPlan } from "@/types/admin";
+import type { AdminCountryPlan, AdminCountrySeatQuota } from "@/types/admin";
 
 const STANDARD_ACCOUNTS = {
   xPersonal: 49,
@@ -55,4 +55,40 @@ export const ADMIN_COUNTRY_PLANS: AdminCountryPlan[] = [
 
 export function xPlanTarget(plan: Pick<AdminCountryPlan, "xPersonal" | "xUmbrella">) {
   return plan.xPersonal + plan.xUmbrella;
+}
+
+function splitTotal(total: number, seats: number): number[] {
+  if (seats <= 0) return [];
+  const base = Math.floor(total / seats);
+  const remainder = total % seats;
+  return Array.from({ length: seats }, (_, index) =>
+    base + (index < remainder ? 1 : 0)
+  );
+}
+
+/** Split a country plan across the planned number of employee seats. */
+export function splitCountryPlanSeats(plan: AdminCountryPlan): AdminCountrySeatQuota[] {
+  const seats = plan.resources;
+  const xShares = splitTotal(xPlanTarget(plan), seats);
+  const facebookPersonalShares = splitTotal(plan.facebookPersonal, seats);
+  const facebookUmbrellaShares = splitTotal(plan.facebookUmbrella, seats);
+  const instagramShares = splitTotal(plan.instagram, seats);
+  const tiktokShares = splitTotal(plan.tiktok, seats);
+
+  return Array.from({ length: seats }, (_, index) => {
+    const x = xShares[index] ?? 0;
+    const facebookPersonal = facebookPersonalShares[index] ?? 0;
+    const facebookUmbrella = facebookUmbrellaShares[index] ?? 0;
+    const instagram = instagramShares[index] ?? 0;
+    const tiktok = tiktokShares[index] ?? 0;
+    return {
+      x,
+      facebookPersonal,
+      facebookUmbrella,
+      instagram,
+      tiktok,
+      totalAccounts:
+        x + facebookPersonal + facebookUmbrella + instagram + tiktok,
+    };
+  });
 }
