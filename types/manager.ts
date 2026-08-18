@@ -131,3 +131,17 @@ export type ManagerBulkImportModalProps = {
   holder: ManagerBulkImportButtonProps["holder"];
   onClose: () => void;
 };
+
+export type ManagerEmployeeEditButtonProps = {
+  employeeId: number;
+  fullName: string;
+  employeeCode: string | null;
+};
+
+export type ManagerEmployeeEditModalProps = {
+  open: boolean;
+  employeeId: number;
+  fullName: string;
+  employeeCode: string | null;
+  onClose: () => void;
+};

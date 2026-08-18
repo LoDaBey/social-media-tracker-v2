@@ -7,6 +7,7 @@ import { CountryFlag } from "@/lib/country-icons";
 import { AccountTotalsCell } from "@/components/admin/AccountTotalsCell";
 import { EmployeeStatusBadge } from "@/components/admin/EmployeeStatusBadge";
 import { ManagerBulkImportButton } from "@/components/manager/ManagerBulkImportButton";
+import { ManagerEmployeeEditButton } from "@/components/manager/ManagerEmployeeEditButton";
 import { ManagerSetupActionButton } from "@/components/manager/ManagerSetupActionButton";
 import { ManagerSetupStatusBadge } from "@/components/manager/ManagerSetupStatusBadge";
 import { ManagerAccountsPanel } from "@/components/manager/ManagerAccountsPanel";
@@ -72,6 +73,9 @@ export function ManagerTeamRow({ row, holderOptions }: ManagerTeamRowProps) {
             <span>{row.full_name}</span>
           )}
         </td>
+        <td className="px-4 py-3 text-[14px] font-semibold tabular-nums text-[var(--color-ink)]">
+          {row.employee_code || "—"}
+        </td>
         <td className="hidden px-4 py-3 text-[14px] text-[var(--color-muted)] sm:table-cell">
           {row.email}
         </td>
@@ -104,6 +108,11 @@ export function ManagerTeamRow({ row, holderOptions }: ManagerTeamRowProps) {
               setupNeedsReview={row.setupNeedsReview}
               fullName={row.full_name}
             />
+            <ManagerEmployeeEditButton
+              employeeId={row.id}
+              fullName={row.full_name}
+              employeeCode={row.employee_code}
+            />
             <ManagerBulkImportButton
               holder={{
                 id: row.id,
@@ -118,7 +127,7 @@ export function ManagerTeamRow({ row, holderOptions }: ManagerTeamRowProps) {
       {expanded ? (
         <tr className="border-b border-[var(--color-hairline)] bg-[var(--color-cream-tint)]/70 last:border-b-0">
           <td
-            colSpan={8}
+            colSpan={9}
             className="px-4 py-4"
             id={panelId}
             onClick={(event) => event.stopPropagation()}

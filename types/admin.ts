@@ -140,6 +140,10 @@ export type AdminWorkspaceProps = {
   children: ReactNode;
 };
 
+export type AdminPageLoaderProps = {
+  label?: string;
+};
+
 export type EmployeeFormInitial = {
   id: number;
   full_name: string;
