@@ -46,7 +46,14 @@ export default async function AppLayout({
   return (
     <div className="min-h-dvh bg-[var(--color-cream)]">
       <header className="h-16 bg-[var(--color-surface)] border-b border-[var(--color-hairline)]">
-        <div className="mx-auto flex h-full w-full max-w-7xl items-center justify-between px-4 sm:px-8">
+        <div
+          className={[
+            "mx-auto flex h-full w-full items-center justify-between px-4 sm:px-8",
+            role === "admin" || role === "manager"
+              ? "max-w-[1600px]"
+              : "max-w-7xl",
+          ].join(" ")}
+        >
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[var(--color-emerald-tint)]">
               <Sparkles
@@ -168,7 +175,10 @@ export default async function AppLayout({
 
       <div
         className={[
-          "mx-auto w-full max-w-7xl px-3 sm:px-8",
+          "mx-auto w-full px-3 sm:px-8",
+          role === "admin" || role === "manager"
+            ? "max-w-[1600px]"
+            : "max-w-7xl",
           role === "admin" ? "py-4 sm:py-6" : "py-8",
         ].join(" ")}
       >
