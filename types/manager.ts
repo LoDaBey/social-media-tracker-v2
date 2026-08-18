@@ -1,4 +1,5 @@
-import type { AccountHolderOption } from "@/types/admin";
+import type { ReactNode } from "react";
+import type { AccountHolderOption, AdminCountryCoverage } from "@/types/admin";
 import type { EmploymentStatus, Platform } from "@/types/db";
 
 export type ManagerOption = {
@@ -44,6 +45,22 @@ export type ManagerCountryGroup = {
 
 export type ManagerHomeTableProps = {
   groups: ManagerCountryGroup[];
+};
+
+export type ManagerHomeProps = {
+  groups: ManagerCountryGroup[];
+  coverage: AdminCountryCoverage;
+};
+
+export type ManagerHomeTab = "team" | "coverage";
+
+export type ManagerHomeTabsProps = {
+  teamPanel: ReactNode;
+  coveragePanel: ReactNode;
+};
+
+export type ManagerCoveragePanelProps = {
+  coverage: AdminCountryCoverage;
 };
 
 export type ManagerTeamRowProps = {
@@ -114,34 +131,4 @@ export type ManagerSetupActionButtonProps = {
 export type ManagerSetupStatusBadgeProps = {
   setupComplete: boolean;
   setupNeedsReview: boolean;
-};
-
-export type ManagerBulkImportButtonProps = {
-  holder: {
-    id: number;
-    full_name: string;
-    country: string;
-    language: string | null;
-  };
-  variant?: "icon" | "button";
-};
-
-export type ManagerBulkImportModalProps = {
-  open: boolean;
-  holder: ManagerBulkImportButtonProps["holder"];
-  onClose: () => void;
-};
-
-export type ManagerEmployeeEditButtonProps = {
-  employeeId: number;
-  fullName: string;
-  employeeCode: string | null;
-};
-
-export type ManagerEmployeeEditModalProps = {
-  open: boolean;
-  employeeId: number;
-  fullName: string;
-  employeeCode: string | null;
-  onClose: () => void;
 };

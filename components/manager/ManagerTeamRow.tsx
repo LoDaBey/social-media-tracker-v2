@@ -6,8 +6,6 @@ import { ChevronDown } from "lucide-react";
 import { CountryFlag } from "@/lib/country-icons";
 import { AccountTotalsCell } from "@/components/admin/AccountTotalsCell";
 import { EmployeeStatusBadge } from "@/components/admin/EmployeeStatusBadge";
-import { ManagerBulkImportButton } from "@/components/manager/ManagerBulkImportButton";
-import { ManagerEmployeeEditButton } from "@/components/manager/ManagerEmployeeEditButton";
 import { ManagerSetupActionButton } from "@/components/manager/ManagerSetupActionButton";
 import { ManagerSetupStatusBadge } from "@/components/manager/ManagerSetupStatusBadge";
 import { ManagerAccountsPanel } from "@/components/manager/ManagerAccountsPanel";
@@ -107,19 +105,6 @@ export function ManagerTeamRow({ row, holderOptions }: ManagerTeamRowProps) {
               setupComplete={row.setupComplete}
               setupNeedsReview={row.setupNeedsReview}
               fullName={row.full_name}
-            />
-            <ManagerEmployeeEditButton
-              employeeId={row.id}
-              fullName={row.full_name}
-              employeeCode={row.employee_code}
-            />
-            <ManagerBulkImportButton
-              holder={{
-                id: row.id,
-                full_name: row.full_name,
-                country: row.country,
-                language: row.language,
-              }}
             />
           </div>
         </td>

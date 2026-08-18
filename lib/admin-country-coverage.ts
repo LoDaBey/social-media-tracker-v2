@@ -7,6 +7,7 @@ import {
 import type {
   AdminCoverageCount,
   AdminCountryCoverage,
+  AdminCountryCoverageFilter,
   AdminCountryCoverageHolder,
   AdminCountryCoverageRow,
   AdminCountryPlan,
@@ -56,19 +57,25 @@ function count(actual: number, target: number): AdminCoverageCount {
   return { actual, target };
 }
 
-function totalAccountsFrom(actuals: {
-  x: number;
-  facebookPersonal: number;
-  facebookUmbrella: number;
-  instagram: number;
-  tiktok: number;
+/** Count toward plan totals: extras above a target never fill another gap. */
+function credited(actual: number, target: number) {
+  if (target <= 0) return 0;
+  return Math.min(actual, target);
+}
+
+function creditedAccountsFrom(counts: {
+  x: AdminCoverageCount;
+  facebookPersonal: AdminCoverageCount;
+  facebookUmbrella: AdminCoverageCount;
+  instagram: AdminCoverageCount;
+  tiktok: AdminCoverageCount;
 }) {
   return (
-    actuals.x +
-    actuals.facebookPersonal +
-    actuals.facebookUmbrella +
-    actuals.instagram +
-    actuals.tiktok
+    credited(counts.x.actual, counts.x.target) +
+    credited(counts.facebookPersonal.actual, counts.facebookPersonal.target) +
+    credited(counts.facebookUmbrella.actual, counts.facebookUmbrella.target) +
+    credited(counts.instagram.actual, counts.instagram.target) +
+    credited(counts.tiktok.actual, counts.tiktok.target)
   );
 }
 
@@ -109,7 +116,13 @@ function holderFromSeat(
     facebookUmbrella: count(actuals.facebookUmbrella, seat.facebookUmbrella),
     instagram: count(actuals.instagram, seat.instagram),
     tiktok: count(actuals.tiktok, seat.tiktok),
-    totalAccounts: count(totalAccountsFrom(actuals), seat.totalAccounts),
+    totalAccounts: count(creditedAccountsFrom({
+      x: count(actuals.x, seat.x),
+      facebookPersonal: count(actuals.facebookPersonal, seat.facebookPersonal),
+      facebookUmbrella: count(actuals.facebookUmbrella, seat.facebookUmbrella),
+      instagram: count(actuals.instagram, seat.instagram),
+      tiktok: count(actuals.tiktok, seat.tiktok),
+    }), seat.totalAccounts),
   };
 }
 
@@ -138,33 +151,57 @@ function toRow(
   people: HolderActuals[],
   onPlan: boolean
 ): AdminCountryCoverageRow {
+  const x = count(actuals.x, xPlanTarget(plan));
+  const facebookPersonal = count(actuals.facebookPersonal, plan.facebookPersonal);
+  const facebookUmbrella = count(actuals.facebookUmbrella, plan.facebookUmbrella);
+  const instagram = count(actuals.instagram, plan.instagram);
+  const tiktok = count(actuals.tiktok, plan.tiktok);
+
   return {
     country: plan.country,
     language: plan.language,
     onPlan,
     resources: count(actuals.employees, plan.resources),
-    x: count(actuals.x, xPlanTarget(plan)),
-    facebookPersonal: count(actuals.facebookPersonal, plan.facebookPersonal),
-    facebookUmbrella: count(actuals.facebookUmbrella, plan.facebookUmbrella),
-    instagram: count(actuals.instagram, plan.instagram),
-    tiktok: count(actuals.tiktok, plan.tiktok),
-    totalAccounts: count(totalAccountsFrom(actuals), plan.totalAccounts),
+    x,
+    facebookPersonal,
+    facebookUmbrella,
+    instagram,
+    tiktok,
+    totalAccounts: count(
+      creditedAccountsFrom({
+        x,
+        facebookPersonal,
+        facebookUmbrella,
+        instagram,
+        tiktok,
+      }),
+      plan.totalAccounts
+    ),
     holders: holdersForCountry(plan, people),
   };
 }
 
-function addCount(
+function addCreditedCount(
   left: AdminCoverageCount,
   right: AdminCoverageCount
 ): AdminCoverageCount {
   return {
-    actual: left.actual + right.actual,
+    actual: left.actual + credited(right.actual, right.target),
     target: left.target + right.target,
   };
 }
 
-export async function fetchAdminCountryCoverage(): Promise<AdminCountryCoverage> {
-  const [countryRows, holderRows] = await Promise.all([
+export async function fetchAdminCountryCoverage(
+  filter?: AdminCountryCoverageFilter
+): Promise<AdminCountryCoverage> {
+  const countryFilter = filter === undefined ? null : (filter.countries ?? []);
+  const sqlCountryClause =
+    countryFilter === null
+      ? ""
+      : ` AND COALESCE(u.country, '') = ANY($1::text[])`;
+  const sqlParams = countryFilter === null ? [] : [countryFilter];
+
+  const [countryRows, holderRows, onHoldRow] = await Promise.all([
     query<{
       country: string;
       employees: string;
@@ -187,8 +224,9 @@ export async function fetchAdminCountryCoverage(): Promise<AdminCountryCoverage>
          ON a.user_id = u.id
         AND a.status = 'active'
       WHERE u.role = 'employee'
-        AND u.is_active = TRUE
-      GROUP BY COALESCE(u.country, '')`
+        AND u.is_active = TRUE${sqlCountryClause}
+      GROUP BY COALESCE(u.country, '')`,
+      sqlParams
     ),
     query<{
       id: number;
@@ -216,9 +254,22 @@ export async function fetchAdminCountryCoverage(): Promise<AdminCountryCoverage>
          ON a.user_id = u.id
         AND a.status = 'active'
       WHERE u.role = 'employee'
-        AND u.is_active = TRUE
+        AND u.is_active = TRUE${sqlCountryClause}
       GROUP BY u.id, u.full_name, u.email, COALESCE(u.country, '')
-      ORDER BY u.full_name ASC, u.id ASC`
+      ORDER BY u.full_name ASC, u.id ASC`,
+      sqlParams
+    ),
+    query<{ on_hold: string }>(
+      countryFilter === null
+        ? `SELECT COUNT(*)::text AS on_hold
+             FROM temp_users
+            WHERE employment_status = 'on_hold'`
+        : `SELECT COUNT(*)::text AS on_hold
+             FROM temp_users
+            WHERE employment_status = 'on_hold'
+              AND role = 'employee'
+              AND COALESCE(country, '') = ANY($1::text[])`,
+      sqlParams
     ),
   ]);
 
@@ -253,7 +304,13 @@ export async function fetchAdminCountryCoverage(): Promise<AdminCountryCoverage>
     holdersByCountry.set(country, list);
   }
 
-  const coverageRows: AdminCountryCoverageRow[] = ADMIN_COUNTRY_PLANS.map((plan) => {
+  const allowedCountries = countryFilter === null ? null : new Set(countryFilter);
+  const plans =
+    allowedCountries === null
+      ? ADMIN_COUNTRY_PLANS
+      : ADMIN_COUNTRY_PLANS.filter((plan) => allowedCountries.has(plan.country));
+
+  const coverageRows: AdminCountryCoverageRow[] = plans.map((plan) => {
     const actuals = actualByCountry.get(plan.country) ?? EMPTY_ACTUALS;
     const people = holdersByCountry.get(plan.country) ?? [];
     actualByCountry.delete(plan.country);
@@ -261,9 +318,9 @@ export async function fetchAdminCountryCoverage(): Promise<AdminCountryCoverage>
     return toRow(plan, actuals, people, true);
   });
 
-  const extraCountries = [...new Set([...actualByCountry.keys(), ...holdersByCountry.keys()])].sort(
-    (a, b) => a.localeCompare(b)
-  );
+  const extraCountries = [...new Set([...actualByCountry.keys(), ...holdersByCountry.keys()])]
+    .filter((country) => allowedCountries === null || allowedCountries.has(country))
+    .sort((a, b) => a.localeCompare(b));
   for (const country of extraCountries) {
     coverageRows.push(
       toRow(
@@ -275,15 +332,25 @@ export async function fetchAdminCountryCoverage(): Promise<AdminCountryCoverage>
     );
   }
 
+  if (allowedCountries) {
+    const shown = new Set(coverageRows.map((row) => row.country));
+    for (const country of countryFilter ?? []) {
+      if (shown.has(country)) continue;
+      coverageRows.push(
+        toRow(emptyPlan(country), EMPTY_ACTUALS, [], false)
+      );
+    }
+  }
+
   const totals = coverageRows.reduce(
     (sum, row) => ({
-      resources: addCount(sum.resources, row.resources),
-      x: addCount(sum.x, row.x),
-      facebookPersonal: addCount(sum.facebookPersonal, row.facebookPersonal),
-      facebookUmbrella: addCount(sum.facebookUmbrella, row.facebookUmbrella),
-      instagram: addCount(sum.instagram, row.instagram),
-      tiktok: addCount(sum.tiktok, row.tiktok),
-      totalAccounts: addCount(sum.totalAccounts, row.totalAccounts),
+      resources: addCreditedCount(sum.resources, row.resources),
+      x: addCreditedCount(sum.x, row.x),
+      facebookPersonal: addCreditedCount(sum.facebookPersonal, row.facebookPersonal),
+      facebookUmbrella: addCreditedCount(sum.facebookUmbrella, row.facebookUmbrella),
+      instagram: addCreditedCount(sum.instagram, row.instagram),
+      tiktok: addCreditedCount(sum.tiktok, row.tiktok),
+      totalAccounts: addCreditedCount(sum.totalAccounts, row.totalAccounts),
     }),
     {
       resources: count(0, 0),
@@ -296,5 +363,9 @@ export async function fetchAdminCountryCoverage(): Promise<AdminCountryCoverage>
     }
   );
 
-  return { rows: coverageRows, totals };
+  return {
+    rows: coverageRows,
+    totals,
+    onHoldCount: Number(onHoldRow[0]?.on_hold ?? 0),
+  };
 }
