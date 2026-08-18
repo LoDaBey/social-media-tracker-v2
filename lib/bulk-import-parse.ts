@@ -1,12 +1,36 @@
 import { PLATFORMS, type Platform } from "@/lib/platform-config";
 import { isSetupCategory, isSetupLanguage } from "@/lib/setup-options";
+import { accountUrlKey } from "@/lib/setup-validation";
 import {
   isPlatformAccountUrl,
   isValidAccountEmail,
   isValidAccountUrl,
   platformUrlErrorMessage,
+  setupAccountFieldsSchemaFor,
 } from "@/lib/setup-schema";
 import type { BulkImportAccountDraft, BulkImportParseResult } from "@/types/admin";
+
+export type BulkImportRowFieldErrors = Partial<
+  Record<
+    | "platform"
+    | "accountHolder"
+    | "url"
+    | "category"
+    | "username"
+    | "email"
+    | "accountPassword"
+    | "emailPassword"
+    | "mobileNumber",
+    string
+  >
+>;
+
+export type BulkImportStrictValidation = {
+  languageError: string | null;
+  rowFieldErrors: Record<string, BulkImportRowFieldErrors>;
+  blockingMessages: string[];
+  canImport: boolean;
+};
 
 function cellString(value: unknown) {
   if (value == null) return "";
@@ -267,6 +291,108 @@ export function validateBulkImportDraftRow(
 ): string | null {
   const warnings = bulkImportRowWarnings(row);
   return warnings[0] ?? null;
+}
+
+export function bulkImportRowFieldErrors(
+  row: BulkImportAccountDraft
+): BulkImportRowFieldErrors {
+  const errors: BulkImportRowFieldErrors = {};
+  if (!row.platform || !PLATFORMS.includes(row.platform)) {
+    errors.platform = "Select a platform.";
+    return errors;
+  }
+
+  const parsed = setupAccountFieldsSchemaFor(row.platform).safeParse({
+    accountHolder: row.accountHolder,
+    url: row.url,
+    category: row.category,
+    username: row.username,
+    email: row.email,
+    accountPassword: row.accountPassword,
+    emailPassword: row.emailPassword,
+    mobileNumber: row.mobileNumber,
+  });
+
+  if (!parsed.success) {
+    for (const issue of parsed.error.issues) {
+      const key = issue.path[0];
+      if (typeof key !== "string") continue;
+      if (errors[key as keyof BulkImportRowFieldErrors]) continue;
+      errors[key as keyof BulkImportRowFieldErrors] = issue.message;
+    }
+  }
+
+  return errors;
+}
+
+export function getBulkImportStrictValidation(
+  rows: BulkImportAccountDraft[],
+  language: string
+): BulkImportStrictValidation {
+  const languageError = isSetupLanguage(language)
+    ? null
+    : "Select a valid language.";
+  const rowFieldErrors: Record<string, BulkImportRowFieldErrors> = {};
+  const blockingMessages: string[] = [];
+  const seenUrls = new Map<string, string>();
+
+  const platformRows = rows.filter((row) => row.platform);
+  if (!platformRows.length) {
+    blockingMessages.push("Add at least one row with a platform.");
+  }
+
+  for (const row of rows) {
+    if (!row.platform) continue;
+
+    const fieldErrors = bulkImportRowFieldErrors(row);
+    const url = row.url.trim();
+    if (
+      url &&
+      isValidAccountUrl(url) &&
+      isPlatformAccountUrl(row.platform, url)
+    ) {
+      const key = accountUrlKey(row.platform, url);
+      const firstRowId = seenUrls.get(key);
+      if (firstRowId) {
+        fieldErrors.url = "Same URL used twice.";
+        rowFieldErrors[firstRowId] = {
+          ...(rowFieldErrors[firstRowId] ?? {}),
+          url: "Same URL used twice.",
+        };
+      } else {
+        seenUrls.set(key, row.id);
+      }
+    }
+
+    if (Object.keys(fieldErrors).length > 0) {
+      rowFieldErrors[row.id] = {
+        ...(rowFieldErrors[row.id] ?? {}),
+        ...fieldErrors,
+      };
+    }
+  }
+
+  const invalidRowCount = Object.keys(rowFieldErrors).length;
+  if (invalidRowCount > 0) {
+    blockingMessages.push(
+      `Fix all highlighted issues in ${invalidRowCount} row${
+        invalidRowCount === 1 ? "" : "s"
+      } before importing.`
+    );
+  }
+  if (languageError) {
+    blockingMessages.push(languageError);
+  }
+
+  return {
+    languageError,
+    rowFieldErrors,
+    blockingMessages,
+    canImport:
+      blockingMessages.length === 0 &&
+      platformRows.length > 0 &&
+      invalidRowCount === 0,
+  };
 }
 
 export function bulkImportRowWarnings(row: BulkImportAccountDraft): string[] {

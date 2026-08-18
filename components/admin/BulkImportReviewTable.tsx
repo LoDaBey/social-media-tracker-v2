@@ -10,17 +10,21 @@ export function BulkImportReviewTable({
   holderName,
   language,
   rows,
-  rowErrors,
+  rowFieldErrors = {},
+  strict = false,
   onLanguageChange,
   onRowChange,
   onRemoveRow,
   onAddRow,
 }: BulkImportReviewTableProps) {
+  const languageInvalid = strict && !isSetupLanguage(language);
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <p className="text-[14px] text-[var(--color-muted)]">
-          Review and edit accounts for {holderName} before importing.
+          {strict
+            ? `Review every account for ${holderName}. Fix all highlighted issues before importing.`
+            : `Review and edit accounts for ${holderName} before importing.`}
         </p>
         <label className="flex min-w-[200px] flex-col gap-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-muted)]">
           Language
@@ -29,9 +33,13 @@ export function BulkImportReviewTable({
             aria-label="Account holder language"
             onChange={(event) => onLanguageChange(event.target.value)}
             className={`cursor-pointer rounded-lg outline-none border bg-[var(--color-cream-tint)] px-3 py-2.5 text-[14px] font-medium text-[var(--color-ink)] ${
-              language && isSetupLanguage(language)
-                ? "border-[var(--color-hairline)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
-                : "border-[#E08A2C] focus-visible:ring-2 focus-visible:ring-[#E08A2C]"
+              languageInvalid
+                ? "border-[var(--color-coral)] focus-visible:ring-2 focus-visible:ring-[var(--color-coral)]"
+                : language && isSetupLanguage(language)
+                  ? "border-[var(--color-hairline)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+                  : strict
+                    ? "border-[var(--color-coral)] focus-visible:ring-2 focus-visible:ring-[var(--color-coral)]"
+                    : "border-[#E08A2C] focus-visible:ring-2 focus-visible:ring-[#E08A2C]"
             }`}
           >
             <option value="">Select a language</option>
@@ -95,7 +103,8 @@ export function BulkImportReviewTable({
                 <BulkImportReviewRow
                   key={row.id}
                   row={row}
-                  error={rowErrors[row.id]}
+                  strict={strict}
+                  fieldErrors={rowFieldErrors[row.id]}
                   onChange={(patch) => onRowChange(row.id, patch)}
                   onRemove={() => onRemoveRow(row.id)}
                 />

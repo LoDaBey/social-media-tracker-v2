@@ -285,6 +285,14 @@ const updateProfileSchema = z.object({
     ),
   role: z.enum(["employee", "team_lead", "admin", "manager"]),
   is_active: z.boolean(),
+  employee_code: z
+    .union([z.string(), z.null()])
+    .transform((value) => {
+      if (value == null) return null;
+      const trimmed = value.trim();
+      return trimmed === "" ? null : trimmed.slice(0, 50);
+    }),
+  employment_status: z.enum(["active", "on_hold", "deactivated"]),
   hire_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   team_lead_id: z.number().int().positive().nullable(),
   manager_id: z.number().int().positive().nullable(),
@@ -369,8 +377,10 @@ export async function updateEmployeeProfile(
          current_level = $9,
          pay_cycle_start_date = $10::date,
          region = $11,
-         country = $12
-       WHERE id = $13`,
+         country = $12,
+         employee_code = $13,
+         employment_status = $14
+       WHERE id = $15`,
       [
         p.full_name,
         p.email,
@@ -384,6 +394,8 @@ export async function updateEmployeeProfile(
         p.pay_cycle_start_date,
         SETUP_REGION,
         primaryCountry,
+        p.employee_code,
+        p.employment_status,
         user_id,
       ]
     );
@@ -434,6 +446,48 @@ export async function setEmployeeActive(
   await pool.query(`UPDATE temp_users SET is_active = $2 WHERE id = $1`, [
     user_id,
     is_active,
+  ]);
+  revalidateAdminEmployee(user_id);
+}
+
+export async function setEmployeeEmploymentStatus(
+  user_id: number,
+  employment_status: "active" | "on_hold" | "deactivated"
+): Promise<void> {
+  await requireAdminSession();
+  if (!Number.isFinite(user_id)) throw new Error("Invalid user.");
+
+  const parsed = z.enum(["active", "on_hold", "deactivated"]).safeParse(employment_status);
+  if (!parsed.success) throw new Error("Invalid status.");
+
+  await pool.query(
+    `UPDATE temp_users SET employment_status = $2 WHERE id = $1`,
+    [user_id, parsed.data]
+  );
+  revalidateAdminEmployee(user_id);
+}
+
+export async function setEmployeeCode(
+  user_id: number,
+  employee_code: string | null
+): Promise<void> {
+  await requireAdminSession();
+  if (!Number.isFinite(user_id)) throw new Error("Invalid user.");
+
+  const parsed = z
+    .union([z.string(), z.null()])
+    .transform((value) => {
+      if (value == null) return null;
+      const trimmed = value.trim();
+      return trimmed === "" ? null : trimmed.slice(0, 50);
+    })
+    .safeParse(employee_code);
+
+  if (!parsed.success) throw new Error("Enter a valid employee code.");
+
+  await pool.query(`UPDATE temp_users SET employee_code = $2 WHERE id = $1`, [
+    user_id,
+    parsed.data,
   ]);
   revalidateAdminEmployee(user_id);
 }

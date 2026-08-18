@@ -7,15 +7,11 @@ import { EmployeeCountryCell } from "@/components/admin/EmployeeCountryCell";
 import { EmployeeActiveToggle } from "@/components/admin/EmployeeActiveToggle";
 import { EmployeeDeleteButton } from "@/components/admin/EmployeeDeleteButton";
 import { EmployeeViewButton } from "@/components/admin/EmployeeViewButton";
+import { EmployeeCodeButton } from "@/components/admin/EmployeeCodeButton";
 import { EmployeeAccountsPanel } from "@/components/admin/EmployeeAccountsPanel";
 import { AccountTotalsCell } from "@/components/admin/AccountTotalsCell";
-import type { AdminEmployeeListRow, EmployeeTableRowProps } from "@/types/admin";
-
-const cycleLabel: Record<AdminEmployeeListRow["cycle_status"], string> = {
-  pending: "Pending",
-  "mid-cycle": "Mid-cycle",
-  payable: "Payable",
-};
+import { EmployeeStatusSelect } from "@/components/admin/EmployeeStatusSelect";
+import type { EmployeeTableRowProps } from "@/types/admin";
 
 export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
   const [expanded, setExpanded] = useState(false);
@@ -80,6 +76,9 @@ export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
             </div>
           </div>
         </td>
+        <td className="px-4 py-3 align-top text-[14px] font-semibold tabular-nums text-[var(--color-ink)]">
+          {row.employee_code || "—"}
+        </td>
         <td className="px-4 py-3 align-top">
           <EmployeeCountryCell countries={row.countries} />
         </td>
@@ -90,9 +89,6 @@ export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
           {row.team_lead_name ?? "—"}
         </td>
         <td className="px-4 py-3 text-[14px] tabular-nums text-[var(--color-ink)]">
-          {row.current_level}
-        </td>
-        <td className="px-4 py-3 text-[14px] tabular-nums text-[var(--color-ink)]">
           {row.target_accounts_sum}
         </td>
         <td className="px-4 py-3">
@@ -101,10 +97,12 @@ export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
             assigned={row.target_accounts_sum}
           />
         </td>
-        <td className="px-4 py-3">
-          <span className="inline-flex rounded-full bg-[var(--color-cream-tint)] px-2.5 py-1 text-[12px] font-semibold text-[var(--color-ink)]">
-            {cycleLabel[row.cycle_status]}
-          </span>
+        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+          <EmployeeStatusSelect
+            userId={row.id}
+            fullName={row.full_name}
+            status={row.employment_status}
+          />
         </td>
         <td className="px-4 py-3">
           <div
@@ -112,6 +110,11 @@ export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.stopPropagation()}
           >
+            <EmployeeCodeButton
+              employeeId={row.id}
+              fullName={row.full_name}
+              employeeCode={row.employee_code}
+            />
             <EmployeeViewButton
               employeeId={row.id}
               fullName={row.full_name}

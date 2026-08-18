@@ -6,66 +6,55 @@ import { X } from "lucide-react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import {
-  importBulkEmployeeAccounts,
-  parseBulkImportWorkbook,
-} from "@/actions/admin-bulk-import";
-import { bulkImportRowWarnings } from "@/lib/bulk-import-parse";
-import { BulkImportHolderStep } from "@/components/admin/BulkImportHolderStep";
+  importManagerBulkEmployeeAccounts,
+  parseManagerBulkImportWorkbook,
+} from "@/actions/manager-bulk-import";
+import { getBulkImportStrictValidation } from "@/lib/bulk-import-parse";
+import { isSetupCountry } from "@/lib/setup-options";
 import { BulkImportUploadStep } from "@/components/admin/BulkImportUploadStep";
 import { BulkImportReviewTable } from "@/components/admin/BulkImportReviewTable";
-import type {
-  BulkImportAccountDraft,
-  BulkImportModalProps,
-} from "@/types/admin";
+import type { BulkImportAccountDraft } from "@/types/admin";
+import type { ManagerBulkImportModalProps } from "@/types/manager";
 
-export function BulkImportModal({
+export function ManagerBulkImportModal({
   open,
-  holders,
-  initialHolderId,
+  holder,
   onClose,
-}: BulkImportModalProps) {
+}: ManagerBulkImportModalProps) {
   return (
     <AnimatePresence>
       {open ? (
-        <BulkImportModalDialog
-          holders={holders}
-          initialHolderId={initialHolderId}
-          onClose={onClose}
-        />
+        <ManagerBulkImportModalDialog holder={holder} onClose={onClose} />
       ) : null}
     </AnimatePresence>
   );
 }
 
-function BulkImportModalDialog({
-  holders,
-  initialHolderId,
+function ManagerBulkImportModalDialog({
+  holder,
   onClose,
-}: Omit<BulkImportModalProps, "open">) {
+}: Omit<ManagerBulkImportModalProps, "open">) {
   const router = useRouter();
-  const [step, setStep] = useState<"holder" | "upload" | "review">("holder");
-  const [holderId, setHolderId] = useState(
-    initialHolderId ? String(initialHolderId) : ""
-  );
-  const [country, setCountry] = useState("");
-  const [language, setLanguage] = useState("");
+  const [step, setStep] = useState<"upload" | "review">("upload");
+  const [language, setLanguage] = useState(holder.language ?? "");
   const [fileName, setFileName] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [warnings, setWarnings] = useState<string[]>([]);
+  const [parseWarnings, setParseWarnings] = useState<string[]>([]);
   const [rows, setRows] = useState<BulkImportAccountDraft[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const selectedHolder = useMemo(
-    () => holders.find((holder) => String(holder.id) === holderId) ?? null,
-    [holders, holderId]
+  const country = holder.country;
+  const countryMissing = !isSetupCountry(country);
+
+  const strictValidation = useMemo(
+    () => getBulkImportStrictValidation(rows, language),
+    [rows, language]
   );
 
   useEffect(() => {
-    if (!selectedHolder) return;
-    setCountry((prev) => prev || selectedHolder.country || "");
-    setLanguage((prev) => prev || selectedHolder.language || "");
-  }, [selectedHolder]);
+    setLanguage(holder.language ?? "");
+  }, [holder.id, holder.language]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -82,27 +71,15 @@ function BulkImportModalDialog({
     };
   }, [onClose]);
 
-  function goToUpload() {
-    setFormError(null);
-    if (!selectedHolder) {
-      setFormError("Select an account holder.");
-      return;
-    }
-    if (!country) {
-      setFormError("Select the country for this account holder.");
-      return;
-    }
-    setStep("upload");
-  }
-
   function handleFile(file: File) {
     setUploadError(null);
     setFileName(file.name);
     const data = new FormData();
     data.set("file", file);
-    data.set("holderName", selectedHolder?.full_name ?? "");
+    data.set("holderId", String(holder.id));
+    data.set("holderName", holder.full_name);
     startTransition(async () => {
-      const result = await parseBulkImportWorkbook(data);
+      const result = await parseManagerBulkImportWorkbook(data);
       if ("error" in result) {
         setUploadError(result.error);
         return;
@@ -110,42 +87,32 @@ function BulkImportModalDialog({
       setRows(
         result.rows.map((row) => ({
           ...row,
-          accountHolder: selectedHolder?.full_name ?? row.accountHolder,
+          accountHolder: holder.full_name,
         }))
       );
       if (result.language) setLanguage(result.language);
-      setWarnings(result.warnings);
+      setParseWarnings(result.warnings);
       setStep("review");
     });
   }
 
   function acceptImport() {
     setFormError(null);
-    if (!selectedHolder) {
-      setFormError("Select an account holder.");
+    if (countryMissing) {
+      setFormError("This employee needs a valid country before importing.");
       return;
     }
-    if (!country) {
-      setFormError("Select the country for this account holder.");
+    if (!strictValidation.canImport) {
+      setFormError(
+        strictValidation.blockingMessages[0] ??
+          "Fix all highlighted issues before importing."
+      );
       return;
     }
-    if (!rows.some((row) => row.platform)) {
-      setFormError("Add at least one row with a platform.");
-      return;
-    }
-    const rowWarnings = rows.flatMap((row) =>
-      bulkImportRowWarnings(row).map(
-        (warning) => `${row.username || row.url || "A row"}: ${warning}`
-      )
-    );
-    setWarnings((prev) => {
-      const merged = [...prev.filter((item) => !item.includes("will be saved empty")), ...rowWarnings];
-      return [...new Set(merged)];
-    });
 
     startTransition(async () => {
-      const result = await importBulkEmployeeAccounts({
-        holderId: selectedHolder.id,
+      const result = await importManagerBulkEmployeeAccounts({
+        holderId: holder.id,
         country,
         language,
         rows,
@@ -156,7 +123,7 @@ function BulkImportModalDialog({
         return;
       }
       toast.success(
-        `Imported ${result.imported ?? rows.length} accounts for ${selectedHolder.full_name}.`
+        `Imported ${result.imported ?? rows.length} accounts for ${holder.full_name}.`
       );
       onClose();
       router.refresh();
@@ -180,7 +147,7 @@ function BulkImportModalDialog({
       <motion.div
         role="dialog"
         aria-modal="true"
-        aria-labelledby="bulk-import-title"
+        aria-labelledby="manager-bulk-import-title"
         initial={{ opacity: 0, y: 16, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 12, scale: 0.98 }}
@@ -189,17 +156,15 @@ function BulkImportModalDialog({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2
-              id="bulk-import-title"
+              id="manager-bulk-import-title"
               className="text-[22px] font-extrabold text-[var(--color-ink)] sm:text-[26px]"
             >
               Bulk import accounts
             </h2>
             <p className="mt-1 text-[14px] text-[var(--color-muted)]">
-              {step === "holder"
-                ? "Choose the account holder and country first."
-                : step === "upload"
-                  ? "Upload the Excel template."
-                  : "Review the extracted accounts, then accept to import. Invalid cells are warnings only and import empty so the manager can finish them. This replaces any accounts already saved for this person."}
+              {step === "upload"
+                ? `Upload the Excel template for ${holder.full_name}.`
+                : "Review every account and fix all highlighted issues before importing. Invalid values cannot be saved."}
             </p>
           </div>
           <motion.button
@@ -215,35 +180,36 @@ function BulkImportModalDialog({
           </motion.button>
         </div>
 
+        {countryMissing ? (
+          <p className="mt-4 rounded-lg bg-[var(--color-coral-tint)] px-4 py-3 text-[14px] text-[var(--color-coral)]">
+            This employee does not have a valid country yet. Ask your admin to assign one
+            before bulk importing.
+          </p>
+        ) : null}
+
         {formError ? (
           <p className="mt-4 rounded-lg bg-[var(--color-coral-tint)] px-4 py-3 text-[14px] text-[var(--color-coral)]">
             {formError}
           </p>
         ) : null}
 
-        {warnings.length > 0 && step === "review" ? (
+        {parseWarnings.length > 0 && step === "review" ? (
           <ul className="mt-4 list-disc space-y-1 rounded-lg bg-[#E08A2C]/15 px-5 py-3 text-[13px] text-[#E08A2C]">
-            {warnings.map((warning) => (
+            {parseWarnings.map((warning) => (
               <li key={warning}>{warning}</li>
             ))}
           </ul>
         ) : null}
 
+        {step === "review" && strictValidation.blockingMessages.length > 0 ? (
+          <ul className="mt-4 list-disc space-y-1 rounded-lg bg-[var(--color-coral-tint)] px-5 py-3 text-[13px] text-[var(--color-coral)]">
+            {strictValidation.blockingMessages.map((message) => (
+              <li key={message}>{message}</li>
+            ))}
+          </ul>
+        ) : null}
+
         <div className="mt-5">
-          {step === "holder" ? (
-            <BulkImportHolderStep
-              holders={holders}
-              holderId={holderId}
-              country={country}
-              onHolderIdChange={(next) => {
-                setHolderId(next);
-                const holder = holders.find((item) => String(item.id) === next);
-                setCountry(holder?.country ?? "");
-                setLanguage(holder?.language ?? "");
-              }}
-              onCountryChange={setCountry}
-            />
-          ) : null}
           {step === "upload" ? (
             <BulkImportUploadStep
               fileName={fileName}
@@ -254,9 +220,11 @@ function BulkImportModalDialog({
           ) : null}
           {step === "review" ? (
             <BulkImportReviewTable
-              holderName={selectedHolder?.full_name ?? "this holder"}
+              holderName={holder.full_name}
               language={language}
               rows={rows}
+              strict
+              rowFieldErrors={strictValidation.rowFieldErrors}
               onLanguageChange={setLanguage}
               onRowChange={(id, patch) =>
                 setRows((prev) =>
@@ -272,7 +240,7 @@ function BulkImportModalDialog({
                   {
                     id: crypto.randomUUID(),
                     platform: "",
-                    accountHolder: selectedHolder?.full_name ?? "",
+                    accountHolder: holder.full_name,
                     url: "",
                     category: "",
                     username: "",
@@ -289,7 +257,7 @@ function BulkImportModalDialog({
         </div>
 
         <div className="mt-6 flex flex-wrap justify-end gap-3">
-          {step !== "holder" ? (
+          {step === "review" ? (
             <motion.button
               type="button"
               layout
@@ -298,9 +266,9 @@ function BulkImportModalDialog({
               disabled={pending}
               onClick={() => {
                 setFormError(null);
-                setStep(step === "review" ? "upload" : "holder");
+                setStep("upload");
               }}
-              aria-label="Go back to the previous import step"
+              aria-label="Go back to spreadsheet upload"
               className="cursor-pointer rounded-lg border border-[var(--color-hairline)] px-4 py-2 text-[13px] font-semibold text-[var(--color-ink)] outline-none hover:bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] disabled:opacity-50"
             >
               Back
@@ -318,31 +286,22 @@ function BulkImportModalDialog({
               Cancel
             </motion.button>
           )}
-          {step === "holder" ? (
-            <motion.button
-              type="button"
-              layout
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={goToUpload}
-              aria-label="Continue to spreadsheet upload"
-              className="cursor-pointer rounded-lg bg-[var(--color-emerald)] px-4 py-2 text-[13px] font-semibold text-white outline-none hover:bg-[var(--color-emerald-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
-            >
-              Continue
-            </motion.button>
-          ) : null}
           {step === "review" ? (
             <motion.button
               type="button"
               layout
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              disabled={pending}
+              disabled={
+                pending ||
+                countryMissing ||
+                !strictValidation.canImport
+              }
               onClick={acceptImport}
-              aria-label="Accept reviewed accounts and import"
+              aria-label="Import reviewed accounts"
               className="cursor-pointer rounded-lg bg-[var(--color-emerald)] px-4 py-2 text-[13px] font-semibold text-white outline-none hover:bg-[var(--color-emerald-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] disabled:opacity-50"
             >
-              {pending ? "Importing…" : "Accept and import"}
+              {pending ? "Importing…" : "Import accounts"}
             </motion.button>
           ) : null}
         </div>
