@@ -1,4 +1,4 @@
-import type { Platform, Role } from "@/types/db";
+import type { Platform, Role, EmploymentStatus } from "@/types/db";
 import type { ReactNode } from "react";
 import type { WalletSummary, WalletTransactionListRow } from "@/types/wallet";
 
@@ -10,6 +10,8 @@ export type AdminEmployeeListRow = {
   email: string;
   role: Role;
   is_active: boolean;
+  employee_code: string | null;
+  employment_status: EmploymentStatus;
   team_lead_id: number | null;
   team_lead_name: string | null;
   manager_id: number | null;
@@ -90,6 +92,8 @@ export type UpdateEmployeeProfilePayload = {
   phone: string | null;
   role: Role;
   is_active: boolean;
+  employee_code: string | null;
+  employment_status: EmploymentStatus;
   hire_date: string;
   team_lead_id: number | null;
   manager_id: number | null;
@@ -143,6 +147,8 @@ export type EmployeeFormInitial = {
   phone: string | null;
   role: Role;
   is_active: boolean;
+  employee_code: string | null;
+  employment_status: EmploymentStatus;
   hire_date: string;
   team_lead_id: number | null;
   manager_id: number | null;
@@ -314,6 +320,7 @@ export type EmployeeFormProps = {
   managers: AdminManagerOption[];
   embedded?: boolean;
   onSaved?: () => void;
+  employmentStatusLocked?: boolean;
 };
 
 export type EmployeeTargetsFormProps = {
@@ -355,10 +362,34 @@ export type EmployeesSearchFormProps = {
   hiddenCountry?: string;
 };
 
+export type EmployeeStatusSelectProps = {
+  userId: number;
+  fullName: string;
+  status: EmploymentStatus;
+};
+
+export type EmployeeStatusBadgeProps = {
+  status: EmploymentStatus;
+};
+
 export type EmployeeViewButtonProps = {
   employeeId: number;
   fullName: string;
   role: Role;
+};
+
+export type EmployeeCodeButtonProps = {
+  employeeId: number;
+  fullName: string;
+  employeeCode: string | null;
+};
+
+export type AdminEmployeeCodeModalProps = {
+  open: boolean;
+  employeeId: number;
+  fullName: string;
+  employeeCode: string | null;
+  onClose: () => void;
 };
 
 export type EmployeeEditModalProps = {
@@ -586,7 +617,8 @@ export type BulkImportReviewTableProps = {
   holderName: string;
   language: string;
   rows: BulkImportAccountDraft[];
-  rowErrors: Record<string, string>;
+  rowFieldErrors?: Record<string, Record<string, string>>;
+  strict?: boolean;
   onLanguageChange: (language: string) => void;
   onRowChange: (id: string, patch: Partial<BulkImportAccountDraft>) => void;
   onRemoveRow: (id: string) => void;
@@ -595,7 +627,8 @@ export type BulkImportReviewTableProps = {
 
 export type BulkImportReviewRowProps = {
   row: BulkImportAccountDraft;
-  error?: string;
+  fieldErrors?: Record<string, string>;
+  strict?: boolean;
   onChange: (patch: Partial<BulkImportAccountDraft>) => void;
   onRemove: () => void;
 };

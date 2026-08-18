@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { updateEmployeeProfile } from "@/actions/admin";
 import { LEVEL_LABELS } from "@/lib/level-labels";
+import { EMPLOYMENT_STATUSES, EMPLOYMENT_STATUS_LABELS } from "@/lib/employment-status";
 import { SETUP_COUNTRIES, SETUP_REGION } from "@/lib/setup-options";
 import type { Role } from "@/types/db";
 import type { EmployeeFormProps, UpdateEmployeeProfilePayload } from "@/types/admin";
@@ -22,6 +23,7 @@ export function EmployeeForm({
   managers,
   embedded = false,
   onSaved,
+  employmentStatusLocked = false,
 }: EmployeeFormProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -34,6 +36,8 @@ export function EmployeeForm({
       phone: initial.phone ?? "",
       role: initial.role,
       is_active: initial.is_active,
+      employee_code: initial.employee_code ?? "",
+      employment_status: initial.employment_status,
       hire_date: normalizeDate(initial.hire_date),
       team_lead_id: initial.team_lead_id,
       manager_id: initial.manager_id,
@@ -86,6 +90,8 @@ export function EmployeeForm({
       phone: form.phone.trim() === "" ? null : form.phone.trim(),
       role: form.role,
       is_active: form.is_active,
+      employee_code: form.employee_code.trim() === "" ? null : form.employee_code.trim(),
+      employment_status: form.employment_status,
       hire_date: form.hire_date,
       team_lead_id: teamLeadDisabled ? null : form.team_lead_id,
       manager_id: managerDisabled ? null : form.manager_id,
@@ -153,6 +159,40 @@ export function EmployeeForm({
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
             className={fieldClass}
           />
+        </label>
+
+        <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
+          Employee code
+          <input
+            value={form.employee_code}
+            aria-label="Employee code"
+            onChange={(e) =>
+              setForm((f) => ({ ...f, employee_code: e.target.value }))
+            }
+            className={fieldClass}
+          />
+        </label>
+
+        <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
+          Status
+          <select
+            value={form.employment_status}
+            disabled={employmentStatusLocked}
+            aria-label="Employee status"
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                employment_status: e.target.value as typeof f.employment_status,
+              }))
+            }
+            className={`cursor-pointer ${fieldClass} disabled:cursor-not-allowed disabled:bg-[var(--color-cream-tint)] disabled:text-[var(--color-muted)]`}
+          >
+            {EMPLOYMENT_STATUSES.map((status) => (
+              <option key={status} value={status}>
+                {EMPLOYMENT_STATUS_LABELS[status]}
+              </option>
+            ))}
+          </select>
         </label>
 
         <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">

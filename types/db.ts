@@ -1,5 +1,7 @@
 export type Role = "employee" | "team_lead" | "admin" | "manager";
 
+export type EmploymentStatus = "active" | "on_hold" | "deactivated";
+
 export type Platform =
   | "x"
   | "facebook_personal"
@@ -15,6 +17,8 @@ export type TempUser = {
   role: Role;
   phone: string | null;
   is_active: boolean;
+  employee_code: string | null;
+  employment_status: EmploymentStatus;
 
   base_salary: string;
   /** Postgres DATE — `pg` may return a string or a `Date`. */

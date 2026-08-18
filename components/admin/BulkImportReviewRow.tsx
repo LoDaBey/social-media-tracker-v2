@@ -2,14 +2,9 @@
 
 import { motion } from "framer-motion";
 import { Trash2 } from "lucide-react";
-import { SETUP_CATEGORIES, isSetupCategory } from "@/lib/setup-options";
+import { SETUP_CATEGORIES } from "@/lib/setup-options";
 import { PLATFORMS, PLATFORM_LABELS } from "@/lib/platform-config";
-import {
-  isPlatformAccountUrl,
-  isValidAccountEmail,
-  isValidAccountUrl,
-} from "@/lib/setup-schema";
-import { bulkImportRowWarnings } from "@/lib/bulk-import-parse";
+import { bulkImportRowWarnings, bulkImportRowFieldErrors } from "@/lib/bulk-import-parse";
 import type { BulkImportReviewRowProps } from "@/types/admin";
 
 const fieldClass =
@@ -17,23 +12,27 @@ const fieldClass =
 const okClass =
   "border-[var(--color-hairline)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]";
 const warnClass = "border-[#E08A2C] focus-visible:ring-2 focus-visible:ring-[#E08A2C]";
+const errorClass =
+  "border-[var(--color-coral)] focus-visible:ring-2 focus-visible:ring-[var(--color-coral)]";
+
+function fieldBorder(hasIssue: boolean, strict: boolean) {
+  if (!hasIssue) return okClass;
+  return strict ? errorClass : warnClass;
+}
 
 export function BulkImportReviewRow({
   row,
+  fieldErrors: fieldErrorsProp,
+  strict = false,
   onChange,
   onRemove,
 }: BulkImportReviewRowProps) {
-  const warnings = bulkImportRowWarnings(row);
-  const urlInvalid = Boolean(
-    row.url.trim() &&
-      (!isValidAccountUrl(row.url) ||
-        (row.platform && !isPlatformAccountUrl(row.platform, row.url)))
-  );
-  const emailInvalid = Boolean(row.email.trim() && !isValidAccountEmail(row.email));
-  const categoryInvalid = Boolean(
-    row.category.trim() && !isSetupCategory(row.category.trim())
-  );
-  const platformInvalid = !row.platform;
+  const fieldErrors = fieldErrorsProp ?? (strict ? bulkImportRowFieldErrors(row) : {});
+  const warnings = strict ? [] : bulkImportRowWarnings(row);
+  const urlInvalid = Boolean(fieldErrors.url);
+  const emailInvalid = Boolean(fieldErrors.email);
+  const categoryInvalid = Boolean(fieldErrors.category);
+  const platformInvalid = Boolean(fieldErrors.platform);
 
   return (
     <>
@@ -47,7 +46,7 @@ export function BulkImportReviewRow({
                 platform: event.target.value as BulkImportReviewRowProps["row"]["platform"],
               })
             }
-            className={`cursor-pointer ${fieldClass} ${platformInvalid ? warnClass : okClass}`}
+            className={`cursor-pointer ${fieldClass} ${fieldBorder(platformInvalid, strict)}`}
           >
             <option value="">Select</option>
             {PLATFORMS.map((platform) => (
@@ -62,7 +61,7 @@ export function BulkImportReviewRow({
             value={row.username}
             aria-label="Username"
             onChange={(event) => onChange({ username: event.target.value })}
-            className={`${fieldClass} ${okClass}`}
+            className={`${fieldClass} ${fieldBorder(Boolean(fieldErrors.username), strict)}`}
           />
         </td>
         <td className="px-3 py-2">
@@ -70,7 +69,7 @@ export function BulkImportReviewRow({
             value={row.email}
             aria-label="Email"
             onChange={(event) => onChange({ email: event.target.value })}
-            className={`${fieldClass} ${emailInvalid ? warnClass : okClass}`}
+            className={`${fieldClass} ${fieldBorder(emailInvalid, strict)}`}
           />
         </td>
         <td className="px-3 py-2">
@@ -79,7 +78,7 @@ export function BulkImportReviewRow({
             aria-label="Account password"
             autoComplete="off"
             onChange={(event) => onChange({ accountPassword: event.target.value })}
-            className={`${fieldClass} ${okClass}`}
+            className={`${fieldClass} ${fieldBorder(Boolean(fieldErrors.accountPassword), strict)}`}
           />
         </td>
         <td className="px-3 py-2">
@@ -88,7 +87,7 @@ export function BulkImportReviewRow({
             aria-label="Email password"
             autoComplete="off"
             onChange={(event) => onChange({ emailPassword: event.target.value })}
-            className={`${fieldClass} ${okClass}`}
+            className={`${fieldClass} ${fieldBorder(Boolean(fieldErrors.emailPassword), strict)}`}
           />
         </td>
         <td className="px-3 py-2">
@@ -96,7 +95,7 @@ export function BulkImportReviewRow({
             value={row.url}
             aria-label="Profile URL"
             onChange={(event) => onChange({ url: event.target.value })}
-            className={`min-w-[220px] ${fieldClass} ${urlInvalid ? warnClass : okClass}`}
+            className={`min-w-[220px] ${fieldClass} ${fieldBorder(urlInvalid, strict)}`}
           />
         </td>
         <td className="px-3 py-2">
@@ -104,7 +103,7 @@ export function BulkImportReviewRow({
             value={row.category}
             aria-label="Category"
             onChange={(event) => onChange({ category: event.target.value })}
-            className={`cursor-pointer ${fieldClass} ${categoryInvalid ? warnClass : okClass}`}
+            className={`cursor-pointer ${fieldClass} ${fieldBorder(categoryInvalid, strict)}`}
           >
             <option value="">Select</option>
             {categoryInvalid ? (
@@ -139,7 +138,7 @@ export function BulkImportReviewRow({
             value={row.mobileNumber}
             aria-label="Mobile number"
             onChange={(event) => onChange({ mobileNumber: event.target.value })}
-            className={`${fieldClass} ${okClass}`}
+            className={`${fieldClass} ${fieldBorder(Boolean(fieldErrors.mobileNumber), strict)}`}
           />
         </td>
         <td className="px-3 py-2">
@@ -155,7 +154,17 @@ export function BulkImportReviewRow({
           </motion.div>
         </td>
       </tr>
-      {warnings.length > 0 ? (
+      {strict && Object.keys(fieldErrors).length > 0 ? (
+        <tr>
+          <td
+            colSpan={10}
+            className="px-3 pb-2 text-[12px] font-semibold text-[var(--color-coral)]"
+          >
+            {Object.values(fieldErrors).join(" ")}
+          </td>
+        </tr>
+      ) : null}
+      {!strict && warnings.length > 0 ? (
         <tr>
           <td
             colSpan={10}

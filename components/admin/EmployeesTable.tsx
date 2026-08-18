@@ -4,11 +4,14 @@ import { EmployeeTableRow } from "@/components/admin/EmployeeTableRow";
 export function EmployeesTable({ rows, holders }: EmployeesTableProps) {
   return (
     <div className="overflow-x-auto rounded-[16px] border border-[var(--color-hairline)] bg-[var(--color-surface)]">
-        <table className="w-full min-w-[1160px] border-collapse text-left">
+        <table className="w-full min-w-[1100px] border-collapse text-left">
         <thead className="sticky top-0 z-10 bg-[var(--color-surface)] shadow-[0_1px_0_var(--color-hairline)]">
           <tr className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
             <th scope="col" className="px-4 py-3">
               Name
+            </th>
+            <th scope="col" className="px-4 py-3">
+              Employee code
             </th>
             <th scope="col" className="px-4 py-3">
               Country
@@ -20,16 +23,13 @@ export function EmployeesTable({ rows, holders }: EmployeesTableProps) {
               Team lead
             </th>
             <th scope="col" className="px-4 py-3">
-              Level
-            </th>
-            <th scope="col" className="px-4 py-3">
               Assigned accounts
             </th>
             <th scope="col" className="px-4 py-3">
               Account total
             </th>
             <th scope="col" className="px-4 py-3">
-              Cycle status
+              Status
             </th>
             <th scope="col" className="px-4 py-3">
               Actions

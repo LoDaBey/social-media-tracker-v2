@@ -61,6 +61,8 @@ export default async function AdminEmployeeDetailPage({
     phone: user.phone,
     role: user.role,
     is_active: user.is_active,
+    employee_code: user.employee_code,
+    employment_status: user.employment_status ?? "active",
     hire_date: normalizePgDateColumn(user.hire_date) ?? "",
     team_lead_id: user.team_lead_id,
     manager_id: user.manager_id,

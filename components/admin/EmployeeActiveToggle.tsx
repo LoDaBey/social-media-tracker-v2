@@ -23,11 +23,15 @@ export function EmployeeActiveToggle({ userId, fullName, isActive }: Props) {
       try {
         await setEmployeeActive(userId, !isActive);
         toast.success(
-          !isActive ? `${fullName} is now active.` : `${fullName} is now inactive.`
+          !isActive
+            ? `${fullName} can now access the dashboard.`
+            : `${fullName} can no longer access the dashboard.`
         );
         router.refresh();
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Could not update status.");
+        toast.error(
+          e instanceof Error ? e.message : "Could not update dashboard access."
+        );
       }
     });
   }
@@ -38,7 +42,9 @@ export function EmployeeActiveToggle({ userId, fullName, isActive }: Props) {
       role="switch"
       aria-checked={isActive}
       aria-label={
-        isActive ? `Deactivate ${fullName}` : `Activate ${fullName}`
+        isActive
+          ? `Revoke dashboard access for ${fullName}`
+          : `Grant dashboard access for ${fullName}`
       }
       disabled={pending}
       onClick={toggle}

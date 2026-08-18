@@ -1,5 +1,5 @@
 import type { AccountHolderOption } from "@/types/admin";
-import type { Platform } from "@/types/db";
+import type { EmploymentStatus, Platform } from "@/types/db";
 
 export type ManagerOption = {
   id: number;
@@ -28,6 +28,8 @@ export type ManagerHolderRow = {
   email: string;
   country: string;
   language: string | null;
+  employee_code: string | null;
+  employment_status: EmploymentStatus;
   setupComplete: boolean;
   setupNeedsReview: boolean;
   targetAccountsSum: number;
@@ -112,4 +114,20 @@ export type ManagerSetupActionButtonProps = {
 export type ManagerSetupStatusBadgeProps = {
   setupComplete: boolean;
   setupNeedsReview: boolean;
+};
+
+export type ManagerBulkImportButtonProps = {
+  holder: {
+    id: number;
+    full_name: string;
+    country: string;
+    language: string | null;
+  };
+  variant?: "icon" | "button";
+};
+
+export type ManagerBulkImportModalProps = {
+  open: boolean;
+  holder: ManagerBulkImportButtonProps["holder"];
+  onClose: () => void;
 };

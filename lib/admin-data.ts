@@ -118,6 +118,7 @@ export async function fetchAdminEmployeesList(
       `(u.full_name ILIKE $${i}
         OR u.email ILIKE $${i}
         OR COALESCE(u.country, '') ILIKE $${i}
+        OR COALESCE(u.employee_code, '') ILIKE $${i}
         OR REPLACE(u.role::text, '_', ' ') ILIKE $${i}
         OR EXISTS (
             SELECT 1 FROM temp_manager_countries mc
@@ -152,6 +153,8 @@ export async function fetchAdminEmployeesList(
       u.email,
       u.role,
       u.is_active,
+      u.employee_code,
+      u.employment_status,
       u.team_lead_id,
       tl.full_name AS team_lead_name,
       u.manager_id,
@@ -183,6 +186,8 @@ export async function fetchAdminEmployeesList(
     email: string;
     role: AdminEmployeeListRow["role"];
     is_active: boolean;
+    employee_code: string | null;
+    employment_status: AdminEmployeeListRow["employment_status"];
     team_lead_id: number | null;
     team_lead_name: string | null;
     manager_id: number | null;
@@ -215,6 +220,8 @@ export async function fetchAdminEmployeesList(
       email: r.email,
       role: r.role,
       is_active: r.is_active,
+      employee_code: r.employee_code,
+      employment_status: r.employment_status,
       team_lead_id: r.team_lead_id,
       team_lead_name: r.team_lead_name,
       manager_id: r.manager_id,
@@ -381,6 +388,8 @@ export async function fetchAdminEmployeeEditorBundle(
     phone: user.phone,
     role: user.role,
     is_active: user.is_active,
+    employee_code: user.employee_code,
+    employment_status: user.employment_status ?? "active",
     hire_date: normalizePgDateColumn(user.hire_date) ?? "",
     team_lead_id: user.team_lead_id,
     manager_id: user.manager_id,
