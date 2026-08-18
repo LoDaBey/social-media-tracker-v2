@@ -179,7 +179,7 @@ export type AdminManagerOption = {
 export type AdminKpiTileProps = {
   title: string;
   value: string;
-  icon: "users" | "clipboard" | "wallet" | "refresh" | "globe" | "layers";
+  icon: "users" | "clipboard" | "wallet" | "refresh" | "globe" | "layers" | "pause";
   subtitle?: string;
 };
 
@@ -245,6 +245,11 @@ export type AdminCountryCoverageTotals = Omit<
 export type AdminCountryCoverage = {
   rows: AdminCountryCoverageRow[];
   totals: AdminCountryCoverageTotals;
+  onHoldCount: number;
+};
+
+export type AdminCountryCoverageFilter = {
+  countries?: string[];
 };
 
 export type AdminCoverageKpisProps = {
