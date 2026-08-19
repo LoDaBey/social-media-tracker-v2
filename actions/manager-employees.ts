@@ -22,7 +22,7 @@ async function requireManager() {
   const managerId = Number(session?.user?.id);
   const role = session?.user?.role;
   if (!Number.isFinite(managerId) || role !== "manager") {
-    throw new Error("Unauthorized — manager only.");
+    throw new Error("Unauthorized - manager only.");
   }
   return managerId;
 }
@@ -48,10 +48,10 @@ export async function updateManagerEmployeeCode(
     const allowed = await assertManagerCanEditEmployee(managerId, employeeId);
     if (!allowed) return { error: "You cannot edit this employee." };
 
-    await pool.query(
-      `UPDATE temp_users SET employee_code = $2 WHERE id = $1`,
-      [employeeId, parsed.data.employee_code]
-    );
+    await pool.query(`UPDATE temp_users SET employee_code = $2 WHERE id = $1`, [
+      employeeId,
+      parsed.data.employee_code,
+    ]);
 
     revalidateManagerEmployee(employeeId);
     return {};

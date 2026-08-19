@@ -172,7 +172,7 @@ function ManagerEmployeeCodeDialog({
             aria-label="Save employee code"
             className="cursor-pointer rounded-lg bg-[var(--color-emerald)] px-4 py-2 text-[13px] font-semibold text-white outline-none hover:bg-[var(--color-emerald-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] disabled:opacity-50"
           >
-            {pending ? "Saving…" : "Save code"}
+            {pending ? "Saving..." : "Save code"}
           </motion.button>
         </div>
       </motion.div>
