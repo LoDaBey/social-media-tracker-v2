@@ -132,3 +132,17 @@ export type ManagerSetupStatusBadgeProps = {
   setupComplete: boolean;
   setupNeedsReview: boolean;
 };
+
+export type ManagerEmployeeCodeButtonProps = {
+  employeeId: number;
+  fullName: string;
+  employeeCode: string | null;
+};
+
+export type ManagerEmployeeCodeModalProps = {
+  open: boolean;
+  employeeId: number;
+  fullName: string;
+  employeeCode: string | null;
+  onClose: () => void;
+};
