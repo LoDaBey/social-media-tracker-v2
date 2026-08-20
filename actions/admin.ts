@@ -219,6 +219,24 @@ export async function createEmployee(
       }
     }
 
+    // Default assigned targets for new employees; other roles stay at 0.
+    const defaultTargets =
+      role === "employee"
+        ? {
+            x: 11,
+            facebook_personal: 1,
+            facebook_umbrella: 1,
+            instagram: 1,
+            tiktok: 0,
+          }
+        : {
+            x: 0,
+            facebook_personal: 0,
+            facebook_umbrella: 0,
+            instagram: 0,
+            tiktok: 0,
+          };
+
     const ins = await client.query<{ id: number }>(
       `INSERT INTO temp_users (
          full_name, email, password_hash, role, phone, is_active,
@@ -230,7 +248,7 @@ export async function createEmployee(
          $1, $2, $3, $4, $5, TRUE,
          $6, $7, $8, $9::date, $10::date, $11,
          $12, $13,
-         0, 0, 0, 0, 0
+         $14, $15, $16, $17, $18
        ) RETURNING id`,
       [
         p.full_name,
@@ -246,6 +264,11 @@ export async function createEmployee(
         level,
         SETUP_REGION,
         primaryCountry,
+        defaultTargets.x,
+        defaultTargets.facebook_personal,
+        defaultTargets.facebook_umbrella,
+        defaultTargets.instagram,
+        defaultTargets.tiktok,
       ]
     );
     const id = ins.rows[0]?.id;
