@@ -6,7 +6,6 @@ import { auth } from "@/auth";
 import { pool, queryOne } from "@/lib/db";
 import { publicAdminMutationError } from "@/lib/admin-action-error";
 import {
-  countBulkImportTargets,
   parseAfricaTemplateSheet,
   sanitizeBulkImportRow,
 } from "@/lib/bulk-import-parse";
@@ -117,33 +116,18 @@ export async function importBulkEmployeeAccounts(input: {
     );
     if (!employee) return { error: "Account holder not found." };
 
-    const targets = countBulkImportTargets(rows);
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
+      // Keep existing target_* values — admin Targets tab is the source of truth.
       await client.query(
         `UPDATE temp_users
             SET country = $2,
                 region = $3,
                 language = $4,
-                setup_needs_review = TRUE,
-                target_x_count = $5,
-                target_facebook_personal_count = $6,
-                target_facebook_umbrella_count = $7,
-                target_instagram_count = $8,
-                target_tiktok_count = $9
+                setup_needs_review = TRUE
           WHERE id = $1`,
-        [
-          holderId,
-          country,
-          SETUP_REGION,
-          savedLanguage,
-          targets.x,
-          targets.facebook_personal,
-          targets.facebook_umbrella,
-          targets.instagram,
-          targets.tiktok,
-        ]
+        [holderId, country, SETUP_REGION, savedLanguage]
       );
 
       await client.query(
