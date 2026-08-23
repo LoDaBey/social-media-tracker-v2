@@ -133,6 +133,12 @@ export type ManagerSetupStatusBadgeProps = {
   setupNeedsReview: boolean;
 };
 
+export type ManagerEmployeeStatusSelectProps = {
+  employeeId: number;
+  fullName: string;
+  status: EmploymentStatus;
+};
+
 export type ManagerEmployeeCodeButtonProps = {
   employeeId: number;
   fullName: string;

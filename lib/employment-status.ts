@@ -9,7 +9,7 @@ export const EMPLOYMENT_STATUSES: EmploymentStatus[] = [
 export const EMPLOYMENT_STATUS_LABELS: Record<EmploymentStatus, string> = {
   active: "Active",
   on_hold: "On Hold",
-  deactivated: "Deactivate",
+  deactivated: "Suspended",
 };
 
 export function employmentStatusLabel(status: EmploymentStatus | string | null) {
