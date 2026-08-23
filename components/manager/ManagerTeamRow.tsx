@@ -5,8 +5,8 @@ import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { CountryFlag } from "@/lib/country-icons";
 import { AccountTotalsCell } from "@/components/admin/AccountTotalsCell";
-import { EmployeeStatusBadge } from "@/components/admin/EmployeeStatusBadge";
 import { ManagerEmployeeCodeButton } from "@/components/manager/ManagerEmployeeCodeButton";
+import { ManagerEmployeeStatusSelect } from "@/components/manager/ManagerEmployeeStatusSelect";
 import { ManagerSetupActionButton } from "@/components/manager/ManagerSetupActionButton";
 import { ManagerSetupStatusBadge } from "@/components/manager/ManagerSetupStatusBadge";
 import { ManagerAccountsPanel } from "@/components/manager/ManagerAccountsPanel";
@@ -94,7 +94,11 @@ export function ManagerTeamRow({ row, holderOptions }: ManagerTeamRowProps) {
           />
         </td>
         <td className="px-4 py-3" onClick={(event) => event.stopPropagation()}>
-          <EmployeeStatusBadge status={row.employment_status} />
+          <ManagerEmployeeStatusSelect
+            employeeId={row.id}
+            fullName={row.full_name}
+            status={row.employment_status}
+          />
         </td>
         <td className="px-4 py-3">
           <div
