@@ -10,7 +10,7 @@ function getGoogleSheetsConfig() {
   const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
   const privateKeyRaw = process.env.GOOGLE_PRIVATE_KEY;
   const spreadsheetId = process.env.SPREADSHEET_ID;
-  const sheetTab = process.env.GOOGLE_SHEETS_TAB ?? "Khaled";
+  const sheetTab = process.env.GOOGLE_SHEETS_TAB ?? "Africa";
 
   if (!clientEmail || !privateKeyRaw || !spreadsheetId) {
     throw new Error(

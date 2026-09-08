@@ -40,7 +40,17 @@ export async function fetchAccountsForSheetsExport(): Promise<SheetsExportAccoun
       INNER JOIN temp_users u ON sma.user_id = u.id
       WHERE u.role = 'employee'
         AND u.is_active = TRUE
-      ORDER BY u.country ASC NULLS LAST, u.full_name ASC, sma.platform ASC, sma.id ASC`
+      ORDER BY u.country ASC NULLS LAST,
+               u.full_name ASC,
+               CASE sma.platform
+                 WHEN 'facebook_personal' THEN 1
+                 WHEN 'facebook_umbrella' THEN 2
+                 WHEN 'x' THEN 3
+                 WHEN 'instagram' THEN 4
+                 WHEN 'tiktok' THEN 5
+                 ELSE 6
+               END,
+               sma.id ASC`
   );
 
   return rows.map((row) => ({

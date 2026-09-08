@@ -1,4 +1,9 @@
 import type { Platform } from "@/lib/platform-config";
+import {
+  sheetCountryName,
+  sheetLanguage1,
+  sheetRegion,
+} from "@/lib/sheets-country-config";
 import type { SheetsExportAccountRow } from "@/types/admin";
 
 function capitalizeWords(str: string | null | undefined) {
@@ -47,20 +52,20 @@ function formatUsername(username: string | null) {
 
 export function transformSheetsExportRow(account: SheetsExportAccountRow) {
   return {
-    region: capitalizeWords(account.region),
-    country: capitalizeWords(account.country),
+    region: sheetRegion(),
+    country: sheetCountryName(account.country),
     platform: transformPlatform(account.platform),
     category: account.category ?? "",
-    acc_name: capitalizeWords(account.account_name),
+    acc_name: account.account_name?.trim() ?? "",
     acc_bio: "",
     acc_url: account.account_url ?? "",
     Personal: sheetBoolean(isPersonalPlatform(account.platform)),
     Umbrella: sheetBoolean(isUmbrellaPlatform(account.platform)),
-    Native: "",
-    Blogs: "",
-    Golden: "",
+    Native: sheetBoolean(false),
+    Blogs: sheetBoolean(false),
+    Golden: sheetBoolean(false),
     acc_state: transformStatus(account.status),
-    Language1: capitalizeWords(account.language) || "",
+    Language1: sheetLanguage1(account.country, account.language),
     Language2: "",
     handler_name: capitalizeWords(account.handler_name),
     acc_username: formatUsername(account.username),
