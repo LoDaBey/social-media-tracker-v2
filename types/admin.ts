@@ -645,7 +645,6 @@ export type BulkImportReviewRowProps = {
 };
 
 export type SheetsExportAccountRow = {
-  id: number;
   region: string | null;
   country: string | null;
   language: string | null;
@@ -667,16 +666,10 @@ export type SheetsSyncResult = {
   success: boolean;
   message: string;
   count?: number;
-  updated?: number;
-  appended?: number;
-  skipped?: number;
-  duplicatesCleared?: number;
-  skippedAccounts?: string[];
 };
 
 export type SyncSheetsButtonProps = {
   variant?: "icon" | "button";
-  endpoint?: "/api/admin/sync-sheets" | "/api/manager/sync-sheets";
   ariaLabel?: string;
   title?: string;
   label?: string;

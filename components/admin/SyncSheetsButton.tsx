@@ -9,12 +9,11 @@ import type { SyncSheetsButtonProps } from "@/types/admin";
 
 export function SyncSheetsButton({
   variant = "icon",
-  endpoint = "/api/admin/sync-sheets",
   ariaLabel = "Sync accounts to Google Sheets",
   title = "Sync accounts to Google Sheets",
   label = "Sync to Sheets",
 }: SyncSheetsButtonProps) {
-  const { syncSheets } = useSyncSheets(endpoint);
+  const { syncSheets } = useSyncSheets();
   const [pending, startTransition] = useTransition();
 
   function handleSync() {
@@ -26,13 +25,11 @@ export function SyncSheetsButton({
         return;
       }
 
-      toast.success(result.message);
-      if (result.skippedAccounts && result.skippedAccounts.length > 0) {
-        toast.error(
-          `Could not sync: ${result.skippedAccounts.join(", ")}`,
-          { duration: 8000 }
-        );
-      }
+      toast.success(
+        result.count != null
+          ? `${result.message} (${result.count} accounts)`
+          : result.message
+      );
     });
   }
 

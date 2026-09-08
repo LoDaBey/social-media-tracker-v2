@@ -15,8 +15,8 @@ export async function POST() {
     return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
   }
 
-  if (role !== "admin") {
-    return NextResponse.json({ success: false, message: "Forbidden — admin only." }, { status: 403 });
+  if (role !== "admin" && role !== "manager") {
+    return NextResponse.json({ success: false, message: "Forbidden." }, { status: 403 });
   }
 
   try {
