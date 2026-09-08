@@ -1,6 +1,7 @@
 "use client";
 
 import { CountryFlag } from "@/lib/country-icons";
+import { ManagerSyncSheetsButton } from "@/components/manager/ManagerSyncSheetsButton";
 import type { ManagerTeamHeaderProps } from "@/types/manager";
 
 export function ManagerTeamHeader({
@@ -17,16 +18,19 @@ export function ManagerTeamHeader({
         <h1 className="text-[32px] font-extrabold tracking-tight text-[var(--color-ink)]">
           Your team
         </h1>
-        <div className="inline-flex items-center gap-2">
-          <span className="text-[14px] font-semibold text-[var(--color-ink)]">
-            Total accounts
-          </span>
-          <span
-            className="inline-flex rounded-lg bg-[var(--color-emerald)] px-3 py-1.5 text-[14px] font-bold tabular-nums text-white"
-            aria-label={`${overall.added} of ${overall.assigned} assigned accounts across all countries`}
-          >
-            {overall.added} / {overall.assigned}
-          </span>
+        <div className="inline-flex flex-wrap items-center justify-end gap-2">
+          <ManagerSyncSheetsButton />
+          <div className="inline-flex items-center gap-2">
+            <span className="text-[14px] font-semibold text-[var(--color-ink)]">
+              Total accounts
+            </span>
+            <span
+              className="inline-flex rounded-lg bg-[var(--color-emerald)] px-3 py-1.5 text-[14px] font-bold tabular-nums text-white"
+              aria-label={`${overall.added} of ${overall.assigned} assigned accounts across all countries`}
+            >
+              {overall.added} / {overall.assigned}
+            </span>
+          </div>
         </div>
       </div>
       {showCountries ? (

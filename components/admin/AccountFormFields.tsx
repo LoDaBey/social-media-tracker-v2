@@ -6,6 +6,8 @@ import { platformUrlPlaceholder } from "@/lib/setup-schema";
 import { SetupSelect } from "@/components/setup/SetupSelect";
 import { SetupTextField } from "@/components/setup/SetupTextField";
 import { AccountHolderSelect } from "@/components/admin/AccountHolderSelect";
+import { AccountScopeSelect } from "@/components/admin/AccountScopeSelect";
+import { resolveAccountScope } from "@/lib/account-scope";
 import type { AccountFormFieldsProps } from "@/types/admin";
 
 const fieldClass =
@@ -15,9 +17,12 @@ export function AccountFormFields({
   value,
   fieldErrors,
   platformLocked = false,
+  showAccountScope = false,
   holderOptions,
   onChange,
 }: AccountFormFieldsProps) {
+  const accountScope = resolveAccountScope(value.platform, value.accountScope);
+
   return (
     <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
       <label className="flex min-w-0 flex-col gap-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-muted)]">
@@ -41,6 +46,12 @@ export function AccountFormFields({
           ))}
         </select>
       </label>
+      {showAccountScope ? (
+        <AccountScopeSelect
+          value={accountScope}
+          onChange={(accountScope) => onChange({ accountScope })}
+        />
+      ) : null}
       <label className="flex min-w-0 flex-col gap-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-muted)]">
         Status
         <select

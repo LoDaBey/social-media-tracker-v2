@@ -1,4 +1,4 @@
-import type { Platform, Role, EmploymentStatus } from "@/types/db";
+import type { Platform, Role, EmploymentStatus, AccountScope } from "@/types/db";
 import type { ReactNode } from "react";
 import type { WalletSummary, WalletTransactionListRow } from "@/types/wallet";
 
@@ -470,6 +470,7 @@ export type AccountHolderOption = {
 
 export type AdminSocialAccountInput = {
   platform: Platform;
+  accountScope?: AccountScope;
   accountHolder: string;
   holderUserId?: number;
   url: string;
@@ -523,6 +524,7 @@ export type AccountFormFieldsProps = {
   value: AdminSocialAccountInput;
   fieldErrors: Partial<Record<keyof AdminSocialAccountInput, string>>;
   platformLocked?: boolean;
+  showAccountScope?: boolean;
   holderOptions?: AccountHolderOption[];
   onChange: (patch: Partial<AdminSocialAccountInput>) => void;
 };
@@ -648,6 +650,7 @@ export type SheetsExportAccountRow = {
   language: string | null;
   handler_name: string;
   platform: Platform;
+  account_scope: AccountScope;
   account_name: string;
   account_handle: string | null;
   account_url: string | null;
@@ -663,8 +666,15 @@ export type SheetsSyncResult = {
   success: boolean;
   message: string;
   count?: number;
+  updated?: number;
+  appended?: number;
+  skipped?: number;
 };
 
 export type SyncSheetsButtonProps = {
   variant?: "icon" | "button";
+  endpoint?: "/api/admin/sync-sheets" | "/api/manager/sync-sheets";
+  ariaLabel?: string;
+  title?: string;
+  label?: string;
 };

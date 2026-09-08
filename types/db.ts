@@ -9,6 +9,8 @@ export type Platform =
   | "instagram"
   | "tiktok";
 
+export type AccountScope = "personal" | "umbrella";
+
 export type TempUser = {
   id: number;
   full_name: string;
@@ -63,6 +65,8 @@ export type TempSocialMediaAccount = {
   account_password: string | null;
   email_password: string | null;
   mobile_number: string | null;
+
+  account_scope: AccountScope;
 
   status: "active" | "archived" | "suspended";
 

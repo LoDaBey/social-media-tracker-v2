@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { pool, queryOne } from "@/lib/db";
 import { assertManagerCanEditEmployee } from "@/lib/manager-data";
+import { normalizeSocialAccountInput } from "@/lib/account-scope";
 import { publicAdminMutationError } from "@/lib/admin-action-error";
 import {
   uniqueAccountUrlError,
@@ -40,7 +41,7 @@ export async function updateManagerSocialAccount(
     if (!Number.isFinite(accountId)) return { error: "Invalid account." };
     const checked = validateSocialAccountInput(payload);
     if ("error" in checked) return checked;
-    const data = checked.data;
+    const data = normalizeSocialAccountInput(checked.data);
 
     const existing = await queryOne<{ id: number; user_id: number }>(
       `SELECT id, user_id FROM temp_social_media_accounts WHERE id = $1`,
@@ -83,7 +84,8 @@ export async function updateManagerSocialAccount(
               account_password = $10,
               email_password = $11,
               mobile_number = $12,
-              status = $13
+              status = $13,
+              account_scope = $14
         WHERE id = $1`,
       [
         accountId,
@@ -99,6 +101,7 @@ export async function updateManagerSocialAccount(
         data.emailPassword,
         data.mobileNumber,
         data.status ?? "active",
+        data.accountScope,
       ]
     );
     revalidateManagerAccounts(existing.user_id);

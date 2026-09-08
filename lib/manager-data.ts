@@ -159,6 +159,7 @@ export async function fetchManagerHomeGroups(
         email_password: account.email_password,
         mobile_number: account.mobile_number,
         category: account.category,
+        account_scope: account.account_scope ?? "personal",
         status: account.status,
       })
     );

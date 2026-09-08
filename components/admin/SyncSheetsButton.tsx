@@ -7,8 +7,14 @@ import toast from "react-hot-toast";
 import { useSyncSheets } from "@/hooks/useSyncSheets";
 import type { SyncSheetsButtonProps } from "@/types/admin";
 
-export function SyncSheetsButton({ variant = "icon" }: SyncSheetsButtonProps) {
-  const { syncSheets } = useSyncSheets();
+export function SyncSheetsButton({
+  variant = "icon",
+  endpoint = "/api/admin/sync-sheets",
+  ariaLabel = "Sync accounts to Google Sheets",
+  title = "Sync accounts to Google Sheets",
+  label = "Sync to Sheets",
+}: SyncSheetsButtonProps) {
+  const { syncSheets } = useSyncSheets(endpoint);
   const [pending, startTransition] = useTransition();
 
   function handleSync() {
@@ -20,11 +26,7 @@ export function SyncSheetsButton({ variant = "icon" }: SyncSheetsButtonProps) {
         return;
       }
 
-      toast.success(
-        result.count != null
-          ? `${result.message} (${result.count} accounts)`
-          : result.message
-      );
+      toast.success(result.message);
     });
   }
 
@@ -35,19 +37,19 @@ export function SyncSheetsButton({ variant = "icon" }: SyncSheetsButtonProps) {
       {variant === "button" ? (
         <button
           type="button"
-          aria-label="Sync accounts to Google Sheets"
+          aria-label={ariaLabel}
           disabled={isPending}
           onClick={handleSync}
           className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--color-hairline)] px-3 py-2 text-[13px] font-semibold text-[var(--color-ink)] outline-none hover:bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Sheet className="h-4 w-4" aria-hidden="true" />
-          {isPending ? "Syncing…" : "Sync to Sheets"}
+          {isPending ? "Syncing…" : label}
         </button>
       ) : (
         <button
           type="button"
-          aria-label="Sync accounts to Google Sheets"
-          title="Sync accounts to Google Sheets"
+          aria-label={ariaLabel}
+          title={title}
           disabled={isPending}
           onClick={handleSync}
           className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface)] text-[var(--color-ink)] outline-none hover:bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] disabled:cursor-not-allowed disabled:opacity-50"

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { AccountHolderOption, AdminCountryCoverage } from "@/types/admin";
-import type { EmploymentStatus, Platform } from "@/types/db";
+import type { EmploymentStatus, Platform, AccountScope } from "@/types/db";
 
 export type ManagerOption = {
   id: number;
@@ -20,6 +20,7 @@ export type ManagerAccountListItem = {
   email_password: string | null;
   mobile_number: string | null;
   category: string | null;
+  account_scope: AccountScope;
   status: "active" | "archived" | "suspended";
 };
 
