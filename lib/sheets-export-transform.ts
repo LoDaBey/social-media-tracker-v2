@@ -1,4 +1,10 @@
-import type { Platform } from "@/lib/platform-config";
+import {
+  sheetAccountStatus,
+  sheetFlag,
+  sheetPersonalFlag,
+  sheetPlatform,
+  sheetUmbrellaFlag,
+} from "@/lib/sheets-validation-values";
 import {
   sheetCountryName,
   sheetLanguage1,
@@ -12,38 +18,6 @@ function capitalizeWords(str: string | null | undefined) {
   return str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-function sheetBoolean(value: boolean) {
-  return value ? "TRUE" : "FALSE";
-}
-
-function transformPlatform(platform: Platform) {
-  switch (platform) {
-    case "x":
-      return "Twitter";
-    case "facebook_personal":
-    case "facebook_umbrella":
-      return "Facebook";
-    case "instagram":
-      return "Instagram";
-    case "tiktok":
-      return "TikTok";
-    default:
-      return capitalizeWords(platform);
-  }
-}
-
-function isPersonalPlatform(platform: Platform) {
-  return platform === "facebook_personal";
-}
-
-function isUmbrellaPlatform(platform: Platform) {
-  return platform === "facebook_umbrella";
-}
-
-function transformStatus(status: SheetsExportAccountRow["status"]) {
-  return capitalizeWords(status);
-}
-
 function formatUsername(username: string | null) {
   const value = username?.trim() ?? "";
   if (!value) return "";
@@ -54,17 +28,17 @@ export function transformSheetsExportRow(account: SheetsExportAccountRow) {
   return {
     region: sheetRegion(),
     country: sheetCountryName(account.country),
-    platform: transformPlatform(account.platform),
+    platform: sheetPlatform(account.platform),
     category: account.category ?? "",
     acc_name: account.account_name?.trim() ?? "",
     acc_bio: "",
     acc_url: account.account_url ?? "",
-    Personal: sheetBoolean(isPersonalPlatform(account.platform)),
-    Umbrella: sheetBoolean(isUmbrellaPlatform(account.platform)),
-    Native: sheetBoolean(false),
-    Blogs: sheetBoolean(false),
-    Golden: sheetBoolean(false),
-    acc_state: transformStatus(account.status),
+    Personal: sheetFlag(sheetPersonalFlag(account.platform)),
+    Umbrella: sheetFlag(sheetUmbrellaFlag(account.platform)),
+    Native: sheetFlag(false),
+    Blogs: sheetFlag(false),
+    Golden: sheetFlag(false),
+    acc_state: sheetAccountStatus(account.status),
     Language1: sheetLanguage1(account.country, account.language),
     Language2: "",
     handler_name: capitalizeWords(account.handler_name),
