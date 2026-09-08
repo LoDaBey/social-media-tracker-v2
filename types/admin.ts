@@ -669,6 +669,7 @@ export type SheetsSyncResult = {
   updated?: number;
   appended?: number;
   skipped?: number;
+  duplicatesCleared?: number;
 };
 
 export type SyncSheetsButtonProps = {

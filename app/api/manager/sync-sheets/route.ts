@@ -34,6 +34,7 @@ export async function POST() {
         updated: 0,
         appended: 0,
         skipped: 0,
+        duplicatesCleared: 0,
       } satisfies SheetsSyncResult);
     }
 

@@ -1,5 +1,6 @@
 import type { SheetsExportAccountRow } from "@/types/admin";
-import { sheetCountryName } from "@/lib/sheets-country-config";
+import { COUNTRY_SHEET_NAME } from "@/lib/sheets-country-config";
+import { SETUP_COUNTRIES } from "@/lib/setup-options";
 
 /** Column indexes in the A:W export row (0-based). */
 export const SHEETS_COL = {
@@ -23,45 +24,165 @@ export const SHEETS_COL = {
   DETAILS: 21,
 } as const;
 
-function normalizeUsername(value: string) {
-  return value.trim().replace(/^@+/i, "").toLowerCase();
+const SHEET_COUNTRY_ALIASES: Record<string, string> = {};
+for (const country of SETUP_COUNTRIES) {
+  const sheetName = COUNTRY_SHEET_NAME[country] ?? country;
+  SHEET_COUNTRY_ALIASES[country.toLowerCase()] = sheetName.toLowerCase();
+  SHEET_COUNTRY_ALIASES[sheetName.toLowerCase()] = sheetName.toLowerCase();
 }
 
 function normalizeCell(value: unknown) {
   return String(value ?? "").trim();
 }
 
-export function sheetsAccountMatchKey(account: {
-  username: string | null;
-  account_url: string | null;
-  handler_name?: string;
-  country?: string | null;
-}): string | null {
-  const username = normalizeUsername(account.username ?? "");
-  if (username) {
-    const handler = normalizeCell(account.handler_name).toLowerCase();
-    const country = normalizeCell(sheetCountryName(account.country ?? "")).toLowerCase();
-    return `u:${country}|${handler}|${username}`;
-  }
-
-  const url = normalizeCell(account.account_url).toLowerCase();
-  if (url) return `url:${url}`;
-
-  return null;
+export function normalizeSheetsUsername(value: string | null | undefined) {
+  return normalizeCell(value).replace(/^@+/i, "").toLowerCase();
 }
 
-export function sheetsRowMatchKey(row: unknown[]): string | null {
-  const username = normalizeUsername(normalizeCell(row[SHEETS_COL.USERNAME]));
+export function normalizeSheetsUrl(value: string | null | undefined) {
+  const raw = normalizeCell(value);
+  if (!raw) return "";
+
+  try {
+    const parsed = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
+    let host = parsed.hostname.replace(/^www\./i, "").toLowerCase();
+    if (host === "twitter.com") host = "x.com";
+    const path = parsed.pathname.replace(/\/+$/, "").toLowerCase();
+    return `${host}${path}`;
+  } catch {
+    return raw.toLowerCase().replace(/\/+$/, "");
+  }
+}
+
+function normalizeCountry(value: string | null | undefined) {
+  const token = normalizeCell(value).toLowerCase();
+  return SHEET_COUNTRY_ALIASES[token] ?? token;
+}
+
+/** Stable keys used to locate an existing sheet row (most specific last). */
+export function sheetsAccountMatchKeys(account: {
+  username: string | null;
+  account_url: string | null;
+  account_name?: string | null;
+  handler_name?: string;
+  country?: string | null;
+}): string[] {
+  const keys: string[] = [];
+  const username = normalizeSheetsUsername(account.username);
+  const url = normalizeSheetsUrl(account.account_url);
+  const accountName = normalizeSheetsUsername(account.account_name);
+
+  if (username) keys.push(`username:${username}`);
+  if (accountName && accountName !== username) keys.push(`username:${accountName}`);
+  if (url) keys.push(`url:${url}`);
+
   if (username) {
-    const handler = normalizeCell(row[SHEETS_COL.HANDLER]).toLowerCase();
-    const country = normalizeCell(row[SHEETS_COL.COUNTRY]).toLowerCase();
-    return `u:${country}|${handler}|${username}`;
+    const handler = normalizeCell(account.handler_name).toLowerCase();
+    const country = normalizeCountry(account.country ?? "");
+    keys.push(`full:${country}|${handler}|${username}`);
   }
 
-  const url = normalizeCell(row[SHEETS_COL.URL]).toLowerCase();
-  if (url) return `url:${url}`;
+  return keys;
+}
 
-  return null;
+export function sheetsRowMatchKeys(row: unknown[]): string[] {
+  const keys: string[] = [];
+  const username = normalizeSheetsUsername(normalizeCell(row[SHEETS_COL.USERNAME]));
+  const url = normalizeSheetsUrl(normalizeCell(row[SHEETS_COL.URL]));
+  const accountName = normalizeSheetsUsername(normalizeCell(row[SHEETS_COL.ACCOUNT_NAME]));
+
+  if (username) keys.push(`username:${username}`);
+  if (accountName && accountName !== username) keys.push(`username:${accountName}`);
+  if (url) keys.push(`url:${url}`);
+
+  if (username) {
+    const handler = normalizeCell(row[SHEETS_COL.HANDLER]).toLowerCase();
+    const country = normalizeCountry(normalizeCell(row[SHEETS_COL.COUNTRY]));
+    keys.push(`full:${country}|${handler}|${username}`);
+  }
+
+  return keys;
+}
+
+export type SheetRowIndex = {
+  /** First row index (0-based) for each match key. */
+  primaryByKey: Map<string, number>;
+  /** All row indices sharing a username or url (for deduping). */
+  byUsername: Map<string, number[]>;
+  byUrl: Map<string, number[]>;
+};
+
+export function buildSheetRowIndex(rows: unknown[][]): SheetRowIndex {
+  const primaryByKey = new Map<string, number>();
+  const byUsername = new Map<string, number[]>();
+  const byUrl = new Map<string, number[]>();
+
+  for (let index = 0; index < rows.length; index += 1) {
+    const row = rows[index] ?? [];
+    if (!row.some((cell) => normalizeCell(cell))) continue;
+
+    const username = normalizeSheetsUsername(normalizeCell(row[SHEETS_COL.USERNAME]));
+    const accountName = normalizeSheetsUsername(normalizeCell(row[SHEETS_COL.ACCOUNT_NAME]));
+    const url = normalizeSheetsUrl(normalizeCell(row[SHEETS_COL.URL]));
+
+    for (const token of [username, accountName]) {
+      if (!token) continue;
+      const list = byUsername.get(token) ?? [];
+      list.push(index);
+      byUsername.set(token, list);
+    }
+
+    if (url) {
+      const list = byUrl.get(url) ?? [];
+      list.push(index);
+      byUrl.set(url, list);
+    }
+
+    for (const key of sheetsRowMatchKeys(row)) {
+      if (!primaryByKey.has(key)) {
+        primaryByKey.set(key, index);
+      }
+    }
+  }
+
+  return { primaryByKey, byUsername, byUrl };
+}
+
+export function findSheetRowIndicesForAccount(
+  account: SheetsExportAccountRow,
+  index: SheetRowIndex
+): number[] {
+  const username = normalizeSheetsUsername(account.username);
+  const accountName = normalizeSheetsUsername(account.account_name);
+  const url = normalizeSheetsUrl(account.account_url);
+
+  const indices = new Set<number>();
+
+  for (const token of [username, accountName]) {
+    if (!token) continue;
+    for (const rowIndex of index.byUsername.get(token) ?? []) {
+      indices.add(rowIndex);
+    }
+  }
+
+  if (url) {
+    for (const rowIndex of index.byUrl.get(url) ?? []) {
+      indices.add(rowIndex);
+    }
+  }
+
+  if (indices.size > 0) {
+    return [...indices].sort((a, b) => a - b);
+  }
+
+  for (const key of sheetsAccountMatchKeys(account)) {
+    const rowIndex = index.primaryByKey.get(key);
+    if (rowIndex !== undefined) {
+      return [rowIndex];
+    }
+  }
+
+  return [];
 }
 
 export function parseSheetSerialNumber(row: unknown[], fallback: number) {
@@ -83,6 +204,7 @@ export type PartialSheetsSyncSummary = {
   updated: number;
   appended: number;
   skipped: number;
+  duplicatesCleared: number;
 };
 
 export function summarizePartialSheetsSync(
@@ -90,6 +212,9 @@ export function summarizePartialSheetsSync(
   summary: PartialSheetsSyncSummary
 ) {
   const parts = [`${summary.updated} updated`];
+  if (summary.duplicatesCleared > 0) {
+    parts.push(`${summary.duplicatesCleared} duplicates cleared`);
+  }
   if (summary.appended > 0) parts.push(`${summary.appended} added`);
   if (summary.skipped > 0) parts.push(`${summary.skipped} skipped`);
 
