@@ -7,7 +7,6 @@ import {
   sheetRegion,
 } from "@/lib/sheets-validation-values";
 import { sheetCountryName, sheetLanguage1 } from "@/lib/sheets-country-config";
-import { formatSheetAccountDetails } from "@/lib/sheets-account-id";
 import type { SheetsExportAccountRow } from "@/types/admin";
 
 function capitalizeWords(str: string | null | undefined) {
@@ -46,7 +45,6 @@ export function transformSheetsExportRow(account: SheetsExportAccountRow) {
     acc_email: account.account_email ?? "",
     acc_password: account.account_password ?? "",
     acc_mobile: account.mobile_number ?? "",
-    details: formatSheetAccountDetails(account.id),
   };
 }
 
@@ -102,6 +100,6 @@ export function sheetsExportValuesFromRow(
     account.acc_email,
     account.acc_password,
     account.acc_mobile,
-    account.details,
+    "ALPHA",
   ];
 }

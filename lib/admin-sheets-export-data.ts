@@ -1,11 +1,9 @@
 import { query } from "@/lib/db";
-import { fetchManagerCountries } from "@/lib/manager-data";
 import type { Platform } from "@/lib/platform-config";
 import type { AccountScope } from "@/types/db";
 import type { SheetsExportAccountRow } from "@/types/admin";
 
 type SheetsExportQueryRow = {
-  id: number;
   region: string | null;
   country: string | null;
   language: string | null;
@@ -25,7 +23,6 @@ type SheetsExportQueryRow = {
 
 function mapSheetsExportRow(row: SheetsExportQueryRow): SheetsExportAccountRow {
   return {
-    id: row.id,
     region: row.region,
     country: row.country,
     language: row.language,
@@ -46,7 +43,6 @@ function mapSheetsExportRow(row: SheetsExportQueryRow): SheetsExportAccountRow {
 
 const SHEETS_EXPORT_QUERY = `
   SELECT
-      sma.id,
       u.region,
       u.country,
       u.language,
@@ -85,23 +81,6 @@ const SHEETS_EXPORT_ORDER = `
 export async function fetchAccountsForSheetsExport(): Promise<SheetsExportAccountRow[]> {
   const rows = await query<SheetsExportQueryRow>(
     `${SHEETS_EXPORT_QUERY}${SHEETS_EXPORT_ORDER}`
-  );
-
-  return rows.map(mapSheetsExportRow);
-}
-
-export async function fetchManagerAccountsForSheetsExport(
-  managerId: number
-): Promise<SheetsExportAccountRow[]> {
-  const managerCountries = await fetchManagerCountries(managerId);
-  if (!managerCountries.length) return [];
-
-  const rows = await query<SheetsExportQueryRow>(
-    `${SHEETS_EXPORT_QUERY}
-      AND u.manager_id = $1
-      AND u.country = ANY($2::text[])
-    ${SHEETS_EXPORT_ORDER}`,
-    [managerId, managerCountries]
   );
 
   return rows.map(mapSheetsExportRow);

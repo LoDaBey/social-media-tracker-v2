@@ -3,15 +3,13 @@
 import { useCallback, useState } from "react";
 import type { SheetsSyncResult } from "@/types/admin";
 
-type SyncSheetsEndpoint = "/api/admin/sync-sheets" | "/api/manager/sync-sheets";
-
-export function useSyncSheets(endpoint: SyncSheetsEndpoint = "/api/admin/sync-sheets") {
+export function useSyncSheets() {
   const [pending, setPending] = useState(false);
 
   const syncSheets = useCallback(async (): Promise<SheetsSyncResult> => {
     setPending(true);
     try {
-      const response = await fetch(endpoint, {
+      const response = await fetch("/api/admin/sync-sheets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
@@ -37,7 +35,7 @@ export function useSyncSheets(endpoint: SyncSheetsEndpoint = "/api/admin/sync-sh
     } finally {
       setPending(false);
     }
-  }, [endpoint]);
+  }, []);
 
   return { syncSheets, pending };
 }
