@@ -52,7 +52,7 @@ export function transformSheetsExportRow(account: SheetsExportAccountRow) {
     platform: transformPlatform(account.platform),
     category: account.category ?? "",
     acc_name: capitalizeWords(account.account_name),
-    acc_bio: account.account_handle ?? "",
+    acc_bio: "",
     acc_url: account.account_url ?? "",
     Personal: sheetBoolean(isPersonalPlatform(account.platform)),
     Umbrella: sheetBoolean(isUmbrellaPlatform(account.platform)),
