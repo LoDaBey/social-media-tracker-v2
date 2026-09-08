@@ -641,3 +641,30 @@ export type BulkImportReviewRowProps = {
   onChange: (patch: Partial<BulkImportAccountDraft>) => void;
   onRemove: () => void;
 };
+
+export type SheetsExportAccountRow = {
+  region: string | null;
+  country: string | null;
+  language: string | null;
+  handler_name: string;
+  platform: Platform;
+  account_name: string;
+  account_handle: string | null;
+  account_url: string | null;
+  category: string | null;
+  username: string | null;
+  account_email: string | null;
+  account_password: string | null;
+  mobile_number: string | null;
+  status: "active" | "archived" | "suspended";
+};
+
+export type SheetsSyncResult = {
+  success: boolean;
+  message: string;
+  count?: number;
+};
+
+export type SyncSheetsButtonProps = {
+  variant?: "icon" | "button";
+};

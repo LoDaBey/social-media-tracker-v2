@@ -3,6 +3,7 @@ import { EmployeesTable } from "@/components/admin/EmployeesTable";
 import {
   EmployeesBulkImportButton,
 } from "@/components/admin/EmployeesBulkImportButton";
+import { SyncSheetsButton } from "@/components/admin/SyncSheetsButton";
 import {
   EmployeesCreateButton,
   EmployeesFilters,
@@ -61,6 +62,7 @@ export default async function AdminEmployeesPage({
             hiddenCountry={country || undefined}
           />
           <EmployeesBulkImportButton holders={holders} />
+          <SyncSheetsButton />
           <EmployeesCreateButton />
         </div>
 
