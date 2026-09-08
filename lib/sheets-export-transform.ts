@@ -1,11 +1,10 @@
 import {
   sheetAccountStatus,
+  sheetBooleanFlag,
   sheetCategory,
-  sheetFlag,
-  sheetPersonalFlag,
+  sheetPersonalUmbrellaFlags,
   sheetPlatform,
   sheetRegion,
-  sheetUmbrellaFlag,
 } from "@/lib/sheets-validation-values";
 import { sheetCountryName, sheetLanguage1 } from "@/lib/sheets-country-config";
 import type { SheetsExportAccountRow } from "@/types/admin";
@@ -23,6 +22,8 @@ function formatUsername(username: string | null) {
 }
 
 export function transformSheetsExportRow(account: SheetsExportAccountRow) {
+  const { personal, umbrella } = sheetPersonalUmbrellaFlags(account.platform);
+
   return {
     region: sheetRegion(),
     country: sheetCountryName(account.country),
@@ -31,11 +32,11 @@ export function transformSheetsExportRow(account: SheetsExportAccountRow) {
     acc_name: account.account_name?.trim() ?? "",
     acc_bio: "",
     acc_url: account.account_url ?? "",
-    Personal: sheetFlag(sheetPersonalFlag(account.platform)),
-    Umbrella: sheetFlag(sheetUmbrellaFlag(account.platform)),
-    Native: sheetFlag(false),
-    Blogs: sheetFlag(false),
-    Golden: sheetFlag(false),
+    Personal: personal,
+    Umbrella: umbrella,
+    Native: sheetBooleanFlag(false),
+    Blogs: sheetBooleanFlag(false),
+    Golden: sheetBooleanFlag(false),
     acc_state: sheetAccountStatus(account.status),
     Language1: sheetLanguage1(account.country, account.language),
     Language2: "",
