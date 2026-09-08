@@ -5,6 +5,7 @@ import type { AccountScope } from "@/types/db";
 import type { SheetsExportAccountRow } from "@/types/admin";
 
 type SheetsExportQueryRow = {
+  id: number;
   region: string | null;
   country: string | null;
   language: string | null;
@@ -24,6 +25,7 @@ type SheetsExportQueryRow = {
 
 function mapSheetsExportRow(row: SheetsExportQueryRow): SheetsExportAccountRow {
   return {
+    id: row.id,
     region: row.region,
     country: row.country,
     language: row.language,
@@ -44,6 +46,7 @@ function mapSheetsExportRow(row: SheetsExportQueryRow): SheetsExportAccountRow {
 
 const SHEETS_EXPORT_QUERY = `
   SELECT
+      sma.id,
       u.region,
       u.country,
       u.language,
