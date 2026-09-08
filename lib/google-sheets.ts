@@ -60,7 +60,7 @@ export async function syncAccountsToGoogleSheets(accounts: SheetsExportAccountRo
   await sheets.spreadsheets.values.update({
     spreadsheetId,
     range: updateRange,
-    valueInputOption: "RAW",
+    valueInputOption: "USER_ENTERED",
     requestBody: {
       values: [Array.from(SHEETS_EXPORT_HEADERS), ...values],
     },
