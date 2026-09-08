@@ -126,14 +126,25 @@ export function sheetRegion() {
   return SHEET_REGION;
 }
 
-export function sheetFlag(value: boolean): boolean {
-  return value;
+export type SheetBooleanFlag = "TRUE" | "FALSE";
+
+export function sheetBooleanFlag(value: boolean): SheetBooleanFlag {
+  return value ? "TRUE" : "FALSE";
 }
 
-export function sheetPersonalFlag(platform: Platform): boolean {
-  return platform === "facebook_personal";
-}
+/** Personal / Umbrella flags — Facebook uses personal vs umbrella; other platforms are Personal. */
+export function sheetPersonalUmbrellaFlags(platform: Platform): {
+  personal: SheetBooleanFlag;
+  umbrella: SheetBooleanFlag;
+} {
+  if (platform === "facebook_personal") {
+    return { personal: "TRUE", umbrella: "FALSE" };
+  }
 
-export function sheetUmbrellaFlag(platform: Platform): boolean {
-  return platform === "facebook_umbrella";
+  if (platform === "facebook_umbrella") {
+    return { personal: "FALSE", umbrella: "TRUE" };
+  }
+
+  // Twitter, Instagram, TikTok — Personal TRUE, Umbrella FALSE.
+  return { personal: "TRUE", umbrella: "FALSE" };
 }
