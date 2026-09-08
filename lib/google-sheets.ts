@@ -4,8 +4,11 @@ import {
   transformSheetsExportRow,
 } from "@/lib/sheets-export-transform";
 import {
+  accountHasSheetIdentifiers,
+  accountSyncLabel,
   buildSheetRowIndex,
   findSheetRowIndicesForAccount,
+  maxSheetSerialNumber,
   parseSheetSerialNumber,
   type PartialSheetsSyncSummary,
 } from "@/lib/sheets-row-match";
@@ -103,14 +106,26 @@ export async function partialSyncAccountsToGoogleSheets(
 
   const batchUpdates: { range: string; values: unknown[][] }[] = [];
   const clearRanges: string[] = [];
+  const appendRows: unknown[][] = [];
   const clearedRowIndices = new Set<number>();
+  const skippedAccounts: string[] = [];
   let skipped = 0;
+
+  let nextSerial = maxSheetSerialNumber(existingRows);
 
   for (const account of accounts) {
     const matchedIndices = findSheetRowIndicesForAccount(account, rowIndex);
 
     if (matchedIndices.length === 0) {
-      skipped += 1;
+      if (!accountHasSheetIdentifiers(account)) {
+        skipped += 1;
+        skippedAccounts.push(`${accountSyncLabel(account)} (invalid account id)`);
+        continue;
+      }
+
+      nextSerial += 1;
+      const transformed = transformSheetsExportRow(account);
+      appendRows.push(sheetsExportValuesFromRow(transformed, nextSerial));
       continue;
     }
 
@@ -150,10 +165,21 @@ export async function partialSyncAccountsToGoogleSheets(
     });
   }
 
+  if (appendRows.length > 0) {
+    await sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range: `${sheetTab}!A:W`,
+      valueInputOption: "USER_ENTERED",
+      insertDataOption: "INSERT_ROWS",
+      requestBody: { values: appendRows },
+    });
+  }
+
   return {
     updated: batchUpdates.length,
-    appended: 0,
+    appended: appendRows.length,
     skipped,
     duplicatesCleared: clearRanges.length,
+    skippedAccounts,
   };
 }

@@ -27,6 +27,12 @@ export function SyncSheetsButton({
       }
 
       toast.success(result.message);
+      if (result.skippedAccounts && result.skippedAccounts.length > 0) {
+        toast.error(
+          `Could not sync: ${result.skippedAccounts.join(", ")}`,
+          { duration: 8000 }
+        );
+      }
     });
   }
 

@@ -645,6 +645,7 @@ export type BulkImportReviewRowProps = {
 };
 
 export type SheetsExportAccountRow = {
+  id: number;
   region: string | null;
   country: string | null;
   language: string | null;
@@ -670,6 +671,7 @@ export type SheetsSyncResult = {
   appended?: number;
   skipped?: number;
   duplicatesCleared?: number;
+  skippedAccounts?: string[];
 };
 
 export type SyncSheetsButtonProps = {
