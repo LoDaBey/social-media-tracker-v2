@@ -4,18 +4,17 @@ import {
   transformSheetsExportRow,
 } from "@/lib/sheets-export-transform";
 import {
-  maxSheetSerialNumber,
+  buildSheetRowIndex,
+  findSheetRowIndicesForAccount,
   parseSheetSerialNumber,
-  sheetsAccountMatchKey,
-  sheetsRowMatchKey,
   type PartialSheetsSyncSummary,
 } from "@/lib/sheets-row-match";
 import type { SheetsExportAccountRow } from "@/types/admin";
 
 /** First data row — row 1 keeps the sheet template headers & validation. */
 export const SHEETS_DATA_START_ROW = 2;
-/** Read/update range cap — avoids touching rows far below production data. */
-export const SHEETS_MAX_DATA_ROW = 1000;
+/** Read/update range cap for production sheets. */
+export const SHEETS_MAX_DATA_ROW = 5000;
 
 function getGoogleSheetsConfig() {
   const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
@@ -84,8 +83,8 @@ export async function syncAccountsToGoogleSheets(accounts: SheetsExportAccountRo
 }
 
 /**
- * Manager-safe sync — reads existing rows, updates only matched accounts,
- * and appends new team accounts without clearing the sheet.
+ * Manager-safe sync — updates matched rows in place, clears duplicate rows
+ * for the same account, and never wipes unrelated sheet data.
  */
 export async function partialSyncAccountsToGoogleSheets(
   accounts: SheetsExportAccountRow[]
@@ -100,50 +99,38 @@ export async function partialSyncAccountsToGoogleSheets(
   });
 
   const existingRows = existingResponse.data.values ?? [];
-  const rowIndexByKey = new Map<string, number>();
-
-  for (let index = 0; index < existingRows.length; index += 1) {
-    const key = sheetsRowMatchKey(existingRows[index] ?? []);
-    if (key && !rowIndexByKey.has(key)) {
-      rowIndexByKey.set(key, index);
-    }
-  }
+  const rowIndex = buildSheetRowIndex(existingRows);
 
   const batchUpdates: { range: string; values: unknown[][] }[] = [];
-  const appendRows: unknown[][] = [];
+  const clearRanges: string[] = [];
+  const clearedRowIndices = new Set<number>();
   let skipped = 0;
 
-  let nextSerial = maxSheetSerialNumber(existingRows);
-
   for (const account of accounts) {
-    const matchKey = sheetsAccountMatchKey({
-      username: account.username,
-      account_url: account.account_url,
-      handler_name: account.handler_name,
-      country: account.country,
-    });
+    const matchedIndices = findSheetRowIndicesForAccount(account, rowIndex);
 
-    if (!matchKey) {
+    if (matchedIndices.length === 0) {
       skipped += 1;
       continue;
     }
 
+    const primaryIndex = matchedIndices[0];
+    const primaryRowNumber = SHEETS_DATA_START_ROW + primaryIndex;
+    const existingRow = existingRows[primaryIndex] ?? [];
+    const serial = parseSheetSerialNumber(existingRow, primaryIndex + 1);
     const transformed = transformSheetsExportRow(account);
-    const existingIndex = rowIndexByKey.get(matchKey);
 
-    if (existingIndex !== undefined) {
-      const sheetRowNumber = SHEETS_DATA_START_ROW + existingIndex;
-      const existingRow = existingRows[existingIndex] ?? [];
-      const serial = parseSheetSerialNumber(existingRow, existingIndex + 1);
-      batchUpdates.push({
-        range: `${sheetTab}!A${sheetRowNumber}:W${sheetRowNumber}`,
-        values: [sheetsExportValuesFromRow(transformed, serial)],
-      });
-      continue;
+    batchUpdates.push({
+      range: `${sheetTab}!A${primaryRowNumber}:W${primaryRowNumber}`,
+      values: [sheetsExportValuesFromRow(transformed, serial)],
+    });
+
+    for (const duplicateIndex of matchedIndices.slice(1)) {
+      if (clearedRowIndices.has(duplicateIndex)) continue;
+      clearedRowIndices.add(duplicateIndex);
+      const duplicateRowNumber = SHEETS_DATA_START_ROW + duplicateIndex;
+      clearRanges.push(`${sheetTab}!A${duplicateRowNumber}:W${duplicateRowNumber}`);
     }
-
-    nextSerial += 1;
-    appendRows.push(sheetsExportValuesFromRow(transformed, nextSerial));
   }
 
   if (batchUpdates.length > 0) {
@@ -156,19 +143,17 @@ export async function partialSyncAccountsToGoogleSheets(
     });
   }
 
-  if (appendRows.length > 0) {
-    await sheets.spreadsheets.values.append({
+  if (clearRanges.length > 0) {
+    await sheets.spreadsheets.values.batchClear({
       spreadsheetId,
-      range: `${sheetTab}!A:W`,
-      valueInputOption: "USER_ENTERED",
-      insertDataOption: "INSERT_ROWS",
-      requestBody: { values: appendRows },
+      requestBody: { ranges: clearRanges },
     });
   }
 
   return {
     updated: batchUpdates.length,
-    appended: appendRows.length,
+    appended: 0,
     skipped,
+    duplicatesCleared: clearRanges.length,
   };
 }
