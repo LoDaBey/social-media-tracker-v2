@@ -1,15 +1,13 @@
 import {
   sheetAccountStatus,
+  sheetCategory,
   sheetFlag,
   sheetPersonalFlag,
   sheetPlatform,
+  sheetRegion,
   sheetUmbrellaFlag,
 } from "@/lib/sheets-validation-values";
-import {
-  sheetCountryName,
-  sheetLanguage1,
-  sheetRegion,
-} from "@/lib/sheets-country-config";
+import { sheetCountryName, sheetLanguage1 } from "@/lib/sheets-country-config";
 import type { SheetsExportAccountRow } from "@/types/admin";
 
 function capitalizeWords(str: string | null | undefined) {
@@ -29,7 +27,7 @@ export function transformSheetsExportRow(account: SheetsExportAccountRow) {
     region: sheetRegion(),
     country: sheetCountryName(account.country),
     platform: sheetPlatform(account.platform),
-    category: account.category ?? "",
+    category: sheetCategory(account.category),
     acc_name: account.account_name?.trim() ?? "",
     acc_bio: "",
     acc_url: account.account_url ?? "",
@@ -49,7 +47,7 @@ export function transformSheetsExportRow(account: SheetsExportAccountRow) {
   };
 }
 
-/** Matches the "051426 Alpha Strategy" spreadsheet column layout. */
+/** Matches the Africa strategy spreadsheet column layout (row 1 on the sheet). */
 export const SHEETS_EXPORT_HEADERS = [
   "S/N",
   "Region",

@@ -1,47 +1,82 @@
 import type { Platform } from "@/lib/platform-config";
 import type { SheetsExportAccountRow } from "@/types/admin";
 
-/** Allowed platform labels from the sheet data-validation list. */
+/** Africa tab — Platforms column dropdown (exact casing). */
 export const SHEET_PLATFORM_OPTIONS = [
-  "1000Kitap",
-  "Aparat",
-  "Balatarin",
-  "BLG-Sky",
-  "BlogSpot",
-  "Facebook",
-  "Facebook groups",
-  "GAB",
-  "Instagram",
-  "KizlarSoruyor",
-  "LinkedIn",
-  "Parler",
-  "Pinterest",
-  "Reddit",
-  "Threads",
-  "TikTok",
-  "Tumblr",
   "Twitter",
-  "communities TW",
-  "Telegram",
+  "Facebook",
+  "Instagram",
   "Website",
   "YouTube",
+  "Pinterest",
+  "Reddit",
+  "LinkedIn",
+  "Parler",
+  "BlogSpot",
+  "Medium",
+  "Media Part",
   "VK",
+  "Telegram",
+  "BLG-Sky",
+  "Facenama",
+  "Aparat",
+  "Tumblr",
+  "GAB",
+  "Sound Cloud",
+  "Quora",
+  "TikTok",
+  "BLG-Farsi",
+  "KizlarSoruyor",
+  "1000Kitap",
+  "FreelyShout",
+  "livejournal",
+  "Telegraf",
+  "Balatarin",
+  "blogger",
+  "kooplog",
+  "Threads",
+  "Twitter Communities",
+  "Facebook Groups",
   "ok.ru",
   "Virasty",
+  "Twitter Verified",
 ] as const;
 
-/** Allowed status labels from the sheet data-validation list. */
+/** Africa tab — Status column dropdown. */
 export const SHEET_STATUS_OPTIONS = [
   "Active",
-  "On Hold",
-  "Inactive",
-  "Restricted",
-  "Stand-by",
+  "Locked",
   "Suspended",
+  "Temporarily Locked",
 ] as const;
+
+/** Africa tab — Categories column dropdown. */
+export const SHEET_CATEGORY_OPTIONS = ["GH-G", "GH-R"] as const;
+
+/** Africa tab — Language1 column dropdown. */
+export const SHEET_LANGUAGE_OPTIONS = [
+  "French",
+  "Sango",
+  "Twi",
+  "Mauritian Creole",
+  "English",
+  "Kriol",
+  "Lingala",
+  "Olyad",
+  "Malagasy",
+  "Arabic",
+  "Somali",
+  "Portuguese",
+  "Kiswahili",
+] as const;
+
+/** Africa tab — Region column dropdown. */
+export const SHEET_REGION = "Africa" as const;
 
 export type SheetPlatform = (typeof SHEET_PLATFORM_OPTIONS)[number];
 export type SheetStatus = (typeof SHEET_STATUS_OPTIONS)[number];
+export type SheetCategory = (typeof SHEET_CATEGORY_OPTIONS)[number];
+export type SheetLanguage = (typeof SHEET_LANGUAGE_OPTIONS)[number];
 
 const PLATFORM_TO_SHEET: Record<Platform, SheetPlatform> = {
   x: "Twitter",
@@ -53,9 +88,15 @@ const PLATFORM_TO_SHEET: Record<Platform, SheetPlatform> = {
 
 const STATUS_TO_SHEET: Record<SheetsExportAccountRow["status"], SheetStatus> = {
   active: "Active",
-  archived: "Stand-by",
+  archived: "Temporarily Locked",
   suspended: "Suspended",
 };
+
+const APP_LANGUAGE_TO_SHEET: Record<string, SheetLanguage> = {
+  "Creole (Kriol)": "Kriol",
+};
+
+const SHEET_LANGUAGE_SET = new Set<string>(SHEET_LANGUAGE_OPTIONS);
 
 export function sheetPlatform(platform: Platform): SheetPlatform {
   return PLATFORM_TO_SHEET[platform];
@@ -65,6 +106,24 @@ export function sheetAccountStatus(
   status: SheetsExportAccountRow["status"]
 ): SheetStatus {
   return STATUS_TO_SHEET[status];
+}
+
+export function sheetCategory(category: string | null | undefined): SheetCategory {
+  if (category === "GH-G" || category === "GH-R") return category;
+  return "GH-G";
+}
+
+export function normalizeSheetLanguage(
+  value: string | null | undefined
+): SheetLanguage | "" {
+  const trimmed = value?.trim() ?? "";
+  if (!trimmed) return "";
+  if (SHEET_LANGUAGE_SET.has(trimmed)) return trimmed as SheetLanguage;
+  return APP_LANGUAGE_TO_SHEET[trimmed] ?? "";
+}
+
+export function sheetRegion() {
+  return SHEET_REGION;
 }
 
 export function sheetFlag(value: boolean): boolean {
