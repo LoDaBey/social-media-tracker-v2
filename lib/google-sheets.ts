@@ -1,10 +1,14 @@
 import { google } from "googleapis";
 import {
-  SHEETS_EXPORT_HEADERS,
   sheetsExportValuesFromRow,
   transformSheetsExportRow,
 } from "@/lib/sheets-export-transform";
 import type { SheetsExportAccountRow } from "@/types/admin";
+
+/** First data row — row 1 keeps the sheet template headers & validation. */
+const DATA_START_ROW = 2;
+/** Clear trailing rows so stale values (e.g. I800) do not block array formulas. */
+const MAX_DATA_ROW = 1000;
 
 function getGoogleSheetsConfig() {
   const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
@@ -49,21 +53,23 @@ export async function syncAccountsToGoogleSheets(accounts: SheetsExportAccountRo
     sheetsExportValuesFromRow(account, index + 1)
   );
 
-  const clearRange = `${sheetTab}!A1:W`;
-  const updateRange = `${sheetTab}!A1`;
+  const clearRange = `${sheetTab}!A${DATA_START_ROW}:W${MAX_DATA_ROW}`;
+  const updateRange = `${sheetTab}!A${DATA_START_ROW}`;
 
   await sheets.spreadsheets.values.clear({
     spreadsheetId,
     range: clearRange,
   });
 
+  if (values.length === 0) {
+    return 0;
+  }
+
   await sheets.spreadsheets.values.update({
     spreadsheetId,
     range: updateRange,
     valueInputOption: "USER_ENTERED",
-    requestBody: {
-      values: [Array.from(SHEETS_EXPORT_HEADERS), ...values],
-    },
+    requestBody: { values },
   });
 
   return accounts.length;

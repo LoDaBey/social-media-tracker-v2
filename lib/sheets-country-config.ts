@@ -1,48 +1,48 @@
-import { SETUP_COUNTRIES, SETUP_REGION } from "@/lib/setup-options";
+import { SETUP_COUNTRIES } from "@/lib/setup-options";
+import type { SheetLanguage } from "@/lib/sheets-validation-values";
+import { normalizeSheetLanguage } from "@/lib/sheets-validation-values";
 
-/** Primary Language1 per country — matches the Africa strategy reference sheet. */
-export const COUNTRY_SHEET_LANGUAGE: Record<(typeof SETUP_COUNTRIES)[number], string> =
-  {
-    Angola: "Portuguese",
-    "Burkina Faso": "French",
-    Cameroon: "French",
-    "Central African Republic": "Sango",
-    Chad: "French",
-    Comoros: "Olyad",
-    Congo: "French",
-    Djibouti: "Lingala",
-    Gabon: "Arabic",
-    Ghana: "Creole (Kriol)",
-    Guinea: "Twi",
-    "Ivory Coast": "Malagasy",
-    Libya: "Portuguese",
-    Madagascar: "Malagasy",
-    Mali: "French",
-    Mauritania: "Arabic",
-    Mauritius: "Mauritian Creole",
-    Mozambique: "Portuguese",
-    Niger: "Kriol",
-    Nigeria: "English",
-    Rwanda: "Kiswahili",
-    Senegal: "French",
-    Somalia: "Somali",
-    "South Sudan": "English",
-    Sudan: "Arabic",
-    Tanzania: "Kiswahili",
-    Uganda: "Somali",
-    Zambia: "English",
-  };
+/** Primary Language1 per country — values must match the sheet dropdown exactly. */
+export const COUNTRY_SHEET_LANGUAGE: Record<
+  (typeof SETUP_COUNTRIES)[number],
+  SheetLanguage
+> = {
+  Angola: "Portuguese",
+  "Burkina Faso": "French",
+  Cameroon: "French",
+  "Central African Republic": "Sango",
+  Chad: "French",
+  Comoros: "Olyad",
+  Congo: "French",
+  Djibouti: "Lingala",
+  Gabon: "Arabic",
+  Ghana: "Kriol",
+  Guinea: "Twi",
+  "Ivory Coast": "Malagasy",
+  Libya: "Portuguese",
+  Madagascar: "Malagasy",
+  Mali: "French",
+  Mauritania: "Arabic",
+  Mauritius: "Mauritian Creole",
+  Mozambique: "Portuguese",
+  Niger: "Kriol",
+  Nigeria: "English",
+  Rwanda: "Kiswahili",
+  Senegal: "French",
+  Somalia: "Somali",
+  "South Sudan": "English",
+  Sudan: "Arabic",
+  Tanzania: "Kiswahili",
+  Uganda: "Somali",
+  Zambia: "English",
+};
 
-/** Country labels as they appear on the strategy spreadsheet. */
+/** Country labels as they appear on the Africa strategy sheet dropdown. */
 export const COUNTRY_SHEET_NAME: Partial<
   Record<(typeof SETUP_COUNTRIES)[number], string>
 > = {
   "Burkina Faso": "Borkina",
 };
-
-export function sheetRegion() {
-  return SETUP_REGION;
-}
 
 export function sheetCountryName(country: string | null | undefined) {
   if (!country) return "";
@@ -53,11 +53,15 @@ export function sheetCountryName(country: string | null | undefined) {
 export function sheetLanguage1(
   country: string | null | undefined,
   storedLanguage: string | null | undefined
-) {
+): SheetLanguage {
   if (country) {
     const mapped =
       COUNTRY_SHEET_LANGUAGE[country as (typeof SETUP_COUNTRIES)[number]];
     if (mapped) return mapped;
   }
-  return storedLanguage?.trim() ?? "";
+
+  const normalized = normalizeSheetLanguage(storedLanguage);
+  if (normalized) return normalized;
+
+  return "English";
 }
