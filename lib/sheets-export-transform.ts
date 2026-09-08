@@ -22,7 +22,7 @@ function formatUsername(username: string | null) {
 }
 
 export function transformSheetsExportRow(account: SheetsExportAccountRow) {
-  const { personal, umbrella } = sheetPersonalUmbrellaFlags(account.platform);
+  const { personal, umbrella } = sheetPersonalUmbrellaFlags(account.account_scope);
 
   return {
     region: sheetRegion(),

@@ -3,6 +3,7 @@ import type {
   AdminSocialAccountListItem,
 } from "@/types/admin";
 import type { ManagerAccountListItem } from "@/types/manager";
+import { resolveAccountScope } from "@/lib/account-scope";
 
 export function emptyAdminSocialAccountInput(
   holderName: string
@@ -18,6 +19,7 @@ export function emptyAdminSocialAccountInput(
     emailPassword: "",
     mobileNumber: "",
     status: "active",
+    accountScope: "personal",
   };
 }
 
@@ -35,6 +37,7 @@ export function adminSocialAccountToInput(
     emailPassword: account.email_password ?? "",
     mobileNumber: account.mobile_number ?? "",
     status: account.status,
+    accountScope: resolveAccountScope(account.platform),
   };
 }
 
@@ -55,5 +58,6 @@ export function managerAccountToInput(
     emailPassword: account.email_password ?? "",
     mobileNumber: account.mobile_number ?? "",
     status: account.status,
+    accountScope: resolveAccountScope(account.platform, account.account_scope),
   };
 }

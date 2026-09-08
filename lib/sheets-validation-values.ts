@@ -1,4 +1,5 @@
 import type { Platform } from "@/lib/platform-config";
+import type { AccountScope } from "@/types/db";
 import type { SheetsExportAccountRow } from "@/types/admin";
 
 /** Africa tab — Platforms column dropdown (exact casing). */
@@ -132,19 +133,14 @@ export function sheetBooleanFlag(value: boolean): SheetBooleanFlag {
   return value ? "TRUE" : "FALSE";
 }
 
-/** Personal / Umbrella flags — Facebook uses personal vs umbrella; other platforms are Personal. */
-export function sheetPersonalUmbrellaFlags(platform: Platform): {
+/** Personal / Umbrella flags from stored account scope. */
+export function sheetPersonalUmbrellaFlags(accountScope: AccountScope): {
   personal: SheetBooleanFlag;
   umbrella: SheetBooleanFlag;
 } {
-  if (platform === "facebook_personal") {
-    return { personal: "TRUE", umbrella: "FALSE" };
-  }
-
-  if (platform === "facebook_umbrella") {
+  if (accountScope === "umbrella") {
     return { personal: "FALSE", umbrella: "TRUE" };
   }
 
-  // Twitter, Instagram, TikTok — Personal TRUE, Umbrella FALSE.
   return { personal: "TRUE", umbrella: "FALSE" };
 }

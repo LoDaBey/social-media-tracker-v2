@@ -192,6 +192,7 @@ function AccountEditModalDialog({
             value={value}
             fieldErrors={fieldErrors}
             platformLocked={mode === "edit" && !save}
+            showAccountScope={Boolean(save)}
             holderOptions={holderOptions}
             onChange={(patch) => setValue((prev) => ({ ...prev, ...patch }))}
           />

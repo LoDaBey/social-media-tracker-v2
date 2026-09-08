@@ -29,6 +29,7 @@ const inputSchema = z.object({
   emailPassword: z.string().min(1, "Add an email password."),
   mobileNumber: z.string().trim().min(1, "Add a mobile number."),
   status: z.enum(["active", "archived", "suspended"]).optional(),
+  accountScope: z.enum(["personal", "umbrella"]).optional(),
 });
 
 export function validateSocialAccountInput(
