@@ -12,6 +12,10 @@ import {
   adminPlanCountriesForRegion,
 } from "@/lib/region-config";
 import { isAlphaaCountry, isTempPlanCountry } from "@/lib/setup-options";
+import {
+  TEMP_USER_COUNTRY,
+  tempUserCountryInList,
+} from "@/lib/temp-country-sql";
 import type {
   AdminCoverageCount,
   AdminCountryCoverage,
@@ -200,6 +204,17 @@ function addCreditedCount(
   };
 }
 
+/** Employee totals count every active handler — not capped at the plan seat count. */
+function addResourceTotal(
+  left: AdminCoverageCount,
+  right: AdminCoverageCount
+): AdminCoverageCount {
+  return {
+    actual: left.actual + right.actual,
+    target: left.target + right.target,
+  };
+}
+
 function splitCoverageCountries(
   countryFilter: string[] | null,
   region: AdminRegion | undefined
@@ -240,9 +255,7 @@ function splitCoverageCountries(
 
 async function fetchTempCountryCoverage(tempCountries: string[] | null) {
   const sqlCountryClause =
-    tempCountries === null
-      ? ""
-      : ` AND COALESCE(u.country, '') = ANY($1::text[])`;
+    tempCountries === null ? "" : ` AND ${tempUserCountryInList(1)}`;
   const sqlParams = tempCountries === null ? [] : [tempCountries];
 
   const [countryRows, holderRows, onHoldRow] = await Promise.all([
@@ -256,7 +269,7 @@ async function fetchTempCountryCoverage(tempCountries: string[] | null) {
       tiktok: string;
     }>(
       `SELECT
-         COALESCE(u.country, '') AS country,
+         ${TEMP_USER_COUNTRY} AS country,
          COUNT(DISTINCT u.id)::text AS employees,
          COUNT(a.id) FILTER (WHERE a.platform = 'x')::text AS x,
          COUNT(a.id) FILTER (WHERE a.platform = 'facebook_personal')::text AS facebook_personal,
@@ -267,9 +280,9 @@ async function fetchTempCountryCoverage(tempCountries: string[] | null) {
        LEFT JOIN temp_social_media_accounts a
          ON a.user_id = u.id
         AND a.status = 'active'
-      WHERE u.role = 'employee'
+      WHERE LOWER(u.role) = 'employee'
         AND u.is_active = TRUE${sqlCountryClause}
-      GROUP BY COALESCE(u.country, '')`,
+      GROUP BY ${TEMP_USER_COUNTRY}`,
       sqlParams
     ),
     query<{
@@ -287,7 +300,7 @@ async function fetchTempCountryCoverage(tempCountries: string[] | null) {
          u.id,
          u.full_name,
          u.email,
-         COALESCE(u.country, '') AS country,
+         ${TEMP_USER_COUNTRY} AS country,
          COUNT(a.id) FILTER (WHERE a.platform = 'x')::text AS x,
          COUNT(a.id) FILTER (WHERE a.platform = 'facebook_personal')::text AS facebook_personal,
          COUNT(a.id) FILTER (WHERE a.platform = 'facebook_umbrella')::text AS facebook_umbrella,
@@ -297,9 +310,9 @@ async function fetchTempCountryCoverage(tempCountries: string[] | null) {
        LEFT JOIN temp_social_media_accounts a
          ON a.user_id = u.id
         AND a.status = 'active'
-      WHERE u.role = 'employee'
+      WHERE LOWER(u.role) = 'employee'
         AND u.is_active = TRUE${sqlCountryClause}
-      GROUP BY u.id, u.full_name, u.email, COALESCE(u.country, '')
+      GROUP BY u.id, u.full_name, u.email, ${TEMP_USER_COUNTRY}
       ORDER BY u.full_name ASC, u.id ASC`,
       sqlParams
     ),
@@ -309,10 +322,10 @@ async function fetchTempCountryCoverage(tempCountries: string[] | null) {
              FROM temp_users
             WHERE employment_status = 'on_hold'`
         : `SELECT COUNT(*)::text AS on_hold
-             FROM temp_users
+             FROM temp_users u
             WHERE employment_status = 'on_hold'
-              AND role = 'employee'
-              AND COALESCE(country, '') = ANY($1::text[])`,
+              AND LOWER(u.role) = 'employee'
+              AND ${tempUserCountryInList(1)}`,
       sqlParams
     ),
   ]);
@@ -440,7 +453,7 @@ export async function fetchAdminCountryCoverage(
 
   const totals = coverageRows.reduce(
     (sum, row) => ({
-      resources: addCreditedCount(sum.resources, row.resources),
+      resources: addResourceTotal(sum.resources, row.resources),
       x: addCreditedCount(sum.x, row.x),
       facebookPersonal: addCreditedCount(sum.facebookPersonal, row.facebookPersonal),
       facebookUmbrella: addCreditedCount(sum.facebookUmbrella, row.facebookUmbrella),
