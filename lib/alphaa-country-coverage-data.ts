@@ -6,7 +6,6 @@ import {
   ALPHAA_PLATFORM_IS_INSTAGRAM,
   ALPHAA_PLATFORM_IS_TIKTOK,
   ALPHAA_PLATFORM_IS_X,
-  ALPHAA_USER_COUNTRY,
 } from "@/lib/alphaa-platform-sql";
 
 export type AlphaaCountryActuals = {
@@ -42,24 +41,13 @@ export async function fetchAlphaaCountryActuals(
   const [employeeRows, accountRows] = await Promise.all([
     query<{ country: string; employees: string }>(
       `SELECT
-         country,
-         COUNT(DISTINCT handler_id)::text AS employees
-       FROM (
-         SELECT ${ALPHAA_USER_COUNTRY} AS country, u.id AS handler_id
-           FROM users u
-          WHERE u.role = 'Handler'
-            AND u.is_active = TRUE
-            AND ${countrySqlClause(1, ALPHAA_USER_COUNTRY)}
-
-         UNION
-
-         SELECT ${ALPHAA_NORMALIZED_COUNTRY} AS country, sma.user_id AS handler_id
-           FROM social_media_accounts sma
-          WHERE sma.spare_acc = FALSE
-            AND sma.user_id IS NOT NULL
-            AND ${countrySqlClause(1, ALPHAA_NORMALIZED_COUNTRY)}
-       ) handlers
-       GROUP BY country`,
+         ${ALPHAA_NORMALIZED_COUNTRY} AS country,
+         COUNT(DISTINCT sma.user_id)::text AS employees
+       FROM social_media_accounts sma
+       WHERE ${ALPHAA_ACTIVE_ACCOUNT_WHERE}
+         AND sma.user_id IS NOT NULL
+         AND ${countrySqlClause(1, ALPHAA_NORMALIZED_COUNTRY)}
+       GROUP BY ${ALPHAA_NORMALIZED_COUNTRY}`,
       [countries]
     ),
     query<{
@@ -137,6 +125,7 @@ export async function fetchAlphaaCountryActuals(
   return actualByCountry;
 }
 
+/** One row per legacy handler — grouped from social_media_accounts (matches sheet export). */
 export async function fetchAlphaaHolderActuals(
   countries: string[]
 ): Promise<Map<string, AlphaaHolderActuals[]>> {
@@ -154,9 +143,17 @@ export async function fetchAlphaaHolderActuals(
     tiktok: string;
   }>(
     `SELECT
-       u.id,
-       COALESCE(NULLIF(TRIM(u.username), ''), 'Unknown') AS full_name,
-       COALESCE(u.email, '') AS email,
+       sma.user_id AS id,
+       COALESCE(
+         NULLIF(TRIM(u.username), ''),
+         NULLIF(TRIM(sma.acc_username), ''),
+         'Handler ' || sma.user_id::text
+       ) AS full_name,
+       COALESCE(
+         NULLIF(TRIM(u.email), ''),
+         NULLIF(TRIM(sma.acc_email), ''),
+         ''
+       ) AS email,
        ${ALPHAA_NORMALIZED_COUNTRY} AS country,
        COUNT(sma.id) FILTER (WHERE ${ALPHAA_PLATFORM_IS_X})::text AS x,
        COUNT(sma.id) FILTER (
@@ -167,15 +164,19 @@ export async function fetchAlphaaHolderActuals(
        )::text AS facebook_umbrella,
        COUNT(sma.id) FILTER (WHERE ${ALPHAA_PLATFORM_IS_INSTAGRAM})::text AS instagram,
        COUNT(sma.id) FILTER (WHERE ${ALPHAA_PLATFORM_IS_TIKTOK})::text AS tiktok
-     FROM users u
-     INNER JOIN social_media_accounts sma
-       ON sma.user_id = u.id
-      AND ${ALPHAA_ACTIVE_ACCOUNT_WHERE}
-     WHERE u.role = 'Handler'
-       AND u.is_active = TRUE
+     FROM social_media_accounts sma
+     LEFT JOIN users u ON u.id = sma.user_id
+     WHERE ${ALPHAA_ACTIVE_ACCOUNT_WHERE}
+       AND sma.user_id IS NOT NULL
        AND ${countrySqlClause(1, ALPHAA_NORMALIZED_COUNTRY)}
-     GROUP BY u.id, u.username, u.email, ${ALPHAA_NORMALIZED_COUNTRY}
-     ORDER BY full_name ASC, u.id ASC`,
+     GROUP BY
+       sma.user_id,
+       u.username,
+       u.email,
+       sma.acc_username,
+       sma.acc_email,
+       ${ALPHAA_NORMALIZED_COUNTRY}
+     ORDER BY full_name ASC, sma.user_id ASC`,
     [countries]
   );
 
