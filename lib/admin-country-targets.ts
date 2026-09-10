@@ -72,6 +72,7 @@ export const ADMIN_COUNTRY_PLANS: AdminCountryPlan[] = [
   planCountry("Nigeria", "English", 5, STANDARD_ACCOUNTS),
   planCountry("Mali", "French", 5, STANDARD_ACCOUNTS),
   planCountry("Chad", "French", 5, STANDARD_ACCOUNTS),
+  planCountry("Sudan", "Arabic", 5, STANDARD_ACCOUNTS),
 ];
 
 /** Balkan resource plan: 15 account slots per employee seat. */

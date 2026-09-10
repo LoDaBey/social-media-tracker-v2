@@ -1,9 +1,17 @@
+import {
+  fetchAlphaaCountryActuals,
+  fetchAlphaaHolderActuals,
+} from "@/lib/alphaa-country-coverage-data";
 import { query } from "@/lib/db";
 import {
   splitCountryPlanSeats,
   xPlanTarget,
 } from "@/lib/admin-country-targets";
-import { adminCountryPlansForRegion } from "@/lib/region-config";
+import {
+  adminCountryPlansForRegion,
+  adminPlanCountriesForRegion,
+} from "@/lib/region-config";
+import { isAlphaaCountry, isTempPlanCountry } from "@/lib/setup-options";
 import type {
   AdminCoverageCount,
   AdminCountryCoverage,
@@ -12,6 +20,7 @@ import type {
   AdminCountryCoverageRow,
   AdminCountryPlan,
   AdminCountrySeatQuota,
+  AdminRegion,
 } from "@/types/admin";
 
 type CountryActuals = {
@@ -191,21 +200,50 @@ function addCreditedCount(
   };
 }
 
-export async function fetchAdminCountryCoverage(
-  filter?: AdminCountryCoverageFilter
-): Promise<AdminCountryCoverage> {
-  const regionPlans =
-    filter?.region === undefined
-      ? null
-      : adminCountryPlansForRegion(filter.region);
-  const countryFilter =
-    filter?.countries ??
-    (regionPlans === null ? null : regionPlans.map((plan) => plan.country));
+function splitCoverageCountries(
+  countryFilter: string[] | null,
+  region: AdminRegion | undefined
+) {
+  if (countryFilter) {
+    return {
+      tempCountries: countryFilter.filter((country) => isTempPlanCountry(country)),
+      alphaaCountries: countryFilter.filter((country) => isAlphaaCountry(country)),
+    };
+  }
+
+  if (region === "Alphaa") {
+    return {
+      tempCountries: [] as string[],
+      alphaaCountries: [...adminPlanCountriesForRegion("Alphaa")],
+    };
+  }
+
+  if (region === "Africa" || region === "Balkan") {
+    return {
+      tempCountries: [...adminPlanCountriesForRegion(region)],
+      alphaaCountries: [] as string[],
+    };
+  }
+
+  if (region === "Overview") {
+    return {
+      tempCountries: [
+        ...adminPlanCountriesForRegion("Africa"),
+        ...adminPlanCountriesForRegion("Balkan"),
+      ],
+      alphaaCountries: [...adminPlanCountriesForRegion("Alphaa")],
+    };
+  }
+
+  return { tempCountries: [] as string[], alphaaCountries: [] as string[] };
+}
+
+async function fetchTempCountryCoverage(tempCountries: string[] | null) {
   const sqlCountryClause =
-    countryFilter === null
+    tempCountries === null
       ? ""
       : ` AND COALESCE(u.country, '') = ANY($1::text[])`;
-  const sqlParams = countryFilter === null ? [] : [countryFilter];
+  const sqlParams = tempCountries === null ? [] : [tempCountries];
 
   const [countryRows, holderRows, onHoldRow] = await Promise.all([
     query<{
@@ -266,7 +304,7 @@ export async function fetchAdminCountryCoverage(
       sqlParams
     ),
     query<{ on_hold: string }>(
-      countryFilter === null
+      tempCountries === null
         ? `SELECT COUNT(*)::text AS on_hold
              FROM temp_users
             WHERE employment_status = 'on_hold'`
@@ -308,6 +346,53 @@ export async function fetchAdminCountryCoverage(
       tiktok: Number(row.tiktok),
     });
     holdersByCountry.set(country, list);
+  }
+
+  return {
+    actualByCountry,
+    holdersByCountry,
+    onHoldCount: Number(onHoldRow[0]?.on_hold ?? 0),
+  };
+}
+
+export async function fetchAdminCountryCoverage(
+  filter?: AdminCountryCoverageFilter
+): Promise<AdminCountryCoverage> {
+  const regionPlans =
+    filter?.region === undefined
+      ? null
+      : adminCountryPlansForRegion(filter.region);
+  const countryFilter =
+    filter?.countries ??
+    (regionPlans === null ? null : regionPlans.map((plan) => plan.country));
+  const { tempCountries, alphaaCountries } = splitCoverageCountries(
+    countryFilter,
+    filter?.region
+  );
+
+  const [tempCoverage, alphaaActualByCountry, alphaaHoldersByCountry] =
+    await Promise.all([
+      tempCountries.length > 0 || countryFilter === null
+        ? fetchTempCountryCoverage(
+            countryFilter === null ? null : tempCountries
+          )
+        : Promise.resolve({
+            actualByCountry: new Map<string, CountryActuals>(),
+            holdersByCountry: new Map<string, HolderActuals[]>(),
+            onHoldCount: 0,
+          }),
+      fetchAlphaaCountryActuals(alphaaCountries),
+      fetchAlphaaHolderActuals(alphaaCountries),
+    ]);
+
+  const actualByCountry = new Map(tempCoverage.actualByCountry);
+  for (const [country, actuals] of alphaaActualByCountry) {
+    actualByCountry.set(country, actuals);
+  }
+
+  const holdersByCountry = new Map(tempCoverage.holdersByCountry);
+  for (const [country, holders] of alphaaHoldersByCountry) {
+    holdersByCountry.set(country, holders);
   }
 
   const allowedCountries = countryFilter === null ? null : new Set(countryFilter);
@@ -377,6 +462,6 @@ export async function fetchAdminCountryCoverage(
   return {
     rows: coverageRows,
     totals,
-    onHoldCount: Number(onHoldRow[0]?.on_hold ?? 0),
+    onHoldCount: tempCoverage.onHoldCount,
   };
 }
