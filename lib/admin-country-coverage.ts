@@ -8,6 +8,10 @@ import {
   xPlanTarget,
 } from "@/lib/admin-country-targets";
 import {
+  isDualRegionCountry,
+  overviewDisplayCountry,
+} from "@/lib/overview-country-display";
+import {
   adminCountryPlansForRegion,
   adminPlanCountriesForRegion,
 } from "@/lib/region-config";
@@ -219,34 +223,62 @@ function splitCoverageCountries(
   countryFilter: string[] | null,
   region: AdminRegion | undefined
 ) {
-  if (countryFilter) {
-    return {
-      tempCountries: countryFilter.filter((country) => isTempPlanCountry(country)),
-      alphaaCountries: countryFilter.filter((country) => isAlphaaCountry(country)),
-    };
-  }
+  const africaPlanCountries = adminPlanCountriesForRegion("Africa");
+  const balkanPlanCountries = adminPlanCountriesForRegion("Balkan");
+  const alphaaPlanCountries = adminPlanCountriesForRegion("Alphaa");
 
+  /** Region tabs must use a single data source — Sudan exists in both Africa (temp) and ALPHAA (legacy). */
   if (region === "Alphaa") {
+    const alphaaCountries = countryFilter
+      ? countryFilter.filter((country) => isAlphaaCountry(country))
+      : [...alphaaPlanCountries];
     return {
       tempCountries: [] as string[],
-      alphaaCountries: [...adminPlanCountriesForRegion("Alphaa")],
+      alphaaCountries,
     };
   }
 
-  if (region === "Africa" || region === "Balkan") {
+  if (region === "Africa") {
+    const tempCountries = countryFilter
+      ? countryFilter.filter((country) =>
+          (africaPlanCountries as readonly string[]).includes(country)
+        )
+      : [...africaPlanCountries];
     return {
-      tempCountries: [...adminPlanCountriesForRegion(region)],
+      tempCountries,
+      alphaaCountries: [] as string[],
+    };
+  }
+
+  if (region === "Balkan") {
+    const tempCountries = countryFilter
+      ? countryFilter.filter((country) =>
+          (balkanPlanCountries as readonly string[]).includes(country)
+        )
+      : [...balkanPlanCountries];
+    return {
+      tempCountries,
       alphaaCountries: [] as string[],
     };
   }
 
   if (region === "Overview") {
+    const tempCountries = countryFilter
+      ? countryFilter.filter((country) => isTempPlanCountry(country))
+      : [...africaPlanCountries, ...balkanPlanCountries];
+    const alphaaCountries = countryFilter
+      ? countryFilter.filter((country) => isAlphaaCountry(country))
+      : [...alphaaPlanCountries];
     return {
-      tempCountries: [
-        ...adminPlanCountriesForRegion("Africa"),
-        ...adminPlanCountriesForRegion("Balkan"),
-      ],
-      alphaaCountries: [...adminPlanCountriesForRegion("Alphaa")],
+      tempCountries,
+      alphaaCountries,
+    };
+  }
+
+  if (countryFilter) {
+    return {
+      tempCountries: countryFilter.filter((country) => isTempPlanCountry(country)),
+      alphaaCountries: countryFilter.filter((country) => isAlphaaCountry(country)),
     };
   }
 
@@ -398,14 +430,71 @@ export async function fetchAdminCountryCoverage(
       fetchAlphaaHolderActuals(alphaaCountries),
     ]);
 
-  const actualByCountry = new Map(tempCoverage.actualByCountry);
-  for (const [country, actuals] of alphaaActualByCountry) {
-    actualByCountry.set(country, actuals);
-  }
+  const actualByCountry = new Map<string, CountryActuals>();
+  const holdersByCountry = new Map<string, HolderActuals[]>();
 
-  const holdersByCountry = new Map(tempCoverage.holdersByCountry);
-  for (const [country, holders] of alphaaHoldersByCountry) {
-    holdersByCountry.set(country, holders);
+  if (filter?.region === "Alphaa") {
+    for (const [country, actuals] of alphaaActualByCountry) {
+      actualByCountry.set(country, actuals);
+    }
+    for (const [country, holders] of alphaaHoldersByCountry) {
+      holdersByCountry.set(country, holders);
+    }
+  } else if (filter?.region === "Africa" || filter?.region === "Balkan") {
+    for (const [country, actuals] of tempCoverage.actualByCountry) {
+      actualByCountry.set(country, actuals);
+    }
+    for (const [country, holders] of tempCoverage.holdersByCountry) {
+      holdersByCountry.set(country, holders);
+    }
+  } else if (filter?.region === "Overview") {
+    for (const [country, actuals] of tempCoverage.actualByCountry) {
+      actualByCountry.set(
+        isDualRegionCountry(country)
+          ? overviewDisplayCountry(country, "Africa")
+          : country,
+        actuals
+      );
+    }
+    for (const [country, holders] of tempCoverage.holdersByCountry) {
+      holdersByCountry.set(
+        isDualRegionCountry(country)
+          ? overviewDisplayCountry(country, "Africa")
+          : country,
+        holders
+      );
+    }
+    for (const [country, actuals] of alphaaActualByCountry) {
+      if (isDualRegionCountry(country)) {
+        actualByCountry.set(overviewDisplayCountry(country, "Alphaa"), actuals);
+      } else if (!isTempPlanCountry(country)) {
+        actualByCountry.set(country, actuals);
+      }
+    }
+    for (const [country, holders] of alphaaHoldersByCountry) {
+      if (isDualRegionCountry(country)) {
+        holdersByCountry.set(overviewDisplayCountry(country, "Alphaa"), holders);
+      } else if (!isTempPlanCountry(country)) {
+        holdersByCountry.set(country, holders);
+      }
+    }
+  } else {
+    for (const [country, actuals] of tempCoverage.actualByCountry) {
+      actualByCountry.set(country, actuals);
+    }
+    for (const [country, holders] of tempCoverage.holdersByCountry) {
+      holdersByCountry.set(country, holders);
+    }
+    for (const [country, actuals] of alphaaActualByCountry) {
+      if (!isTempPlanCountry(country)) {
+        actualByCountry.set(country, actuals);
+      }
+    }
+    for (const [country, holders] of alphaaHoldersByCountry) {
+      if (!isTempPlanCountry(country)) {
+        holdersByCountry.set(country, holders);
+      }
+    }
   }
 
   const allowedCountries = countryFilter === null ? null : new Set(countryFilter);

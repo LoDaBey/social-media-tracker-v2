@@ -3,6 +3,7 @@
 import { createElement } from "react";
 import type { ComponentType, SVGProps } from "react";
 import * as Flags from "country-flag-icons/react/3x2";
+import { baseCountryFromDisplay } from "@/lib/overview-country-display";
 import { ALL_SETUP_COUNTRIES } from "@/lib/setup-options";
 import type { CountryFlagProps } from "@/types/setup";
 
@@ -63,7 +64,8 @@ export function countryIsoCode(country: string): string | null {
 }
 
 export function CountryFlag({ country, title, className }: CountryFlagProps) {
-  const flag = FLAG_BY_COUNTRY[country];
+  const flagCountry = baseCountryFromDisplay(country);
+  const flag = FLAG_BY_COUNTRY[flagCountry];
   if (!flag) {
     return (
       <span
@@ -76,7 +78,7 @@ export function CountryFlag({ country, title, className }: CountryFlagProps) {
   }
 
   return createElement(flag, {
-    "aria-label": title ?? country,
+    "aria-label": title ?? flagCountry,
     "aria-hidden": title ? undefined : true,
     className: `inline-block h-4 w-6 shrink-0 rounded-[2px] object-cover shadow-sm ${className ?? ""}`,
   });

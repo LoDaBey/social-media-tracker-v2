@@ -27,6 +27,9 @@ export function AdminCountryCoverageSection({
           current / planned. Open a country to see which account holders still
           have gaps. X combines Twitter personal and umbrella slots from the{" "}
           {planLabel} plan{region === "Overview" ? "s" : ""}.
+          {region === "Overview"
+            ? " Sudan appears twice: Africa (temp) and ALPHAA (legacy)."
+            : ""}
         </p>
       </div>
       <AdminCountryCoverageTable rows={coverage.rows} totals={coverage.totals} />
