@@ -44,6 +44,9 @@ const COUNTRY_ISO: Record<(typeof ALL_SETUP_COUNTRIES)[number], string> = {
   Macedonia: "MK",
   Bulgaria: "BG",
   Bosnia: "BA",
+  Palestine: "PS",
+  Turkey: "TR",
+  Iran: "IR",
 };
 
 const FLAGS_BY_ISO = Flags as Record<string, FlagComponent | undefined>;

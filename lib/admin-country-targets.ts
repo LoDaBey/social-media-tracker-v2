@@ -9,15 +9,6 @@ const STANDARD_ACCOUNTS = {
   tiktok: 5,
 } as const;
 
-const SUDAN_ACCOUNTS = {
-  xPersonal: 87,
-  facebookPersonal: 9,
-  xUmbrella: 9,
-  facebookUmbrella: 9,
-  instagram: 9,
-  tiktok: 9,
-} as const;
-
 /** Per employee seat: 15 account slots — same platform mix as the Africa standard plan. */
 const BALKAN_SEAT_ACCOUNTS = {
   xPersonal: 10,
@@ -34,7 +25,7 @@ function planCountry(
   country: string,
   language: string,
   resources: number,
-  accounts: typeof STANDARD_ACCOUNTS | typeof SUDAN_ACCOUNTS
+  accounts: typeof STANDARD_ACCOUNTS
 ): AdminCountryPlan {
   return {
     country,
@@ -81,7 +72,6 @@ export const ADMIN_COUNTRY_PLANS: AdminCountryPlan[] = [
   planCountry("Nigeria", "English", 5, STANDARD_ACCOUNTS),
   planCountry("Mali", "French", 5, STANDARD_ACCOUNTS),
   planCountry("Chad", "French", 5, STANDARD_ACCOUNTS),
-  planCountry("Sudan", "Arabic", 9, SUDAN_ACCOUNTS),
 ];
 
 /** Balkan resource plan: 15 account slots per employee seat. */

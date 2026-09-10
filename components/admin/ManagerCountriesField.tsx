@@ -1,5 +1,6 @@
 import { CountryFlag } from "@/lib/country-icons";
 import {
+  ALPHAA_SETUP_COUNTRIES,
   BALKAN_SETUP_COUNTRIES,
   SETUP_COUNTRIES,
   type SetupRegion,
@@ -10,6 +11,7 @@ import { AdminFieldError } from "@/components/admin/AdminFieldError";
 const REGION_GROUPS: { region: SetupRegion; countries: readonly string[] }[] = [
   { region: "Africa", countries: SETUP_COUNTRIES },
   { region: "Balkan", countries: BALKAN_SETUP_COUNTRIES },
+  { region: "Alphaa", countries: ALPHAA_SETUP_COUNTRIES },
 ];
 
 function CountryCheckbox({
@@ -59,7 +61,7 @@ export function ManagerCountriesField({
         {REGION_GROUPS.map(({ region, countries }) => (
           <section key={region} aria-label={`${region} countries`}>
             <h3 className="text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--color-muted)]">
-              {region}
+              {region === "Alphaa" ? "ALPHAA" : region}
             </h3>
             <div className="mt-2.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
               {[...countries]

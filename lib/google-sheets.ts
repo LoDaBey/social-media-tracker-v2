@@ -1,17 +1,23 @@
 import { google } from "googleapis";
 import {
+  ALPHAA_SHEETS_EXPORT_HEADERS,
+  alphaaSheetsExportValuesFromRow,
+  transformAlphaaSheetsExportRow,
+} from "@/lib/alphaa-sheets-export-transform";
+import {
   sheetsExportValuesFromRow,
   transformSheetsExportRow,
 } from "@/lib/sheets-export-transform";
-import {
-  splitAccountsByExportRegion,
-  type SheetsExportRegion,
-} from "@/lib/sheets-export-region";
-import type { SheetsExportAccountRow } from "@/types/admin";
+import { splitAccountsByExportRegion } from "@/lib/sheets-export-region";
+import type { SetupRegion } from "@/lib/setup-options";
+import type {
+  AlphaaSheetsExportAccountRow,
+  SheetsExportAccountRow,
+} from "@/types/admin";
 
-/** First data row — row 1 keeps the sheet template headers & validation. */
-const DATA_START_ROW = 2;
-const MAX_DATA_ROW = 5000;
+/** Africa/Balkan — row 1 keeps template headers; data starts at row 2. */
+const STRATEGY_DATA_START_ROW = 2;
+const STRATEGY_MAX_DATA_ROW = 5000;
 
 type RegionSheetsTarget = {
   spreadsheetId: string;
@@ -39,7 +45,7 @@ function getGoogleSheetsCredentials(): GoogleSheetsCredentials {
   };
 }
 
-function getRegionSheetsTarget(region: SheetsExportRegion): RegionSheetsTarget {
+function getRegionSheetsTarget(region: SetupRegion): RegionSheetsTarget {
   const spreadsheetId = process.env.SPREADSHEET_ID?.trim();
   if (!spreadsheetId) {
     throw new Error(
@@ -47,10 +53,12 @@ function getRegionSheetsTarget(region: SheetsExportRegion): RegionSheetsTarget {
     );
   }
 
-  const sheetTab =
-    region === "Balkan"
-      ? process.env.GOOGLE_SHEETS_TAB_BALKAN?.trim() || "Balkan"
-      : process.env.GOOGLE_SHEETS_TAB?.trim() || "Africa";
+  let sheetTab = process.env.GOOGLE_SHEETS_TAB?.trim() || "Africa";
+  if (region === "Balkan") {
+    sheetTab = process.env.GOOGLE_SHEETS_TAB_BALKAN?.trim() || "Balkan";
+  } else if (region === "Alphaa") {
+    sheetTab = process.env.GOOGLE_SHEETS_TAB_ALPHAA?.trim() || "ALPHAA";
+  }
 
   return { spreadsheetId, sheetTab };
 }
@@ -67,8 +75,8 @@ function getSheetsClient(credentials: GoogleSheetsCredentials) {
   return google.sheets({ version: "v4", auth });
 }
 
-/** Replaces all data rows on one sheet tab with the exported accounts. */
-async function syncAccountsToSheetTab(
+/** Africa/Balkan strategy tabs — data only (headers live on the sheet template). */
+async function syncStrategyAccountsToSheetTab(
   target: RegionSheetsTarget,
   accounts: SheetsExportAccountRow[],
   credentials: GoogleSheetsCredentials
@@ -79,8 +87,8 @@ async function syncAccountsToSheetTab(
     sheetsExportValuesFromRow(account, index + 1)
   );
 
-  const clearRange = `${target.sheetTab}!A${DATA_START_ROW}:W${MAX_DATA_ROW}`;
-  const updateRange = `${target.sheetTab}!A${DATA_START_ROW}`;
+  const clearRange = `${target.sheetTab}!A${STRATEGY_DATA_START_ROW}:W${STRATEGY_MAX_DATA_ROW}`;
+  const updateRange = `${target.sheetTab}!A${STRATEGY_DATA_START_ROW}`;
 
   await sheets.spreadsheets.values.clear({
     spreadsheetId: target.spreadsheetId,
@@ -101,27 +109,73 @@ async function syncAccountsToSheetTab(
   return accounts.length;
 }
 
+/** ALPHAA tab — full replace including headers (legacy social_media_accounts format). */
+async function syncAlphaaAccountsToSheetTab(
+  target: RegionSheetsTarget,
+  accounts: AlphaaSheetsExportAccountRow[],
+  credentials: GoogleSheetsCredentials
+) {
+  const sheets = getSheetsClient(credentials);
+  const transformedAccounts = accounts.map(transformAlphaaSheetsExportRow);
+  const values = transformedAccounts.map(alphaaSheetsExportValuesFromRow);
+
+  const clearRange = `${target.sheetTab}!A1:Z`;
+  const updateRange = `${target.sheetTab}!A1`;
+
+  await sheets.spreadsheets.values.clear({
+    spreadsheetId: target.spreadsheetId,
+    range: clearRange,
+  });
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: target.spreadsheetId,
+    range: updateRange,
+    valueInputOption: "RAW",
+    requestBody: {
+      values: [Array.from(ALPHAA_SHEETS_EXPORT_HEADERS), ...values],
+    },
+  });
+
+  return accounts.length;
+}
+
 export type SheetsSyncSummary = {
   africaCount: number;
   balkanCount: number;
+  alphaaCount: number;
   total: number;
 };
 
-/** Sync Africa and Balkan accounts to separate tabs in the same spreadsheet. */
+/** Sync Africa/Balkan (temp accounts) and ALPHAA (legacy social_media_accounts). */
 export async function syncAccountsToGoogleSheets(
-  accounts: SheetsExportAccountRow[]
+  africaBalkanAccounts: SheetsExportAccountRow[],
+  alphaaAccounts: AlphaaSheetsExportAccountRow[]
 ): Promise<SheetsSyncSummary> {
   const credentials = getGoogleSheetsCredentials();
-  const { africa, balkan } = splitAccountsByExportRegion(accounts);
+  const { africa, balkan } = splitAccountsByExportRegion(africaBalkanAccounts);
 
-  const [africaCount, balkanCount] = await Promise.all([
-    syncAccountsToSheetTab(getRegionSheetsTarget("Africa"), africa, credentials),
-    syncAccountsToSheetTab(getRegionSheetsTarget("Balkan"), balkan, credentials),
+  const [africaCount, balkanCount, alphaaCount] = await Promise.all([
+    syncStrategyAccountsToSheetTab(
+      getRegionSheetsTarget("Africa"),
+      africa,
+      credentials
+    ),
+    syncStrategyAccountsToSheetTab(
+      getRegionSheetsTarget("Balkan"),
+      balkan,
+      credentials
+    ),
+    syncAlphaaAccountsToSheetTab(
+      getRegionSheetsTarget("Alphaa"),
+      alphaaAccounts,
+      credentials
+    ),
   ]);
 
   return {
     africaCount,
     balkanCount,
-    total: africaCount + balkanCount,
+    alphaaCount,
+    total: africaCount + balkanCount + alphaaCount,
   };
 }

@@ -12,6 +12,7 @@ const TABS: { region: AdminRegion; slug: AdminRegionSlug; label: string }[] = [
   { region: "Overview", slug: "overview", label: "Overview" },
   { region: "Africa", slug: "africa", label: "Africa" },
   { region: "Balkan", slug: "balkan", label: "Balkan" },
+  { region: "Alphaa", slug: "alphaa", label: "ALPHAA" },
 ];
 
 export function AdminOverviewRegionTabs({

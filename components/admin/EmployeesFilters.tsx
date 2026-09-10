@@ -111,6 +111,7 @@ export function EmployeesFilters() {
             <option value="">All regions</option>
             <option value="africa">Africa</option>
             <option value="balkan">Balkan</option>
+            <option value="alphaa">ALPHAA</option>
           </select>
         </label>
         <label className="flex min-w-0 flex-wrap items-center gap-2 text-[13px] font-semibold text-[var(--color-muted)]">

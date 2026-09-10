@@ -75,11 +75,14 @@ export const SHEET_LANGUAGE_OPTIONS = [
   "Macedonian",
   "Bulgarian",
   "Bosnian",
+  "Turkish",
+  "Persian",
 ] as const;
 
 /** Sheet Region column values. */
 export const SHEET_REGION = "Africa" as const;
 export const SHEET_REGION_BALKAN = "Balkan" as const;
+export const SHEET_REGION_ALPHAA = "ALPHAA" as const;
 
 export type SheetPlatform = (typeof SHEET_PLATFORM_OPTIONS)[number];
 export type SheetStatus = (typeof SHEET_STATUS_OPTIONS)[number];
@@ -130,8 +133,12 @@ export function normalizeSheetLanguage(
   return APP_LANGUAGE_TO_SHEET[trimmed] ?? "";
 }
 
-export function sheetRegion(region: typeof SHEET_REGION | typeof SHEET_REGION_BALKAN = SHEET_REGION) {
-  return region;
+export function sheetRegion(
+  region: "Africa" | "Balkan" | "Alphaa" = SHEET_REGION
+): typeof SHEET_REGION | typeof SHEET_REGION_BALKAN | typeof SHEET_REGION_ALPHAA {
+  if (region === "Alphaa") return SHEET_REGION_ALPHAA;
+  if (region === "Balkan") return SHEET_REGION_BALKAN;
+  return SHEET_REGION;
 }
 
 export type SheetBooleanFlag = "TRUE" | "FALSE";

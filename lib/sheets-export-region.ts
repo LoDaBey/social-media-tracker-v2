@@ -7,21 +7,27 @@ export function resolveSheetsExportRegion(
   account: Pick<SheetsExportAccountRow, "region" | "country">
 ): SheetsExportRegion {
   const stored = account.region?.trim();
-  if (stored === "Balkan" || stored === "Africa") return stored;
+  if (stored === "Balkan" || stored === "Africa" || stored === "Alphaa") {
+    return stored;
+  }
   return setupRegionForCountry(account.country ?? "");
 }
 
 export function splitAccountsByExportRegion(accounts: SheetsExportAccountRow[]) {
   const africa: SheetsExportAccountRow[] = [];
   const balkan: SheetsExportAccountRow[] = [];
+  const alphaa: SheetsExportAccountRow[] = [];
 
   for (const account of accounts) {
-    if (resolveSheetsExportRegion(account) === "Balkan") {
+    const region = resolveSheetsExportRegion(account);
+    if (region === "Balkan") {
       balkan.push(account);
+    } else if (region === "Alphaa") {
+      alphaa.push(account);
     } else {
       africa.push(account);
     }
   }
 
-  return { africa, balkan };
+  return { africa, balkan, alphaa };
 }

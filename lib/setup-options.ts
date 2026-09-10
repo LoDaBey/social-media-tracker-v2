@@ -1,4 +1,8 @@
-import { isBalkanCountry, regionForCountry } from "@/lib/region-config";
+import {
+  isAlphaaCountry,
+  isBalkanCountry,
+  regionForCountry,
+} from "@/lib/region-config";
 
 export const SETUP_REGION = "Africa" as const;
 
@@ -25,9 +29,7 @@ export const SETUP_COUNTRIES = [
   "Nigeria",
   "Rwanda",
   "Senegal",
-  "Somalia",
   "South Sudan",
-  "Sudan",
   "Tanzania",
   "Uganda",
   "Zambia",
@@ -42,9 +44,18 @@ export const BALKAN_SETUP_COUNTRIES = [
   "Bosnia",
 ] as const;
 
+export const ALPHAA_SETUP_COUNTRIES = [
+  "Sudan",
+  "Somalia",
+  "Palestine",
+  "Turkey",
+  "Iran",
+] as const;
+
 export const ALL_SETUP_COUNTRIES = [
   ...SETUP_COUNTRIES,
   ...BALKAN_SETUP_COUNTRIES,
+  ...ALPHAA_SETUP_COUNTRIES,
 ] as const;
 
 export const SETUP_CATEGORIES = ["GH-G", "GH-R"] as const;
@@ -70,6 +81,8 @@ export const SETUP_LANGUAGES = [
   "Macedonian",
   "Bulgarian",
   "Bosnian",
+  "Turkish",
+  "Persian",
 ] as const;
 
 export function isSetupCountry(value: string) {
@@ -80,10 +93,12 @@ export function setupRegionForCountry(country: string) {
   return regionForCountry(country) ?? SETUP_REGION;
 }
 
-export type SetupRegion = "Africa" | "Balkan";
+export type SetupRegion = "Africa" | "Balkan" | "Alphaa";
 
 export function setupCountriesForRegion(region: SetupRegion): readonly string[] {
-  return region === "Balkan" ? BALKAN_SETUP_COUNTRIES : SETUP_COUNTRIES;
+  if (region === "Balkan") return BALKAN_SETUP_COUNTRIES;
+  if (region === "Alphaa") return ALPHAA_SETUP_COUNTRIES;
+  return SETUP_COUNTRIES;
 }
 
 export function employeeListRegionFromSlug(
@@ -92,11 +107,14 @@ export function employeeListRegionFromSlug(
   const normalized = value?.trim().toLowerCase();
   if (normalized === "balkan") return "Balkan";
   if (normalized === "africa") return "Africa";
+  if (normalized === "alphaa") return "Alphaa";
   return "all";
 }
 
 export function employeeListRegionSlug(region: SetupRegion): string {
-  return region === "Balkan" ? "balkan" : "africa";
+  if (region === "Balkan") return "balkan";
+  if (region === "Alphaa") return "alphaa";
+  return "africa";
 }
 
 export function isCountryInEmployeeListRegion(
@@ -108,7 +126,7 @@ export function isCountryInEmployeeListRegion(
   return (setupCountriesForRegion(region) as readonly string[]).includes(country);
 }
 
-export { isBalkanCountry };
+export { isAlphaaCountry, isBalkanCountry };
 
 export function isSetupCategory(value: string) {
   return (SETUP_CATEGORIES as readonly string[]).includes(value);
