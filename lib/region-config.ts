@@ -3,8 +3,20 @@ import {
   BALKAN_COUNTRY_PLANS,
 } from "@/lib/admin-country-targets";
 import { ALPHAA_COUNTRY_PLANS } from "@/lib/alphaa-country-targets";
+import {
+  isDualRegionCountry,
+  overviewDisplayCountry,
+} from "@/lib/overview-country-display";
 import type { AdminCountryPlan } from "@/types/admin";
 import type { AdminRegion, AdminRegionSlug } from "@/types/admin";
+
+export {
+  baseCountryFromDisplay,
+  DUAL_REGION_COUNTRIES,
+  isDualRegionCountry,
+  overviewDisplayCountry,
+} from "@/lib/overview-country-display";
+export type { OverviewCountrySource } from "@/lib/overview-country-display";
 
 export const BALKAN_COUNTRIES = [
   "Slovakia",
@@ -55,10 +67,20 @@ export function adminCountryPlansForRegion(region: AdminRegion): AdminCountryPla
   ]);
 
   return [
-    ...ADMIN_COUNTRY_PLANS,
+    ...ADMIN_COUNTRY_PLANS.map((plan) =>
+      isDualRegionCountry(plan.country)
+        ? { ...plan, country: overviewDisplayCountry(plan.country, "Africa") }
+        : plan
+    ),
     ...BALKAN_COUNTRY_PLANS,
     ...ALPHAA_COUNTRY_PLANS.filter(
-      (plan) => !africaAndBalkanCountries.has(plan.country)
+      (plan) =>
+        !africaAndBalkanCountries.has(plan.country) ||
+        isDualRegionCountry(plan.country)
+    ).map((plan) =>
+      isDualRegionCountry(plan.country)
+        ? { ...plan, country: overviewDisplayCountry(plan.country, "Alphaa") }
+        : plan
     ),
   ];
 }
