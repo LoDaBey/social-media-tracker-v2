@@ -3,13 +3,13 @@
 import { createElement } from "react";
 import type { ComponentType, SVGProps } from "react";
 import * as Flags from "country-flag-icons/react/3x2";
-import { SETUP_COUNTRIES } from "@/lib/setup-options";
+import { ALL_SETUP_COUNTRIES } from "@/lib/setup-options";
 import type { CountryFlagProps } from "@/types/setup";
 
 type FlagComponent = ComponentType<SVGProps<SVGSVGElement>>;
 
 /** ISO 3166-1 alpha-2 codes for setup countries. */
-const COUNTRY_ISO: Record<(typeof SETUP_COUNTRIES)[number], string> = {
+const COUNTRY_ISO: Record<(typeof ALL_SETUP_COUNTRIES)[number], string> = {
   Angola: "AO",
   "Burkina Faso": "BF",
   Cameroon: "CM",
@@ -38,6 +38,12 @@ const COUNTRY_ISO: Record<(typeof SETUP_COUNTRIES)[number], string> = {
   Tanzania: "TZ",
   Uganda: "UG",
   Zambia: "ZM",
+  Slovakia: "SK",
+  Moldova: "MD",
+  Slovenia: "SI",
+  Macedonia: "MK",
+  Bulgaria: "BG",
+  Bosnia: "BA",
 };
 
 const FLAGS_BY_ISO = Flags as Record<string, FlagComponent | undefined>;
@@ -50,7 +56,7 @@ for (const [name, iso] of Object.entries(COUNTRY_ISO)) {
 }
 
 export function countryIsoCode(country: string): string | null {
-  return COUNTRY_ISO[country as (typeof SETUP_COUNTRIES)[number]] ?? null;
+  return COUNTRY_ISO[country as (typeof ALL_SETUP_COUNTRIES)[number]] ?? null;
 }
 
 export function CountryFlag({ country, title, className }: CountryFlagProps) {

@@ -1,4 +1,4 @@
-import { SETUP_COUNTRIES } from "@/lib/setup-options";
+import { isSetupCountry } from "@/lib/setup-options";
 import type {
   CreateEmployeeFieldErrors,
   ValidateCreateEmployeeInput,
@@ -26,9 +26,7 @@ export function validateCreateEmployeeForm(
     }
   } else if (!input.country.trim()) {
     errors.country = "Select a country.";
-  } else if (
-    !(SETUP_COUNTRIES as readonly string[]).includes(input.country.trim())
-  ) {
+  } else if (!isSetupCountry(input.country.trim())) {
     errors.country = "Select a valid country.";
   }
 

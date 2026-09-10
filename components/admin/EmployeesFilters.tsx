@@ -2,11 +2,16 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useCallback, useTransition } from "react";
+import { useCallback, useMemo, useTransition } from "react";
 import { motion } from "framer-motion";
 import { Search, UserPlus } from "lucide-react";
 import { CountryFilterSelect } from "@/components/admin/CountryFilterSelect";
-import { SETUP_COUNTRIES } from "@/lib/setup-options";
+import {
+  employeeListRegionFromSlug,
+  employeeListRegionSlug,
+  isCountryInEmployeeListRegion,
+  setupCountriesForRegion,
+} from "@/lib/setup-options";
 import type { EmployeesSearchFormProps } from "@/types/admin";
 
 function chipClass(active: boolean) {
@@ -23,10 +28,17 @@ export function EmployeesFilters() {
   const [, startTransition] = useTransition();
   const statusNorm = sp.get("status") ?? "all";
   const roleNorm = sp.get("role") ?? "all";
+  const region = employeeListRegionFromSlug(sp.get("region") ?? undefined);
   const countryRaw = sp.get("country") ?? "";
-  const country = (SETUP_COUNTRIES as readonly string[]).includes(countryRaw)
-    ? countryRaw
-    : "";
+  const country = isCountryInEmployeeListRegion(countryRaw, region) ? countryRaw : "";
+
+  const countryOptions = useMemo(
+    () =>
+      region === "all"
+        ? undefined
+        : [...setupCountriesForRegion(region)].sort((a, b) => a.localeCompare(b)),
+    [region]
+  );
 
   const buildHref = useCallback(
     (next: Record<string, string | undefined>) => {
@@ -72,9 +84,40 @@ export function EmployeesFilters() {
 
       <div className="flex min-w-0 flex-wrap items-center gap-3">
         <label className="flex min-w-0 flex-wrap items-center gap-2 text-[13px] font-semibold text-[var(--color-muted)]">
+          <span className="shrink-0">Region</span>
+          <select
+            value={region === "all" ? "" : employeeListRegionSlug(region)}
+            onChange={(e) => {
+              const nextRegionSlug = e.target.value;
+              const nextRegion = employeeListRegionFromSlug(nextRegionSlug || undefined);
+              const nextCountry =
+                country &&
+                nextRegion !== "all" &&
+                !isCountryInEmployeeListRegion(country, nextRegion)
+                  ? undefined
+                  : country || undefined;
+              startTransition(() => {
+                router.push(
+                  buildHref({
+                    region: nextRegionSlug || undefined,
+                    country: nextCountry,
+                  })
+                );
+              });
+            }}
+            aria-label="Filter by region"
+            className={selectClass}
+          >
+            <option value="">All regions</option>
+            <option value="africa">Africa</option>
+            <option value="balkan">Balkan</option>
+          </select>
+        </label>
+        <label className="flex min-w-0 flex-wrap items-center gap-2 text-[13px] font-semibold text-[var(--color-muted)]">
           <span className="shrink-0">Country</span>
           <CountryFilterSelect
             value={country}
+            countries={countryOptions}
             onChange={(next) => {
               startTransition(() => {
                 router.push(buildHref({ country: next || undefined }));
@@ -110,6 +153,7 @@ export function EmployeesSearchForm({
   initialQ,
   hiddenStatus,
   hiddenRole,
+  hiddenRegion,
   hiddenCountry,
 }: EmployeesSearchFormProps) {
   return (
@@ -121,6 +165,7 @@ export function EmployeesSearchForm({
     >
       {hiddenStatus ? <input type="hidden" name="status" value={hiddenStatus} /> : null}
       {hiddenRole ? <input type="hidden" name="role" value={hiddenRole} /> : null}
+      {hiddenRegion ? <input type="hidden" name="region" value={hiddenRegion} /> : null}
       {hiddenCountry ? (
         <input type="hidden" name="country" value={hiddenCountry} />
       ) : null}

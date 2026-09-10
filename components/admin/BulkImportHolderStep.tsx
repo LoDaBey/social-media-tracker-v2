@@ -1,7 +1,13 @@
 "use client";
 
-import { SETUP_COUNTRIES } from "@/lib/setup-options";
+import { useMemo } from "react";
+import { AdminCountrySelect } from "@/components/admin/AdminCountrySelect";
 import { CountryFlag } from "@/lib/country-icons";
+import {
+  isCountryInEmployeeListRegion,
+  setupCountriesForRegion,
+  setupRegionForCountry,
+} from "@/lib/setup-options";
 import type { BulkImportHolderStepProps } from "@/types/admin";
 
 const fieldClass =
@@ -10,10 +16,22 @@ const fieldClass =
 export function BulkImportHolderStep({
   holders,
   holderId,
+  region,
   country,
   onHolderIdChange,
+  onRegionChange,
   onCountryChange,
 }: BulkImportHolderStepProps) {
+  const countryOptions = useMemo(
+    () =>
+      region
+        ? [...setupCountriesForRegion(region)].sort((a, b) => a.localeCompare(b))
+        : undefined,
+    [region]
+  );
+
+  const assignedRegion = country ? setupRegionForCountry(country) : "";
+
   return (
     <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
       <label className="flex min-w-0 flex-col gap-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-muted)]">
@@ -34,25 +52,43 @@ export function BulkImportHolderStep({
         </select>
       </label>
       <label className="flex min-w-0 flex-col gap-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-muted)]">
-        Country
+        Region
         <select
-          value={country}
-          aria-label="Select country"
-          onChange={(event) => onCountryChange(event.target.value)}
+          value={region}
+          aria-label="Select region"
+          onChange={(event) => {
+            const nextRegion = event.target.value as "" | "Africa" | "Balkan";
+            onRegionChange(nextRegion);
+            if (
+              country &&
+              nextRegion &&
+              !isCountryInEmployeeListRegion(country, nextRegion)
+            ) {
+              onCountryChange("");
+            }
+          }}
           className={fieldClass}
         >
-          <option value="">Select a country</option>
-          {SETUP_COUNTRIES.map((item) => (
-            <option key={item} value={item}>
-              {item}
-            </option>
-          ))}
+          <option value="">Select a region</option>
+          <option value="Africa">Africa</option>
+          <option value="Balkan">Balkan</option>
         </select>
+      </label>
+      <label className="flex min-w-0 flex-col gap-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-muted)] sm:col-span-2">
+        Country
+        <AdminCountrySelect
+          value={country}
+          countries={countryOptions}
+          disabled={!region}
+          ariaLabel="Select country for bulk import"
+          onChange={onCountryChange}
+        />
       </label>
       {country ? (
         <p className="sm:col-span-2 inline-flex items-center gap-2 text-[13px] text-[var(--color-muted)]">
           <CountryFlag country={country} title={country} className="h-4 w-6" />
-          Accounts in this file will be assigned to this holder in {country}.
+          Accounts in this file will be assigned to this holder in {country}
+          {assignedRegion ? ` (${assignedRegion})` : ""}.
         </p>
       ) : null}
     </div>

@@ -11,9 +11,9 @@ import {
 } from "@/lib/bulk-import-parse";
 import { uniqueAccountUrlError } from "@/lib/social-account-validation";
 import {
-  SETUP_REGION,
   isSetupCountry,
   isSetupLanguage,
+  setupRegionForCountry,
 } from "@/lib/setup-options";
 import type {
   BulkImportAccountDraft,
@@ -127,7 +127,7 @@ export async function importBulkEmployeeAccounts(input: {
                 language = $4,
                 setup_needs_review = TRUE
           WHERE id = $1`,
-        [holderId, country, SETUP_REGION, savedLanguage]
+        [holderId, country, setupRegionForCountry(country), savedLanguage]
       );
 
       await client.query(

@@ -248,8 +248,13 @@ export type AdminCountryCoverage = {
   onHoldCount: number;
 };
 
+export type AdminRegion = "Overview" | "Africa" | "Balkan";
+
+export type AdminRegionSlug = "overview" | "africa" | "balkan";
+
 export type AdminCountryCoverageFilter = {
   countries?: string[];
+  region?: AdminRegion;
 };
 
 export type AdminCoverageKpisProps = {
@@ -258,6 +263,12 @@ export type AdminCoverageKpisProps = {
 
 export type AdminCountryCoverageSectionProps = {
   coverage: AdminCountryCoverage;
+  region: AdminRegion;
+};
+
+export type AdminOverviewRegionTabsProps = {
+  region: AdminRegion;
+  children: ReactNode;
 };
 
 export type AdminCountryCoverageTableProps = {
@@ -362,12 +373,25 @@ export type AccountTotalsCellProps = {
 export type CountryFilterSelectProps = {
   value: string;
   onChange: (country: string) => void;
+  countries?: readonly string[];
+};
+
+export type AdminCountrySelectProps = {
+  value: string;
+  onChange: (country: string) => void;
+  countries?: readonly string[];
+  disabled?: boolean;
+  ariaLabel?: string;
+  ariaInvalid?: boolean;
+  ariaDescribedBy?: string;
+  invalid?: boolean;
 };
 
 export type EmployeesSearchFormProps = {
   initialQ: string;
   hiddenStatus?: string;
   hiddenRole?: string;
+  hiddenRegion?: string;
   hiddenCountry?: string;
 };
 
@@ -612,8 +636,10 @@ export type BulkImportModalProps = {
 export type BulkImportHolderStepProps = {
   holders: BulkImportHolderOption[];
   holderId: string;
+  region: "" | "Africa" | "Balkan";
   country: string;
   onHolderIdChange: (holderId: string) => void;
+  onRegionChange: (region: "" | "Africa" | "Balkan") => void;
   onCountryChange: (country: string) => void;
 };
 
@@ -626,6 +652,8 @@ export type BulkImportUploadStepProps = {
 
 export type BulkImportReviewTableProps = {
   holderName: string;
+  country: string;
+  region: string;
   language: string;
   rows: BulkImportAccountDraft[];
   rowFieldErrors?: Record<string, Record<string, string>>;

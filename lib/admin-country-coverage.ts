@@ -1,9 +1,9 @@
 import { query } from "@/lib/db";
 import {
-  ADMIN_COUNTRY_PLANS,
   splitCountryPlanSeats,
   xPlanTarget,
 } from "@/lib/admin-country-targets";
+import { adminCountryPlansForRegion } from "@/lib/region-config";
 import type {
   AdminCoverageCount,
   AdminCountryCoverage,
@@ -194,7 +194,13 @@ function addCreditedCount(
 export async function fetchAdminCountryCoverage(
   filter?: AdminCountryCoverageFilter
 ): Promise<AdminCountryCoverage> {
-  const countryFilter = filter === undefined ? null : (filter.countries ?? []);
+  const regionPlans =
+    filter?.region === undefined
+      ? null
+      : adminCountryPlansForRegion(filter.region);
+  const countryFilter =
+    filter?.countries ??
+    (regionPlans === null ? null : regionPlans.map((plan) => plan.country));
   const sqlCountryClause =
     countryFilter === null
       ? ""
@@ -305,10 +311,15 @@ export async function fetchAdminCountryCoverage(
   }
 
   const allowedCountries = countryFilter === null ? null : new Set(countryFilter);
+  const planSource =
+    regionPlans ??
+    (filter?.region === undefined
+      ? adminCountryPlansForRegion("Overview")
+      : adminCountryPlansForRegion(filter.region));
   const plans =
     allowedCountries === null
-      ? ADMIN_COUNTRY_PLANS
-      : ADMIN_COUNTRY_PLANS.filter((plan) => allowedCountries.has(plan.country));
+      ? planSource
+      : planSource.filter((plan) => allowedCountries.has(plan.country));
 
   const coverageRows: AdminCountryCoverageRow[] = plans.map((plan) => {
     const actuals = actualByCountry.get(plan.country) ?? EMPTY_ACTUALS;

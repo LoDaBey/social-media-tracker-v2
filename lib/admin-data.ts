@@ -18,6 +18,7 @@ import { computeWallet } from "@/lib/wallet";
 import { fetchWalletTransactionsThisCycle } from "@/lib/wallet-page-data";
 import { fetchAdminAccountsByUserIds } from "@/lib/admin-accounts-data";
 import { fetchManagerOptions } from "@/lib/manager-data";
+import { setupCountriesForRegion } from "@/lib/setup-options";
 import type { TempUser } from "@/types/db";
 
 export type AdminHealthMetrics = {
@@ -80,6 +81,7 @@ export type AdminEmployeeListFilters = {
   q?: string;
   status?: "all" | "active" | "inactive";
   role?: "all" | "employee" | "manager" | "team_lead";
+  region?: "Africa" | "Balkan";
   country?: string;
   teamLeadId?: number | null;
 };
@@ -92,6 +94,7 @@ export async function fetchAdminEmployeesList(
   const status = filters.status ?? "all";
   const role = filters.role ?? "all";
   const country = filters.country?.trim() ?? "";
+  const region = filters.region;
   const teamLeadId = filters.teamLeadId;
 
   const params: unknown[] = [];
@@ -100,6 +103,21 @@ export async function fetchAdminEmployeesList(
   if (role === "employee" || role === "manager" || role === "team_lead") {
     params.push(role);
     where.push(`u.role = $${params.length}`);
+  }
+  if (region === "Africa" || region === "Balkan") {
+    params.push(region);
+    const regionParam = params.length;
+    params.push([...setupCountriesForRegion(region)]);
+    const countriesParam = params.length;
+    where.push(
+      `(u.region = $${regionParam}
+        OR COALESCE(u.country, '') = ANY($${countriesParam}::text[])
+        OR EXISTS (
+            SELECT 1 FROM temp_manager_countries mc
+             WHERE mc.user_id = u.id
+               AND mc.country = ANY($${countriesParam}::text[])
+          ))`
+    );
   }
   if (country) {
     params.push(country);

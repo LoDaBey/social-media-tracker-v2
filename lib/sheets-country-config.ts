@@ -1,11 +1,10 @@
-import { SETUP_COUNTRIES } from "@/lib/setup-options";
+import { ALL_SETUP_COUNTRIES } from "@/lib/setup-options";
 import type { SheetLanguage } from "@/lib/sheets-validation-values";
 import { normalizeSheetLanguage } from "@/lib/sheets-validation-values";
 
 /** Primary Language1 per country — values must match the sheet dropdown exactly. */
-export const COUNTRY_SHEET_LANGUAGE: Record<
-  (typeof SETUP_COUNTRIES)[number],
-  SheetLanguage
+export const COUNTRY_SHEET_LANGUAGE: Partial<
+  Record<(typeof ALL_SETUP_COUNTRIES)[number], SheetLanguage>
 > = {
   Angola: "Portuguese",
   "Burkina Faso": "French",
@@ -35,18 +34,24 @@ export const COUNTRY_SHEET_LANGUAGE: Record<
   Tanzania: "Kiswahili",
   Uganda: "Somali",
   Zambia: "English",
+  Slovakia: "Slovak",
+  Moldova: "Romanian",
+  Slovenia: "Slovenian",
+  Macedonia: "Macedonian",
+  Bulgaria: "Bulgarian",
+  Bosnia: "Bosnian",
 };
 
 /** Country labels as they appear on the Africa strategy sheet dropdown. */
 export const COUNTRY_SHEET_NAME: Partial<
-  Record<(typeof SETUP_COUNTRIES)[number], string>
+  Record<(typeof ALL_SETUP_COUNTRIES)[number], string>
 > = {
   "Burkina Faso": "Borkina",
 };
 
 export function sheetCountryName(country: string | null | undefined) {
   if (!country) return "";
-  const alias = COUNTRY_SHEET_NAME[country as (typeof SETUP_COUNTRIES)[number]];
+  const alias = COUNTRY_SHEET_NAME[country as (typeof ALL_SETUP_COUNTRIES)[number]];
   return alias ?? country;
 }
 
@@ -56,7 +61,7 @@ export function sheetLanguage1(
 ): SheetLanguage {
   if (country) {
     const mapped =
-      COUNTRY_SHEET_LANGUAGE[country as (typeof SETUP_COUNTRIES)[number]];
+      COUNTRY_SHEET_LANGUAGE[country as (typeof ALL_SETUP_COUNTRIES)[number]];
     if (mapped) return mapped;
   }
 

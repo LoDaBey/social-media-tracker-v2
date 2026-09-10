@@ -2,12 +2,15 @@
 
 import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
+import { CountryFlag } from "@/lib/country-icons";
 import { SETUP_LANGUAGES, isSetupLanguage } from "@/lib/setup-options";
 import { BulkImportReviewRow } from "@/components/admin/BulkImportReviewRow";
 import type { BulkImportReviewTableProps } from "@/types/admin";
 
 export function BulkImportReviewTable({
   holderName,
+  country,
+  region,
   language,
   rows,
   rowFieldErrors = {},
@@ -21,11 +24,24 @@ export function BulkImportReviewTable({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <p className="text-[14px] text-[var(--color-muted)]">
-          {strict
-            ? `Review every account for ${holderName}. Fix all highlighted issues before importing.`
-            : `Review and edit accounts for ${holderName} before importing.`}
-        </p>
+        <div className="min-w-0">
+          <p className="text-[14px] text-[var(--color-muted)]">
+            {strict
+              ? `Review every account for ${holderName}. Fix all highlighted issues before importing.`
+              : `Review and edit accounts for ${holderName} before importing.`}
+          </p>
+          {country ? (
+            <p className="mt-1 inline-flex flex-wrap items-center gap-2 text-[13px] font-semibold text-[var(--color-ink)]">
+              <CountryFlag country={country} title={country} className="h-4 w-6" />
+              <span>{country}</span>
+              {region ? (
+                <span className="rounded-full bg-[var(--color-cream-tint)] px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-muted)]">
+                  {region}
+                </span>
+              ) : null}
+            </p>
+          ) : null}
+        </div>
         <label className="flex min-w-[200px] flex-col gap-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-muted)]">
           Language
           <select
