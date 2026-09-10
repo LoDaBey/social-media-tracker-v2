@@ -25,9 +25,16 @@ export function SyncSheetsButton({
         return;
       }
 
+      const parts: string[] = [];
+      if (result.africaCount != null) {
+        parts.push(`${result.africaCount} Africa`);
+      }
+      if (result.balkanCount != null) {
+        parts.push(`${result.balkanCount} Balkan`);
+      }
       toast.success(
-        result.count != null
-          ? `${result.message} (${result.count} accounts)`
+        parts.length > 0
+          ? `${result.message} (${parts.join(", ")} accounts)`
           : result.message
       );
     });

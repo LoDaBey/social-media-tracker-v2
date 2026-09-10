@@ -694,6 +694,8 @@ export type SheetsSyncResult = {
   success: boolean;
   message: string;
   count?: number;
+  africaCount?: number;
+  balkanCount?: number;
 };
 
 export type SyncSheetsButtonProps = {

@@ -77,8 +77,9 @@ export const SHEET_LANGUAGE_OPTIONS = [
   "Bosnian",
 ] as const;
 
-/** Africa tab — Region column dropdown. */
+/** Sheet Region column values. */
 export const SHEET_REGION = "Africa" as const;
+export const SHEET_REGION_BALKAN = "Balkan" as const;
 
 export type SheetPlatform = (typeof SHEET_PLATFORM_OPTIONS)[number];
 export type SheetStatus = (typeof SHEET_STATUS_OPTIONS)[number];
@@ -129,8 +130,8 @@ export function normalizeSheetLanguage(
   return APP_LANGUAGE_TO_SHEET[trimmed] ?? "";
 }
 
-export function sheetRegion() {
-  return SHEET_REGION;
+export function sheetRegion(region: typeof SHEET_REGION | typeof SHEET_REGION_BALKAN = SHEET_REGION) {
+  return region;
 }
 
 export type SheetBooleanFlag = "TRUE" | "FALSE";

@@ -21,12 +21,15 @@ export async function POST() {
 
   try {
     const accounts = await fetchAccountsForSheetsExport();
-    const count = await syncAccountsToGoogleSheets(accounts);
+    const { africaCount, balkanCount, total } =
+      await syncAccountsToGoogleSheets(accounts);
 
     const result: SheetsSyncResult = {
       success: true,
       message: "Data successfully saved to Google Sheets",
-      count,
+      count: total,
+      africaCount,
+      balkanCount,
     };
 
     return NextResponse.json(result);
