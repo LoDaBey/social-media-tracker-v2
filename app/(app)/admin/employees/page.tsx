@@ -11,7 +11,11 @@ import {
 } from "@/components/admin/EmployeesFilters";
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import { adminViewEmployees } from "@/lib/admin-view";
-import { SETUP_COUNTRIES } from "@/lib/setup-options";
+import {
+  employeeListRegionFromSlug,
+  employeeListRegionSlug,
+  isCountryInEmployeeListRegion,
+} from "@/lib/setup-options";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -31,8 +35,12 @@ export default async function AdminEmployeesPage({
       ? roleRaw
       : "all";
 
+  const regionFilter = employeeListRegionFromSlug(
+    typeof sp.region === "string" ? sp.region : undefined
+  );
+  const region = regionFilter === "all" ? undefined : regionFilter;
   const countryRaw = typeof sp.country === "string" ? sp.country : "";
-  const country = (SETUP_COUNTRIES as readonly string[]).includes(countryRaw)
+  const country = isCountryInEmployeeListRegion(countryRaw, regionFilter)
     ? countryRaw
     : "";
 
@@ -40,6 +48,7 @@ export default async function AdminEmployeesPage({
     q,
     status: status === "all" ? undefined : status,
     role: role === "all" ? undefined : role,
+    region,
     country: country || undefined,
   });
   const holders = rows
@@ -59,6 +68,7 @@ export default async function AdminEmployeesPage({
             initialQ={q}
             hiddenStatus={status === "all" ? undefined : status}
             hiddenRole={role === "all" ? undefined : role}
+            hiddenRegion={region ? employeeListRegionSlug(region) : undefined}
             hiddenCountry={country || undefined}
           />
           <EmployeesBulkImportButton holders={holders} />

@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { createEmployee } from "@/actions/admin";
-import { SETUP_COUNTRIES, SETUP_REGION } from "@/lib/setup-options";
+import { setupRegionForCountry } from "@/lib/setup-options";
+import { AdminCountrySelect } from "@/components/admin/AdminCountrySelect";
 import type { Role } from "@/types/db";
 import type {
   AdminManagerOption,
@@ -128,22 +129,30 @@ export function CreateEmployeeForm({ teamLeads, managers }: Props) {
   const isManagerRole = role === "manager";
   const isEmployeeRole = role === "employee";
 
+  const assignedRegion = useMemo(() => {
+    if (isManagerRole && manager_countries.length > 0) {
+      return setupRegionForCountry(manager_countries[0]);
+    }
+    if (country) return setupRegionForCountry(country);
+    return "";
+  }, [country, isManagerRole, manager_countries]);
+
   const fieldClass =
-    "rounded outline-none border border-[var(--color-hairline)] bg-[var(--color-cream-tint)] px-3 py-2.5 text-[15px] font-medium text-[var(--color-ink)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]";
+    "w-full rounded outline-none border border-[var(--color-hairline)] bg-[var(--color-cream-tint)] px-3 py-2.5 text-[15px] font-medium text-[var(--color-ink)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]";
   const invalidFieldClass =
     "border-[var(--color-coral)] focus-visible:ring-[var(--color-coral)]";
 
   return (
     <div
-      className="w-full max-w-[960px] rounded-[20px] border border-[var(--color-hairline)] bg-[var(--color-surface)] p-8 md:p-10"
+      className="w-full rounded-[20px] border border-[var(--color-hairline)] bg-[var(--color-surface)] p-8 md:p-10"
       style={{ boxShadow: "0 4px 24px rgba(20,20,20,.06)" }}
     >
       <h2 className="text-[26px] font-extrabold tracking-tight text-[var(--color-ink)] md:text-[30px]">
         New employee
       </h2>
       <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-[var(--color-muted)]">
-        Create an account and assign their country. Region is always {SETUP_REGION}. The employee
-        can change their password after first login.
+        Create an account and assign their country. Region is set automatically to Africa or
+        Balkan based on the country. The employee can change their password after first login.
       </p>
       {error ? (
         <p className="mt-4 rounded-lg bg-[var(--color-coral-tint)] px-4 py-3 text-[14px] text-[var(--color-coral)]">
@@ -235,42 +244,42 @@ export function CreateEmployeeForm({ teamLeads, managers }: Props) {
         {isManagerRole ? null : (
           <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
             Country
-            <select
+            <AdminCountrySelect
               value={country}
-              onChange={(e) => {
-                setCountry(e.target.value);
+              onChange={(next) => {
+                setCountry(next);
                 setFieldErrors((prev) => ({ ...prev, country: undefined }));
               }}
-              aria-label="Assign employee country"
-              aria-invalid={Boolean(fieldErrors.country)}
-              aria-describedby={
+              ariaLabel="Assign employee country"
+              ariaInvalid={Boolean(fieldErrors.country)}
+              ariaDescribedBy={
                 fieldErrors.country ? "create-country-error" : undefined
               }
-              className={`cursor-pointer ${fieldClass} ${fieldErrors.country ? invalidFieldClass : ""}`}
-            >
-              <option value="">Select a country</option>
-              {SETUP_COUNTRIES.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
+              invalid={Boolean(fieldErrors.country)}
+            />
             <AdminFieldError
               id="create-country-error"
               message={fieldErrors.country}
             />
           </label>
         )}
-        <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
-          Region
-          <input
-            value={SETUP_REGION}
-            disabled
-            readOnly
-            aria-label="Region is Africa for every country"
-            className={`${fieldClass} cursor-not-allowed opacity-70`}
-          />
-        </label>
+        {isManagerRole ? null : (
+          <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
+            Region
+            <input
+              value={assignedRegion}
+              disabled
+              readOnly
+              placeholder="Select a country"
+              aria-label={
+                assignedRegion
+                  ? `Region is ${assignedRegion}`
+                  : "Region is set automatically from the selected country"
+              }
+              className={`${fieldClass} cursor-not-allowed opacity-70`}
+            />
+          </label>
+        )}
         <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
           Role
           <select
@@ -347,9 +356,9 @@ export function CreateEmployeeForm({ teamLeads, managers }: Props) {
             }}
           />
         ) : null}
-        <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)] sm:col-span-2">
+        <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
           Base salary (EGP / cycle)
-          <span className="flex max-w-md items-center gap-2 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-cream-tint)] px-3 py-2.5">
+          <span className="flex w-full items-center gap-2 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-cream-tint)] px-3 py-2.5">
             <span className="text-[13px] font-semibold text-[var(--color-muted)]">EGP</span>
             <input
               type="number"

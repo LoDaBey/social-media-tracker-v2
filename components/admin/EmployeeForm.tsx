@@ -7,9 +7,10 @@ import toast from "react-hot-toast";
 import { updateEmployeeProfile } from "@/actions/admin";
 import { LEVEL_LABELS } from "@/lib/level-labels";
 import { EMPLOYMENT_STATUSES, EMPLOYMENT_STATUS_LABELS } from "@/lib/employment-status";
-import { SETUP_COUNTRIES, SETUP_REGION } from "@/lib/setup-options";
+import { setupRegionForCountry } from "@/lib/setup-options";
 import type { Role } from "@/types/db";
 import type { EmployeeFormProps, UpdateEmployeeProfilePayload } from "@/types/admin";
+import { AdminCountrySelect } from "@/components/admin/AdminCountrySelect";
 import { ManagerCountriesField } from "@/components/admin/ManagerCountriesField";
 
 function normalizeDate(v: string | null): string {
@@ -61,6 +62,14 @@ export function EmployeeForm({
     () => managers.find((m) => m.id === form.manager_id) ?? null,
     [managers, form.manager_id]
   );
+
+  const assignedRegion = useMemo(() => {
+    if (form.role === "manager" && form.manager_countries.length > 0) {
+      return setupRegionForCountry(form.manager_countries[0]);
+    }
+    if (form.country) return setupRegionForCountry(form.country);
+    return "";
+  }, [form.country, form.manager_countries, form.role]);
 
   const countryMismatch =
     form.role === "employee" &&
@@ -207,32 +216,31 @@ export function EmployeeForm({
         {form.role === "manager" ? null : (
           <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
             Country
-            <select
+            <AdminCountrySelect
               value={form.country}
-              onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
-              aria-label="Employee country"
-              className={`cursor-pointer ${fieldClass}`}
-            >
-              <option value="">Select a country</option>
-              {SETUP_COUNTRIES.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
+              onChange={(country) => setForm((f) => ({ ...f, country }))}
+              ariaLabel="Employee country"
+            />
           </label>
         )}
 
-        <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
-          Region
-          <input
-            value={SETUP_REGION}
-            disabled
-            readOnly
-            aria-label="Region is Africa for every country"
-            className={`${fieldClass} cursor-not-allowed bg-[var(--color-cream-tint)] text-[var(--color-muted)]`}
-          />
-        </label>
+        {form.role === "manager" ? null : (
+          <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
+            Region
+            <input
+              value={assignedRegion}
+              disabled
+              readOnly
+              placeholder="Select a country"
+              aria-label={
+                assignedRegion
+                  ? `Region is ${assignedRegion}`
+                  : "Region is set automatically from the selected country"
+              }
+              className={`${fieldClass} cursor-not-allowed bg-[var(--color-cream-tint)] text-[var(--color-muted)]`}
+            />
+          </label>
+        )}
 
         <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
           Role

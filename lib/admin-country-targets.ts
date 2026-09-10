@@ -18,6 +18,18 @@ const SUDAN_ACCOUNTS = {
   tiktok: 9,
 } as const;
 
+/** Per employee seat: 15 account slots — same platform mix as the Africa standard plan. */
+const BALKAN_SEAT_ACCOUNTS = {
+  xPersonal: 10,
+  facebookPersonal: 1,
+  xUmbrella: 1,
+  facebookUmbrella: 1,
+  instagram: 1,
+  tiktok: 1,
+} as const;
+
+const BALKAN_ACCOUNTS_PER_SEAT = 15;
+
 function planCountry(
   country: string,
   language: string,
@@ -39,6 +51,25 @@ function planCountry(
   };
 }
 
+function balkanPlanCountry(
+  country: string,
+  language: string,
+  resources: number
+): AdminCountryPlan {
+  return {
+    country,
+    language,
+    resources,
+    xPersonal: BALKAN_SEAT_ACCOUNTS.xPersonal * resources,
+    facebookPersonal: BALKAN_SEAT_ACCOUNTS.facebookPersonal * resources,
+    xUmbrella: BALKAN_SEAT_ACCOUNTS.xUmbrella * resources,
+    facebookUmbrella: BALKAN_SEAT_ACCOUNTS.facebookUmbrella * resources,
+    instagram: BALKAN_SEAT_ACCOUNTS.instagram * resources,
+    tiktok: BALKAN_SEAT_ACCOUNTS.tiktok * resources,
+    totalAccounts: BALKAN_ACCOUNTS_PER_SEAT * resources,
+  };
+}
+
 /** Africa resource plan: employees and account slots the admin should fill. */
 export const ADMIN_COUNTRY_PLANS: AdminCountryPlan[] = [
   planCountry("Burkina Faso", "French", 5, STANDARD_ACCOUNTS),
@@ -51,6 +82,16 @@ export const ADMIN_COUNTRY_PLANS: AdminCountryPlan[] = [
   planCountry("Mali", "French", 5, STANDARD_ACCOUNTS),
   planCountry("Chad", "French", 5, STANDARD_ACCOUNTS),
   planCountry("Sudan", "Arabic", 9, SUDAN_ACCOUNTS),
+];
+
+/** Balkan resource plan: 15 account slots per employee seat. */
+export const BALKAN_COUNTRY_PLANS: AdminCountryPlan[] = [
+  balkanPlanCountry("Slovakia", "Slovak", 13),
+  balkanPlanCountry("Moldova", "Romanian", 13),
+  balkanPlanCountry("Slovenia", "Slovenian", 6),
+  balkanPlanCountry("Macedonia", "Macedonian", 6),
+  balkanPlanCountry("Bulgaria", "Bulgarian", 6),
+  balkanPlanCountry("Bosnia", "Bosnian", 6),
 ];
 
 export function xPlanTarget(plan: Pick<AdminCountryPlan, "xPersonal" | "xUmbrella">) {

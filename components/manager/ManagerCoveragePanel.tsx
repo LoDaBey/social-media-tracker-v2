@@ -14,7 +14,7 @@ export function ManagerCoveragePanel({ coverage }: ManagerCoveragePanelProps) {
   return (
     <div className="flex flex-col gap-4 sm:gap-5">
       <AdminCoverageKpis coverage={coverage} />
-      <AdminCountryCoverageSection coverage={coverage} />
+      <AdminCountryCoverageSection coverage={coverage} region="Africa" />
     </div>
   );
 }

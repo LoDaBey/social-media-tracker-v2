@@ -69,6 +69,12 @@ export const SHEET_LANGUAGE_OPTIONS = [
   "Somali",
   "Portuguese",
   "Kiswahili",
+  "Slovak",
+  "Romanian",
+  "Slovenian",
+  "Macedonian",
+  "Bulgarian",
+  "Bosnian",
 ] as const;
 
 /** Africa tab — Region column dropdown. */

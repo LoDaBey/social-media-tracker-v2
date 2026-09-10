@@ -16,7 +16,7 @@ import {
 import { LEVEL_LABELS, LEVEL_SALARY_PERCENT } from "@/lib/level-labels";
 import { createNotification } from "@/lib/notifications";
 import { fetchAdminEmployeeEditorBundle } from "@/lib/admin-data";
-import { SETUP_COUNTRIES, SETUP_REGION } from "@/lib/setup-options";
+import { isSetupCountry, setupRegionForCountry } from "@/lib/setup-options";
 import { recordBaseSalary, recordBonus, recordPayout } from "@/lib/wallet-events";
 import type {
   AdminEmployeeEditorBundle,
@@ -34,10 +34,7 @@ const setupCountrySchema = z
   .string()
   .trim()
   .min(1, "Select a country.")
-  .refine(
-    (value) => (SETUP_COUNTRIES as readonly string[]).includes(value),
-    "Select a valid country."
-  );
+  .refine((value) => isSetupCountry(value), "Select a valid country.");
 
 async function requireAdminSession() {
   const session = await auth();
@@ -121,7 +118,7 @@ const createEmployeeSchema = z
       });
       return;
     }
-    if (!(SETUP_COUNTRIES as readonly string[]).includes(country)) {
+    if (!isSetupCountry(country)) {
       ctx.addIssue({
         code: "custom",
         path: ["country"],
@@ -262,7 +259,7 @@ export async function createEmployee(
         hire,
         cycleStart,
         level,
-        SETUP_REGION,
+        setupRegionForCountry(primaryCountry),
         primaryCountry,
         defaultTargets.x,
         defaultTargets.facebook_personal,
@@ -415,7 +412,7 @@ export async function updateEmployeeProfile(
         p.base_salary,
         p.current_level,
         p.pay_cycle_start_date,
-        SETUP_REGION,
+        setupRegionForCountry(primaryCountry),
         primaryCountry,
         p.employee_code,
         p.employment_status,

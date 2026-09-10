@@ -10,6 +10,11 @@ import {
   parseBulkImportWorkbook,
 } from "@/actions/admin-bulk-import";
 import { bulkImportRowWarnings } from "@/lib/bulk-import-parse";
+import { sheetLanguage1 } from "@/lib/sheets-country-config";
+import {
+  setupRegionForCountry,
+  type SetupRegion,
+} from "@/lib/setup-options";
 import { BulkImportHolderStep } from "@/components/admin/BulkImportHolderStep";
 import { BulkImportUploadStep } from "@/components/admin/BulkImportUploadStep";
 import { BulkImportReviewTable } from "@/components/admin/BulkImportReviewTable";
@@ -47,6 +52,7 @@ function BulkImportModalDialog({
   const [holderId, setHolderId] = useState(
     initialHolderId ? String(initialHolderId) : ""
   );
+  const [region, setRegion] = useState<"" | SetupRegion>("");
   const [country, setCountry] = useState("");
   const [language, setLanguage] = useState("");
   const [fileName, setFileName] = useState<string | null>(null);
@@ -63,9 +69,21 @@ function BulkImportModalDialog({
 
   useEffect(() => {
     if (!selectedHolder) return;
-    setCountry((prev) => prev || selectedHolder.country || "");
-    setLanguage((prev) => prev || selectedHolder.language || "");
+    const nextCountry = selectedHolder.country || "";
+    setCountry((prev) => prev || nextCountry);
+    if (nextCountry) {
+      setRegion(setupRegionForCountry(nextCountry));
+    }
+    setLanguage(
+      (prev) =>
+        prev ||
+        sheetLanguage1(nextCountry, selectedHolder.language || "") ||
+        selectedHolder.language ||
+        ""
+    );
   }, [selectedHolder]);
+
+  const assignedRegion = country ? setupRegionForCountry(country) : region;
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -86,6 +104,10 @@ function BulkImportModalDialog({
     setFormError(null);
     if (!selectedHolder) {
       setFormError("Select an account holder.");
+      return;
+    }
+    if (!region) {
+      setFormError("Select a region for this account holder.");
       return;
     }
     if (!country) {
@@ -234,14 +256,28 @@ function BulkImportModalDialog({
             <BulkImportHolderStep
               holders={holders}
               holderId={holderId}
+              region={region}
               country={country}
               onHolderIdChange={(next) => {
                 setHolderId(next);
                 const holder = holders.find((item) => String(item.id) === next);
-                setCountry(holder?.country ?? "");
-                setLanguage(holder?.language ?? "");
+                const nextCountry = holder?.country ?? "";
+                setCountry(nextCountry);
+                setRegion(nextCountry ? setupRegionForCountry(nextCountry) : "");
+                setLanguage(
+                  sheetLanguage1(nextCountry, holder?.language || "") ||
+                    holder?.language ||
+                    ""
+                );
               }}
-              onCountryChange={setCountry}
+              onRegionChange={setRegion}
+              onCountryChange={(next) => {
+                setCountry(next);
+                if (next) {
+                  setRegion(setupRegionForCountry(next));
+                  setLanguage((prev) => sheetLanguage1(next, prev) || prev);
+                }
+              }}
             />
           ) : null}
           {step === "upload" ? (
@@ -255,6 +291,8 @@ function BulkImportModalDialog({
           {step === "review" ? (
             <BulkImportReviewTable
               holderName={selectedHolder?.full_name ?? "this holder"}
+              country={country}
+              region={assignedRegion}
               language={language}
               rows={rows}
               onLanguageChange={setLanguage}
