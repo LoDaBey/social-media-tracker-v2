@@ -40,6 +40,9 @@ export const COUNTRY_SHEET_LANGUAGE: Partial<
   Macedonia: "Macedonian",
   Bulgaria: "Bulgarian",
   Bosnia: "Bosnian",
+  Palestine: "Arabic",
+  Turkey: "Turkish",
+  Iran: "Persian",
 };
 
 /** Country labels as they appear on the Africa strategy sheet dropdown. */

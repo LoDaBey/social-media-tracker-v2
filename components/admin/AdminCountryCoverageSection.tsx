@@ -6,7 +6,11 @@ export function AdminCountryCoverageSection({
   region,
 }: AdminCountryCoverageSectionProps) {
   const planLabel =
-    region === "Overview" ? "Africa and Balkan" : region;
+    region === "Overview"
+      ? "Africa, Balkan, and ALPHAA"
+      : region === "Alphaa"
+        ? "ALPHAA"
+        : region;
 
   return (
     <section

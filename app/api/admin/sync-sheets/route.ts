@@ -2,6 +2,7 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { fetchAlphaaAccountsForSheetsExport } from "@/lib/alphaa-sheets-export-data";
 import { fetchAccountsForSheetsExport } from "@/lib/admin-sheets-export-data";
 import { syncAccountsToGoogleSheets } from "@/lib/google-sheets";
 import type { SheetsSyncResult } from "@/types/admin";
@@ -20,9 +21,12 @@ export async function POST() {
   }
 
   try {
-    const accounts = await fetchAccountsForSheetsExport();
-    const { africaCount, balkanCount, total } =
-      await syncAccountsToGoogleSheets(accounts);
+    const [africaBalkanAccounts, alphaaAccounts] = await Promise.all([
+      fetchAccountsForSheetsExport(),
+      fetchAlphaaAccountsForSheetsExport(),
+    ]);
+    const { africaCount, balkanCount, alphaaCount, total } =
+      await syncAccountsToGoogleSheets(africaBalkanAccounts, alphaaAccounts);
 
     const result: SheetsSyncResult = {
       success: true,
@@ -30,6 +34,7 @@ export async function POST() {
       count: total,
       africaCount,
       balkanCount,
+      alphaaCount,
     };
 
     return NextResponse.json(result);

@@ -1,3 +1,4 @@
+import type { SetupRegion } from "@/lib/setup-options";
 import type { Platform, Role, EmploymentStatus, AccountScope } from "@/types/db";
 import type { ReactNode } from "react";
 import type { WalletSummary, WalletTransactionListRow } from "@/types/wallet";
@@ -248,9 +249,9 @@ export type AdminCountryCoverage = {
   onHoldCount: number;
 };
 
-export type AdminRegion = "Overview" | "Africa" | "Balkan";
+export type AdminRegion = "Overview" | "Africa" | "Balkan" | "Alphaa";
 
-export type AdminRegionSlug = "overview" | "africa" | "balkan";
+export type AdminRegionSlug = "overview" | "africa" | "balkan" | "alphaa";
 
 export type AdminCountryCoverageFilter = {
   countries?: string[];
@@ -636,10 +637,10 @@ export type BulkImportModalProps = {
 export type BulkImportHolderStepProps = {
   holders: BulkImportHolderOption[];
   holderId: string;
-  region: "" | "Africa" | "Balkan";
+  region: "" | SetupRegion;
   country: string;
   onHolderIdChange: (holderId: string) => void;
-  onRegionChange: (region: "" | "Africa" | "Balkan") => void;
+  onRegionChange: (region: "" | SetupRegion) => void;
   onCountryChange: (country: string) => void;
 };
 
@@ -690,12 +691,41 @@ export type SheetsExportAccountRow = {
   status: "active" | "archived" | "suspended";
 };
 
+export type AlphaaSheetsExportFlag = boolean | string | null;
+
+/** Row shape from the legacy social_media_accounts table (ALPHAA sheet export). */
+export type AlphaaSheetsExportAccountRow = {
+  region: string | null;
+  country: string | null;
+  platform: string | null;
+  direction: string | null;
+  acc_name: string | null;
+  acc_bio: string | null;
+  acc_url: string | null;
+  personal: AlphaaSheetsExportFlag;
+  umberlla: AlphaaSheetsExportFlag;
+  native: AlphaaSheetsExportFlag;
+  blogs: AlphaaSheetsExportFlag;
+  golden: AlphaaSheetsExportFlag;
+  acc_state: string | null;
+  language1: string | null;
+  language2: string | null;
+  handler_name: string | null;
+  acc_username: string | null;
+  acc_email: string | null;
+  acc_password_hash: string | null;
+  acc_mobile: string | null;
+  rss: string | null;
+  dropbox: string | null;
+};
+
 export type SheetsSyncResult = {
   success: boolean;
   message: string;
   count?: number;
   africaCount?: number;
   balkanCount?: number;
+  alphaaCount?: number;
 };
 
 export type SyncSheetsButtonProps = {

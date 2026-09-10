@@ -81,7 +81,7 @@ export type AdminEmployeeListFilters = {
   q?: string;
   status?: "all" | "active" | "inactive";
   role?: "all" | "employee" | "manager" | "team_lead";
-  region?: "Africa" | "Balkan";
+  region?: "Africa" | "Balkan" | "Alphaa";
   country?: string;
   teamLeadId?: number | null;
 };
@@ -104,7 +104,7 @@ export async function fetchAdminEmployeesList(
     params.push(role);
     where.push(`u.role = $${params.length}`);
   }
-  if (region === "Africa" || region === "Balkan") {
+  if (region === "Africa" || region === "Balkan" || region === "Alphaa") {
     params.push(region);
     const regionParam = params.length;
     params.push([...setupCountriesForRegion(region)]);

@@ -224,7 +224,7 @@ export async function createEmployee(
             facebook_personal: 1,
             facebook_umbrella: 1,
             instagram: 1,
-            tiktok: 0,
+            tiktok: 1,
           }
         : {
             x: 0,

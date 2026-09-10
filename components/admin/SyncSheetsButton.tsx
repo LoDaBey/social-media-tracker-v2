@@ -32,6 +32,9 @@ export function SyncSheetsButton({
       if (result.balkanCount != null) {
         parts.push(`${result.balkanCount} Balkan`);
       }
+      if (result.alphaaCount != null) {
+        parts.push(`${result.alphaaCount} ALPHAA`);
+      }
       toast.success(
         parts.length > 0
           ? `${result.message} (${parts.join(", ")} accounts)`

@@ -72,6 +72,7 @@ export function BulkImportHolderStep({
           <option value="">Select a region</option>
           <option value="Africa">Africa</option>
           <option value="Balkan">Balkan</option>
+          <option value="Alphaa">ALPHAA</option>
         </select>
       </label>
       <label className="flex min-w-0 flex-col gap-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-muted)] sm:col-span-2">
