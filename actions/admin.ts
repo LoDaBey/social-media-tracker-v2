@@ -15,6 +15,10 @@ import {
 } from "@/lib/cairo-date";
 import { LEVEL_LABELS, LEVEL_SALARY_PERCENT } from "@/lib/level-labels";
 import { createNotification } from "@/lib/notifications";
+import {
+  AFRICA_SEAT_ACCOUNTS,
+  AFRICA_X_PER_SEAT,
+} from "@/lib/admin-country-targets";
 import { fetchAdminEmployeeEditorBundle } from "@/lib/admin-data";
 import { isSetupCountry, setupRegionForCountry } from "@/lib/setup-options";
 import { recordBaseSalary, recordBonus, recordPayout } from "@/lib/wallet-events";
@@ -220,11 +224,11 @@ export async function createEmployee(
     const defaultTargets =
       role === "employee"
         ? {
-            x: 11,
-            facebook_personal: 1,
-            facebook_umbrella: 1,
-            instagram: 1,
-            tiktok: 1,
+            x: AFRICA_X_PER_SEAT,
+            facebook_personal: AFRICA_SEAT_ACCOUNTS.facebookPersonal,
+            facebook_umbrella: AFRICA_SEAT_ACCOUNTS.facebookUmbrella,
+            instagram: AFRICA_SEAT_ACCOUNTS.instagram,
+            tiktok: AFRICA_SEAT_ACCOUNTS.tiktok,
           }
         : {
             x: 0,

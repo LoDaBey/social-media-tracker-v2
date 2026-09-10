@@ -111,7 +111,7 @@ export async function fetchAdminEmployeesList(
     const countriesParam = params.length;
     where.push(
       `(u.region = $${regionParam}
-        OR COALESCE(u.country, '') = ANY($${countriesParam}::text[])
+        OR INITCAP(TRIM(COALESCE(u.country, ''))) = ANY($${countriesParam}::text[])
         OR EXISTS (
             SELECT 1 FROM temp_manager_countries mc
              WHERE mc.user_id = u.id

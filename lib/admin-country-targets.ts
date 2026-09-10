@@ -1,5 +1,24 @@
 import type { AdminCountryPlan, AdminCountrySeatQuota } from "@/types/admin";
 
+/** Planned employee seats per standard Africa country (excluding Sudan). */
+export const AFRICA_STANDARD_RESOURCES = 5;
+
+/** Sudan (Africa / temp system) planned employee seats. */
+export const SUDAN_AFRICA_RESOURCES = 9;
+
+/** Per-handler targets when creating a new Africa employee (11 + 1 + 1 + 1 + 1 = 15). */
+export const AFRICA_SEAT_ACCOUNTS = {
+  xPersonal: 10,
+  xUmbrella: 1,
+  facebookPersonal: 1,
+  facebookUmbrella: 1,
+  instagram: 1,
+  tiktok: 1,
+} as const;
+
+export const AFRICA_X_PER_SEAT =
+  AFRICA_SEAT_ACCOUNTS.xPersonal + AFRICA_SEAT_ACCOUNTS.xUmbrella;
+
 const STANDARD_ACCOUNTS = {
   xPersonal: 49,
   facebookPersonal: 5,
@@ -9,7 +28,16 @@ const STANDARD_ACCOUNTS = {
   tiktok: 5,
 } as const;
 
-/** Per employee seat: 15 account slots — same platform mix as the Africa standard plan. */
+const SUDAN_ACCOUNTS = {
+  xPersonal: 87,
+  facebookPersonal: 9,
+  xUmbrella: 9,
+  facebookUmbrella: 9,
+  instagram: 9,
+  tiktok: 9,
+} as const;
+
+/** Per employee seat: 15 account slots — Balkan platform mix. */
 const BALKAN_SEAT_ACCOUNTS = {
   xPersonal: 10,
   facebookPersonal: 1,
@@ -25,7 +53,7 @@ function planCountry(
   country: string,
   language: string,
   resources: number,
-  accounts: typeof STANDARD_ACCOUNTS
+  accounts: typeof STANDARD_ACCOUNTS | typeof SUDAN_ACCOUNTS
 ): AdminCountryPlan {
   return {
     country,
@@ -61,18 +89,18 @@ function balkanPlanCountry(
   };
 }
 
-/** Africa resource plan: employees and account slots the admin should fill. */
+/** Africa resource plan — 9×74 + 132 = 798 account slots project-wide. */
 export const ADMIN_COUNTRY_PLANS: AdminCountryPlan[] = [
-  planCountry("Burkina Faso", "French", 5, STANDARD_ACCOUNTS),
-  planCountry("Angola", "Portuguese", 5, STANDARD_ACCOUNTS),
-  planCountry("Tanzania", "Kiswahili", 5, STANDARD_ACCOUNTS),
-  planCountry("Mozambique", "Portuguese", 5, STANDARD_ACCOUNTS),
-  planCountry("Madagascar", "Malagasy", 5, STANDARD_ACCOUNTS),
-  planCountry("Zambia", "English", 5, STANDARD_ACCOUNTS),
-  planCountry("Nigeria", "English", 5, STANDARD_ACCOUNTS),
-  planCountry("Mali", "French", 5, STANDARD_ACCOUNTS),
-  planCountry("Chad", "French", 5, STANDARD_ACCOUNTS),
-  planCountry("Sudan", "Arabic", 5, STANDARD_ACCOUNTS),
+  planCountry("Burkina Faso", "French", AFRICA_STANDARD_RESOURCES, STANDARD_ACCOUNTS),
+  planCountry("Angola", "Portuguese", AFRICA_STANDARD_RESOURCES, STANDARD_ACCOUNTS),
+  planCountry("Tanzania", "Kiswahili", AFRICA_STANDARD_RESOURCES, STANDARD_ACCOUNTS),
+  planCountry("Mozambique", "Portuguese", AFRICA_STANDARD_RESOURCES, STANDARD_ACCOUNTS),
+  planCountry("Madagascar", "Malagasy", AFRICA_STANDARD_RESOURCES, STANDARD_ACCOUNTS),
+  planCountry("Zambia", "English", AFRICA_STANDARD_RESOURCES, STANDARD_ACCOUNTS),
+  planCountry("Nigeria", "English", AFRICA_STANDARD_RESOURCES, STANDARD_ACCOUNTS),
+  planCountry("Mali", "French", AFRICA_STANDARD_RESOURCES, STANDARD_ACCOUNTS),
+  planCountry("Chad", "French", AFRICA_STANDARD_RESOURCES, STANDARD_ACCOUNTS),
+  planCountry("Sudan", "Arabic", SUDAN_AFRICA_RESOURCES, SUDAN_ACCOUNTS),
 ];
 
 /** Balkan resource plan: 15 account slots per employee seat. */
