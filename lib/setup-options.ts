@@ -1,6 +1,7 @@
 import {
   isAlphaaCountry,
   isBalkanCountry,
+  isTempPlanCountry,
   regionForCountry,
 } from "@/lib/region-config";
 
@@ -29,6 +30,7 @@ export const SETUP_COUNTRIES = [
   "Nigeria",
   "Rwanda",
   "Senegal",
+  "Sudan",
   "South Sudan",
   "Tanzania",
   "Uganda",
@@ -52,10 +54,18 @@ export const ALPHAA_SETUP_COUNTRIES = [
   "Iran",
 ] as const;
 
+/** ALPHAA countries not already listed under Africa/Balkan setup lists. */
+export const ALPHAA_EXCLUSIVE_SETUP_COUNTRIES = [
+  "Somalia",
+  "Palestine",
+  "Turkey",
+  "Iran",
+] as const;
+
 export const ALL_SETUP_COUNTRIES = [
   ...SETUP_COUNTRIES,
   ...BALKAN_SETUP_COUNTRIES,
-  ...ALPHAA_SETUP_COUNTRIES,
+  ...ALPHAA_EXCLUSIVE_SETUP_COUNTRIES,
 ] as const;
 
 export const SETUP_CATEGORIES = ["GH-G", "GH-R"] as const;
@@ -126,7 +136,7 @@ export function isCountryInEmployeeListRegion(
   return (setupCountriesForRegion(region) as readonly string[]).includes(country);
 }
 
-export { isAlphaaCountry, isBalkanCountry };
+export { isAlphaaCountry, isBalkanCountry, isTempPlanCountry };
 
 export function isSetupCategory(value: string) {
   return (SETUP_CATEGORIES as readonly string[]).includes(value);

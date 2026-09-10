@@ -1,6 +1,5 @@
 import { query } from "@/lib/db";
 import type { Platform } from "@/lib/platform-config";
-import { ALPHAA_SETUP_COUNTRIES } from "@/lib/setup-options";
 import type { AccountScope } from "@/types/db";
 import type { SheetsExportAccountRow } from "@/types/admin";
 
@@ -63,8 +62,6 @@ const SHEETS_EXPORT_QUERY = `
     INNER JOIN temp_users u ON sma.user_id = u.id
     WHERE u.role = 'employee'
       AND u.is_active = TRUE
-      AND COALESCE(u.region, '') NOT IN ('Alphaa', 'ALPHAA', 'alphaa')
-      AND COALESCE(u.country, '') <> ALL($1::text[])
 `;
 
 const SHEETS_EXPORT_ORDER = `
@@ -81,10 +78,10 @@ const SHEETS_EXPORT_ORDER = `
            sma.id ASC
 `;
 
+/** Africa/Balkan strategy export — temp_users + temp_social_media_accounts only. */
 export async function fetchAccountsForSheetsExport(): Promise<SheetsExportAccountRow[]> {
   const rows = await query<SheetsExportQueryRow>(
-    `${SHEETS_EXPORT_QUERY}${SHEETS_EXPORT_ORDER}`,
-    [[...ALPHAA_SETUP_COUNTRIES]]
+    `${SHEETS_EXPORT_QUERY}${SHEETS_EXPORT_ORDER}`
   );
 
   return rows.map(mapSheetsExportRow);
