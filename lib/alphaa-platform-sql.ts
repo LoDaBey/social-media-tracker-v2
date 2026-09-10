@@ -1,9 +1,7 @@
-/** SQL fragments for classifying legacy social_media_accounts.platform values. */
+/** SQL fragments for legacy social_media_accounts (TableCreations.sql). */
 
-export const ALPHAA_ACTIVE_ACCOUNT_WHERE = `
-  sma.spare_acc = FALSE
-  AND LOWER(TRIM(COALESCE(sma.acc_state, ''))) = 'active'
-`;
+/** Same rule as ALPHAA sheet export — non-spare accounts only. */
+export const ALPHAA_LEGACY_ACCOUNT_WHERE = `sma.spare_acc IS FALSE`;
 
 export const ALPHAA_PLATFORM_IS_X = `
   (
@@ -24,10 +22,7 @@ export const ALPHAA_PLATFORM_IS_TIKTOK = `
   LOWER(TRIM(sma.platform)) IN ('tiktok')
 `;
 
-export const ALPHAA_NORMALIZED_COUNTRY = `
+/** Country bucket for legacy accounts — INITCAP(TRIM(sma.country)). */
+export const ALPHAA_LEGACY_COUNTRY = `
   INITCAP(TRIM(COALESCE(sma.country, '')))
-`;
-
-export const ALPHAA_USER_COUNTRY = `
-  INITCAP(TRIM(COALESCE(u.country, '')))
 `;
