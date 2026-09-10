@@ -4,6 +4,7 @@ import {
 } from "@/lib/admin-country-targets";
 import { ALPHAA_COUNTRY_PLANS } from "@/lib/alphaa-country-targets";
 import {
+  baseCountryFromDisplay,
   isDualRegionCountry,
   overviewDisplayCountry,
 } from "@/lib/overview-country-display";
@@ -91,9 +92,10 @@ export function adminPlanCountriesForRegion(region: AdminRegion): string[] {
 
 /** Countries tracked via temp_users + temp_social_media_accounts (Africa/Balkan tabs). */
 export function isTempPlanCountry(value: string) {
+  const base = baseCountryFromDisplay(value);
   return (
-    (AFRICA_PLAN_COUNTRIES as readonly string[]).includes(value) ||
-    (BALKAN_COUNTRIES as readonly string[]).includes(value)
+    (AFRICA_PLAN_COUNTRIES as readonly string[]).includes(base) ||
+    (BALKAN_COUNTRIES as readonly string[]).includes(base)
   );
 }
 
@@ -116,5 +118,16 @@ export function isBalkanCountry(value: string) {
 }
 
 export function isAlphaaCountry(value: string) {
-  return (ALPHAA_COUNTRIES as readonly string[]).includes(value);
+  const base = baseCountryFromDisplay(value);
+  return (ALPHAA_COUNTRIES as readonly string[]).includes(base);
+}
+
+/** Map Overview display labels (e.g. Sudan (Africa)) back to DB country names. */
+export function baseCountriesFromDisplayFilter(
+  displayCountries: string[] | null,
+  baseCountries: readonly string[]
+): string[] {
+  if (!displayCountries) return [...baseCountries];
+  const allowed = new Set(displayCountries.map(baseCountryFromDisplay));
+  return baseCountries.filter((country) => allowed.has(country));
 }

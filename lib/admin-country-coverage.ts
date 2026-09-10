@@ -2,24 +2,24 @@ import {
   fetchAlphaaCountryActuals,
   fetchAlphaaHolderActuals,
 } from "@/lib/alphaa-country-coverage-data";
-import { query } from "@/lib/db";
 import {
   splitCountryPlanSeats,
   xPlanTarget,
 } from "@/lib/admin-country-targets";
-import {
-  isDualRegionCountry,
-  overviewDisplayCountry,
-} from "@/lib/overview-country-display";
+import { baseCountryFromDisplay } from "@/lib/overview-country-display";
 import {
   adminCountryPlansForRegion,
   adminPlanCountriesForRegion,
+  baseCountriesFromDisplayFilter,
+  isDualRegionCountry,
+  overviewDisplayCountry,
 } from "@/lib/region-config";
 import { isAlphaaCountry, isTempPlanCountry } from "@/lib/setup-options";
 import {
-  TEMP_USER_COUNTRY,
-  tempUserCountryInList,
-} from "@/lib/temp-country-sql";
+  fetchTempCountryCoverage,
+  type TempCountryActuals,
+  type TempHolderActuals,
+} from "@/lib/temp-country-coverage-data";
 import type {
   AdminCoverageCount,
   AdminCountryCoverage,
@@ -31,26 +31,8 @@ import type {
   AdminRegion,
 } from "@/types/admin";
 
-type CountryActuals = {
-  employees: number;
-  x: number;
-  facebookPersonal: number;
-  facebookUmbrella: number;
-  instagram: number;
-  tiktok: number;
-};
-
-type HolderActuals = {
-  id: number;
-  fullName: string;
-  email: string;
-  country: string;
-  x: number;
-  facebookPersonal: number;
-  facebookUmbrella: number;
-  instagram: number;
-  tiktok: number;
-};
+type CountryActuals = TempCountryActuals;
+type HolderActuals = TempHolderActuals;
 
 const EMPTY_ACTUALS: CountryActuals = {
   employees: 0,
@@ -219,6 +201,10 @@ function addResourceTotal(
   };
 }
 
+function uniqueBaseCountries(displayCountries: string[]): string[] {
+  return [...new Set(displayCountries.map(baseCountryFromDisplay))];
+}
+
 function splitCoverageCountries(
   countryFilter: string[] | null,
   region: AdminRegion | undefined
@@ -226,177 +212,84 @@ function splitCoverageCountries(
   const africaPlanCountries = adminPlanCountriesForRegion("Africa");
   const balkanPlanCountries = adminPlanCountriesForRegion("Balkan");
   const alphaaPlanCountries = adminPlanCountriesForRegion("Alphaa");
+  const allTempPlanCountries = [...africaPlanCountries, ...balkanPlanCountries];
 
-  /** Region tabs must use a single data source — Sudan exists in both Africa (temp) and ALPHAA (legacy). */
+  /** ALPHAA — legacy users + social_media_accounts only. */
   if (region === "Alphaa") {
-    const alphaaCountries = countryFilter
-      ? countryFilter.filter((country) => isAlphaaCountry(country))
-      : [...alphaaPlanCountries];
     return {
       tempCountries: [] as string[],
-      alphaaCountries,
+      alphaaCountries: baseCountriesFromDisplayFilter(
+        countryFilter,
+        alphaaPlanCountries
+      ),
+      tempRegionScope: undefined,
+      fetchTemp: false,
+      fetchAlphaa: true,
     };
   }
 
+  /** Africa — temp_users + temp_social_media_accounts only. */
   if (region === "Africa") {
-    const tempCountries = countryFilter
-      ? countryFilter.filter((country) =>
-          (africaPlanCountries as readonly string[]).includes(country)
-        )
-      : [...africaPlanCountries];
     return {
-      tempCountries,
+      tempCountries: baseCountriesFromDisplayFilter(
+        countryFilter,
+        africaPlanCountries
+      ),
       alphaaCountries: [] as string[],
+      tempRegionScope: "Africa" as const,
+      fetchTemp: true,
+      fetchAlphaa: false,
     };
   }
 
+  /** Balkan — temp_users + temp_social_media_accounts only. */
   if (region === "Balkan") {
-    const tempCountries = countryFilter
-      ? countryFilter.filter((country) =>
-          (balkanPlanCountries as readonly string[]).includes(country)
-        )
-      : [...balkanPlanCountries];
     return {
-      tempCountries,
+      tempCountries: baseCountriesFromDisplayFilter(
+        countryFilter,
+        balkanPlanCountries
+      ),
       alphaaCountries: [] as string[],
+      tempRegionScope: "Balkan" as const,
+      fetchTemp: true,
+      fetchAlphaa: false,
     };
   }
 
+  /** Overview — temp for Africa+Balkan rows, legacy for ALPHAA rows (dual Sudan). */
   if (region === "Overview") {
-    const tempCountries = countryFilter
-      ? countryFilter.filter((country) => isTempPlanCountry(country))
-      : [...africaPlanCountries, ...balkanPlanCountries];
-    const alphaaCountries = countryFilter
-      ? countryFilter.filter((country) => isAlphaaCountry(country))
-      : [...alphaaPlanCountries];
+    const tempFromFilter = countryFilter
+      ? uniqueBaseCountries(countryFilter.filter(isTempPlanCountry))
+      : allTempPlanCountries;
+    const alphaaFromFilter = countryFilter
+      ? uniqueBaseCountries(countryFilter.filter(isAlphaaCountry))
+      : alphaaPlanCountries;
+
     return {
-      tempCountries,
-      alphaaCountries,
+      tempCountries: tempFromFilter,
+      alphaaCountries: alphaaFromFilter,
+      tempRegionScope: "AfricaAndBalkan" as const,
+      fetchTemp: tempFromFilter.length > 0,
+      fetchAlphaa: alphaaFromFilter.length > 0,
     };
   }
 
   if (countryFilter) {
     return {
-      tempCountries: countryFilter.filter((country) => isTempPlanCountry(country)),
-      alphaaCountries: countryFilter.filter((country) => isAlphaaCountry(country)),
+      tempCountries: uniqueBaseCountries(countryFilter.filter(isTempPlanCountry)),
+      alphaaCountries: uniqueBaseCountries(countryFilter.filter(isAlphaaCountry)),
+      tempRegionScope: "AfricaAndBalkan" as const,
+      fetchTemp: countryFilter.some(isTempPlanCountry),
+      fetchAlphaa: countryFilter.some(isAlphaaCountry),
     };
   }
 
-  return { tempCountries: [] as string[], alphaaCountries: [] as string[] };
-}
-
-async function fetchTempCountryCoverage(tempCountries: string[] | null) {
-  const sqlCountryClause =
-    tempCountries === null ? "" : ` AND ${tempUserCountryInList(1)}`;
-  const sqlParams = tempCountries === null ? [] : [tempCountries];
-
-  const [countryRows, holderRows, onHoldRow] = await Promise.all([
-    query<{
-      country: string;
-      employees: string;
-      x: string;
-      facebook_personal: string;
-      facebook_umbrella: string;
-      instagram: string;
-      tiktok: string;
-    }>(
-      `SELECT
-         ${TEMP_USER_COUNTRY} AS country,
-         COUNT(DISTINCT u.id)::text AS employees,
-         COUNT(a.id) FILTER (WHERE a.platform = 'x')::text AS x,
-         COUNT(a.id) FILTER (WHERE a.platform = 'facebook_personal')::text AS facebook_personal,
-         COUNT(a.id) FILTER (WHERE a.platform = 'facebook_umbrella')::text AS facebook_umbrella,
-         COUNT(a.id) FILTER (WHERE a.platform = 'instagram')::text AS instagram,
-         COUNT(a.id) FILTER (WHERE a.platform = 'tiktok')::text AS tiktok
-       FROM temp_users u
-       LEFT JOIN temp_social_media_accounts a
-         ON a.user_id = u.id
-        AND a.status = 'active'
-      WHERE LOWER(u.role) = 'employee'
-        AND u.is_active = TRUE${sqlCountryClause}
-      GROUP BY ${TEMP_USER_COUNTRY}`,
-      sqlParams
-    ),
-    query<{
-      id: number;
-      full_name: string;
-      email: string;
-      country: string;
-      x: string;
-      facebook_personal: string;
-      facebook_umbrella: string;
-      instagram: string;
-      tiktok: string;
-    }>(
-      `SELECT
-         u.id,
-         u.full_name,
-         u.email,
-         ${TEMP_USER_COUNTRY} AS country,
-         COUNT(a.id) FILTER (WHERE a.platform = 'x')::text AS x,
-         COUNT(a.id) FILTER (WHERE a.platform = 'facebook_personal')::text AS facebook_personal,
-         COUNT(a.id) FILTER (WHERE a.platform = 'facebook_umbrella')::text AS facebook_umbrella,
-         COUNT(a.id) FILTER (WHERE a.platform = 'instagram')::text AS instagram,
-         COUNT(a.id) FILTER (WHERE a.platform = 'tiktok')::text AS tiktok
-       FROM temp_users u
-       LEFT JOIN temp_social_media_accounts a
-         ON a.user_id = u.id
-        AND a.status = 'active'
-      WHERE LOWER(u.role) = 'employee'
-        AND u.is_active = TRUE${sqlCountryClause}
-      GROUP BY u.id, u.full_name, u.email, ${TEMP_USER_COUNTRY}
-      ORDER BY u.full_name ASC, u.id ASC`,
-      sqlParams
-    ),
-    query<{ on_hold: string }>(
-      tempCountries === null
-        ? `SELECT COUNT(*)::text AS on_hold
-             FROM temp_users
-            WHERE employment_status = 'on_hold'`
-        : `SELECT COUNT(*)::text AS on_hold
-             FROM temp_users u
-            WHERE employment_status = 'on_hold'
-              AND LOWER(u.role) = 'employee'
-              AND ${tempUserCountryInList(1)}`,
-      sqlParams
-    ),
-  ]);
-
-  const actualByCountry = new Map<string, CountryActuals>();
-  for (const row of countryRows) {
-    const country = row.country.trim() || "Unassigned";
-    actualByCountry.set(country, {
-      employees: Number(row.employees),
-      x: Number(row.x),
-      facebookPersonal: Number(row.facebook_personal),
-      facebookUmbrella: Number(row.facebook_umbrella),
-      instagram: Number(row.instagram),
-      tiktok: Number(row.tiktok),
-    });
-  }
-
-  const holdersByCountry = new Map<string, HolderActuals[]>();
-  for (const row of holderRows) {
-    const country = row.country.trim() || "Unassigned";
-    const list = holdersByCountry.get(country) ?? [];
-    list.push({
-      id: row.id,
-      fullName: row.full_name,
-      email: row.email,
-      country,
-      x: Number(row.x),
-      facebookPersonal: Number(row.facebook_personal),
-      facebookUmbrella: Number(row.facebook_umbrella),
-      instagram: Number(row.instagram),
-      tiktok: Number(row.tiktok),
-    });
-    holdersByCountry.set(country, list);
-  }
-
   return {
-    actualByCountry,
-    holdersByCountry,
-    onHoldCount: Number(onHoldRow[0]?.on_hold ?? 0),
+    tempCountries: [] as string[],
+    alphaaCountries: [] as string[],
+    tempRegionScope: undefined,
+    fetchTemp: false,
+    fetchAlphaa: false,
   };
 }
 
@@ -410,24 +303,30 @@ export async function fetchAdminCountryCoverage(
   const countryFilter =
     filter?.countries ??
     (regionPlans === null ? null : regionPlans.map((plan) => plan.country));
-  const { tempCountries, alphaaCountries } = splitCoverageCountries(
-    countryFilter,
-    filter?.region
-  );
+
+  const {
+    tempCountries,
+    alphaaCountries,
+    tempRegionScope,
+    fetchTemp,
+    fetchAlphaa,
+  } = splitCoverageCountries(countryFilter, filter?.region);
 
   const [tempCoverage, alphaaActualByCountry, alphaaHoldersByCountry] =
     await Promise.all([
-      tempCountries.length > 0 || countryFilter === null
-        ? fetchTempCountryCoverage(
-            countryFilter === null ? null : tempCountries
-          )
+      fetchTemp
+        ? fetchTempCountryCoverage(tempCountries, { regionScope: tempRegionScope })
         : Promise.resolve({
             actualByCountry: new Map<string, CountryActuals>(),
             holdersByCountry: new Map<string, HolderActuals[]>(),
             onHoldCount: 0,
           }),
-      fetchAlphaaCountryActuals(alphaaCountries),
-      fetchAlphaaHolderActuals(alphaaCountries),
+      fetchAlphaa
+        ? fetchAlphaaCountryActuals(alphaaCountries)
+        : Promise.resolve(new Map()),
+      fetchAlphaa
+        ? fetchAlphaaHolderActuals(alphaaCountries)
+        : Promise.resolve(new Map()),
     ]);
 
   const actualByCountry = new Map<string, CountryActuals>();
