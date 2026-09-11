@@ -29,10 +29,16 @@ export function AdminCountryCoverageSection({
           {planLabel} plan{region === "Overview" ? "s" : ""}.
           {region === "Overview"
             ? " Sudan appears twice: Africa (temp) and ALPHAA (legacy)."
-            : ""}
+            : region === "Alphaa"
+              ? " Extended platforms (Reddit, Threads, YouTube, etc.) apply to ALPHAA only. Spare accounts are excluded."
+              : ""}
         </p>
       </div>
-      <AdminCountryCoverageTable rows={coverage.rows} totals={coverage.totals} />
+      <AdminCountryCoverageTable
+        rows={coverage.rows}
+        totals={coverage.totals}
+        showAlphaaPlatforms={region === "Alphaa"}
+      />
     </section>
   );
 }
