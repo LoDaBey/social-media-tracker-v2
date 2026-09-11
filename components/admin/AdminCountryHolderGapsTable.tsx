@@ -1,4 +1,5 @@
 import { AdminCountryHolderGapRow } from "@/components/admin/AdminCountryHolderGapRow";
+import { AlphaaCoveragePlatformHeaderCells } from "@/components/admin/AlphaaCoveragePlatformColumns";
 import { holderHasCoverageGap } from "@/lib/admin-coverage-gaps";
 import type { AdminCountryHolderGapsTableProps } from "@/types/admin";
 
@@ -6,6 +7,7 @@ export function AdminCountryHolderGapsTable({
   country,
   holders,
   missingEmployees,
+  showAlphaaPlatforms = false,
 }: AdminCountryHolderGapsTableProps) {
   const gapHolders = holders.filter(holderHasCoverageGap);
   const completeCount = holders.length - gapHolders.length;
@@ -50,6 +52,9 @@ export function AdminCountryHolderGapsTable({
               <th scope="col" className="px-3 py-2">
                 TikTok
               </th>
+              {showAlphaaPlatforms ? (
+                <AlphaaCoveragePlatformHeaderCells />
+              ) : null}
               <th scope="col" className="px-3 py-2">
                 Total
               </th>
@@ -59,7 +64,7 @@ export function AdminCountryHolderGapsTable({
             {holders.length === 0 ? (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={showAlphaaPlatforms ? 16 : 7}
                   className="px-3 py-6 text-center text-[13px] text-[var(--color-muted)]"
                 >
                   No account holders to review.
@@ -71,6 +76,7 @@ export function AdminCountryHolderGapsTable({
                   key={holder.id ?? `vacant-${country}-${index}`}
                   holder={holder}
                   country={country}
+                  showAlphaaPlatforms={showAlphaaPlatforms}
                 />
               ))
             )}

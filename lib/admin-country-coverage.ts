@@ -2,6 +2,11 @@ import {
   fetchAlphaaCountryActuals,
   fetchAlphaaHolderActuals,
 } from "@/lib/alphaa-country-coverage-data";
+import { splitAlphaaCountryPlanSeats } from "@/lib/alphaa-country-targets";
+import {
+  ALPHAA_EXTRA_PLATFORM_KEYS,
+  emptyAlphaaExtraPlatformCounts,
+} from "@/lib/alphaa-coverage-platforms";
 import {
   splitCountryPlanSeats,
   xPlanTarget,
@@ -29,10 +34,18 @@ import type {
   AdminCountryPlan,
   AdminCountrySeatQuota,
   AdminRegion,
+  AlphaaExtraPlatformCounts,
+  AlphaaExtraPlatformCoverage,
+  AlphaaExtraPlatformKey,
 } from "@/types/admin";
 
-type CountryActuals = TempCountryActuals;
-type HolderActuals = TempHolderActuals;
+type CountryActuals = TempCountryActuals & {
+  extraPlatforms?: Record<AlphaaExtraPlatformKey, number>;
+};
+
+type HolderActuals = TempHolderActuals & {
+  extraPlatforms?: Record<AlphaaExtraPlatformKey, number>;
+};
 
 const EMPTY_ACTUALS: CountryActuals = {
   employees: 0,
@@ -41,6 +54,7 @@ const EMPTY_ACTUALS: CountryActuals = {
   facebookUmbrella: 0,
   instagram: 0,
   tiktok: 0,
+  extraPlatforms: emptyAlphaaExtraPlatformCounts(),
 };
 
 const EMPTY_SEAT: AdminCountrySeatQuota = {
@@ -50,6 +64,7 @@ const EMPTY_SEAT: AdminCountrySeatQuota = {
   instagram: 0,
   tiktok: 0,
   totalAccounts: 0,
+  extraPlatforms: {},
 };
 
 function count(actual: number, target: number): AdminCoverageCount {
@@ -68,14 +83,46 @@ function creditedAccountsFrom(counts: {
   facebookUmbrella: AdminCoverageCount;
   instagram: AdminCoverageCount;
   tiktok: AdminCoverageCount;
+  extraPlatforms?: AlphaaExtraPlatformCoverage;
 }) {
-  return (
+  let total =
     credited(counts.x.actual, counts.x.target) +
     credited(counts.facebookPersonal.actual, counts.facebookPersonal.target) +
     credited(counts.facebookUmbrella.actual, counts.facebookUmbrella.target) +
     credited(counts.instagram.actual, counts.instagram.target) +
-    credited(counts.tiktok.actual, counts.tiktok.target)
-  );
+    credited(counts.tiktok.actual, counts.tiktok.target);
+
+  if (counts.extraPlatforms) {
+    for (const key of ALPHAA_EXTRA_PLATFORM_KEYS) {
+      const platform = counts.extraPlatforms[key];
+      if (platform) {
+        total += credited(platform.actual, platform.target);
+      }
+    }
+  }
+
+  return total;
+}
+
+function buildExtraPlatformCoverage(
+  actuals: Record<AlphaaExtraPlatformKey, number> | undefined,
+  targets: AlphaaExtraPlatformCounts | undefined
+): AlphaaExtraPlatformCoverage | undefined {
+  if (!targets) return undefined;
+
+  const coverage: AlphaaExtraPlatformCoverage = {};
+  for (const key of ALPHAA_EXTRA_PLATFORM_KEYS) {
+    const target = targets[key] ?? 0;
+    if (target > 0) {
+      coverage[key] = count(actuals?.[key] ?? 0, target);
+    }
+  }
+
+  return Object.keys(coverage).length > 0 ? coverage : undefined;
+}
+
+function isAlphaaPlan(plan: AdminCountryPlan) {
+  return plan.extraPlatforms !== undefined;
 }
 
 function emptyPlan(country: string): AdminCountryPlan {
@@ -104,24 +151,28 @@ function holderFromSeat(
     facebookUmbrella: 0,
     instagram: 0,
     tiktok: 0,
+    extraPlatforms: emptyAlphaaExtraPlatformCounts(),
   };
-  return {
-    id: person?.id ?? null,
-    fullName: person?.fullName ?? `Unfilled resource ${vacantIndex}`,
-    email: person?.email ?? null,
-    vacant: !person,
+  const extraPlatforms = buildExtraPlatformCoverage(
+    actuals.extraPlatforms,
+    seat.extraPlatforms
+  );
+  const platformCounts = {
     x: count(actuals.x, seat.x),
     facebookPersonal: count(actuals.facebookPersonal, seat.facebookPersonal),
     facebookUmbrella: count(actuals.facebookUmbrella, seat.facebookUmbrella),
     instagram: count(actuals.instagram, seat.instagram),
     tiktok: count(actuals.tiktok, seat.tiktok),
-    totalAccounts: count(creditedAccountsFrom({
-      x: count(actuals.x, seat.x),
-      facebookPersonal: count(actuals.facebookPersonal, seat.facebookPersonal),
-      facebookUmbrella: count(actuals.facebookUmbrella, seat.facebookUmbrella),
-      instagram: count(actuals.instagram, seat.instagram),
-      tiktok: count(actuals.tiktok, seat.tiktok),
-    }), seat.totalAccounts),
+    extraPlatforms,
+  };
+
+  return {
+    id: person?.id ?? null,
+    fullName: person?.fullName ?? `Unfilled resource ${vacantIndex}`,
+    email: person?.email ?? null,
+    vacant: !person,
+    ...platformCounts,
+    totalAccounts: count(creditedAccountsFrom(platformCounts), seat.totalAccounts),
   };
 }
 
@@ -129,7 +180,9 @@ function holdersForCountry(
   plan: AdminCountryPlan,
   people: HolderActuals[]
 ): AdminCountryCoverageHolder[] {
-  const seats = splitCountryPlanSeats(plan);
+  const seats = isAlphaaPlan(plan)
+    ? splitAlphaaCountryPlanSeats(plan)
+    : splitCountryPlanSeats(plan);
   const holders: AdminCountryCoverageHolder[] = [];
   const seatCount = Math.max(seats.length, people.length);
   let vacantIndex = 0;
@@ -155,29 +208,50 @@ function toRow(
   const facebookUmbrella = count(actuals.facebookUmbrella, plan.facebookUmbrella);
   const instagram = count(actuals.instagram, plan.instagram);
   const tiktok = count(actuals.tiktok, plan.tiktok);
+  const extraPlatforms = buildExtraPlatformCoverage(
+    actuals.extraPlatforms,
+    plan.extraPlatforms
+  );
+  const platformCounts = {
+    x,
+    facebookPersonal,
+    facebookUmbrella,
+    instagram,
+    tiktok,
+    extraPlatforms,
+  };
 
   return {
     country: plan.country,
     language: plan.language,
     onPlan,
     resources: count(actuals.employees, plan.resources),
-    x,
-    facebookPersonal,
-    facebookUmbrella,
-    instagram,
-    tiktok,
+    ...platformCounts,
     totalAccounts: count(
-      creditedAccountsFrom({
-        x,
-        facebookPersonal,
-        facebookUmbrella,
-        instagram,
-        tiktok,
-      }),
+      creditedAccountsFrom(platformCounts),
       plan.totalAccounts
     ),
     holders: holdersForCountry(plan, people),
   };
+}
+
+function addCreditedExtraPlatforms(
+  left: AlphaaExtraPlatformCoverage | undefined,
+  right: AlphaaExtraPlatformCoverage | undefined
+): AlphaaExtraPlatformCoverage | undefined {
+  if (!right) return left;
+  const merged: AlphaaExtraPlatformCoverage = { ...(left ?? {}) };
+
+  for (const key of ALPHAA_EXTRA_PLATFORM_KEYS) {
+    const next = right[key];
+    if (!next) continue;
+    const current = merged[key];
+    merged[key] = current
+      ? addCreditedCount(current, next)
+      : { actual: credited(next.actual, next.target), target: next.target };
+  }
+
+  return Object.keys(merged).length > 0 ? merged : undefined;
 }
 
 function addCreditedCount(
@@ -447,6 +521,7 @@ export async function fetchAdminCountryCoverage(
       facebookUmbrella: addCreditedCount(sum.facebookUmbrella, row.facebookUmbrella),
       instagram: addCreditedCount(sum.instagram, row.instagram),
       tiktok: addCreditedCount(sum.tiktok, row.tiktok),
+      extraPlatforms: addCreditedExtraPlatforms(sum.extraPlatforms, row.extraPlatforms),
       totalAccounts: addCreditedCount(sum.totalAccounts, row.totalAccounts),
     }),
     {
@@ -456,6 +531,7 @@ export async function fetchAdminCountryCoverage(
       facebookUmbrella: count(0, 0),
       instagram: count(0, 0),
       tiktok: count(0, 0),
+      extraPlatforms: undefined as AlphaaExtraPlatformCoverage | undefined,
       totalAccounts: count(0, 0),
     }
   );

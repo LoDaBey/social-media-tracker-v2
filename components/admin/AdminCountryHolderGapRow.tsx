@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { AdminCoverageCountCell } from "@/components/admin/AdminCoverageCountCell";
+import { AlphaaCoveragePlatformBodyCells } from "@/components/admin/AlphaaCoveragePlatformColumns";
 import { holderGapSummary, holderHasCoverageGap } from "@/lib/admin-coverage-gaps";
 import type { AdminCountryHolderGapRowProps } from "@/types/admin";
 
 export function AdminCountryHolderGapRow({
   holder,
   country,
+  showAlphaaPlatforms = false,
 }: AdminCountryHolderGapRowProps) {
   const hasGap = holderHasCoverageGap(holder);
   const summary = holderGapSummary(holder);
@@ -72,6 +74,12 @@ export function AdminCountryHolderGapRow({
           label={`${holder.fullName} TikTok accounts`}
         />
       </td>
+      {showAlphaaPlatforms ? (
+        <AlphaaCoveragePlatformBodyCells
+          platforms={holder.extraPlatforms}
+          labelPrefix={holder.fullName}
+        />
+      ) : null}
       <td className="px-3 py-2">
         <AdminCoverageCountCell
           count={holder.totalAccounts}

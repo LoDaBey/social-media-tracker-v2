@@ -1,3 +1,7 @@
+import {
+  emptyAlphaaExtraPlatformCounts,
+  parseAlphaaExtraPlatformRow,
+} from "@/lib/alphaa-coverage-platforms";
 import { query } from "@/lib/db";
 import {
   ALPHAA_LEGACY_ACCOUNT_WHERE,
@@ -6,7 +10,9 @@ import {
   ALPHAA_PLATFORM_IS_INSTAGRAM,
   ALPHAA_PLATFORM_IS_TIKTOK,
   ALPHAA_PLATFORM_IS_X,
+  alphaaExtraPlatformCountColumns,
 } from "@/lib/alphaa-platform-sql";
+import type { AlphaaExtraPlatformKey } from "@/types/admin";
 
 export type AlphaaCountryActuals = {
   employees: number;
@@ -15,6 +21,7 @@ export type AlphaaCountryActuals = {
   facebookUmbrella: number;
   instagram: number;
   tiktok: number;
+  extraPlatforms: Record<AlphaaExtraPlatformKey, number>;
 };
 
 export type AlphaaHolderActuals = {
@@ -27,6 +34,7 @@ export type AlphaaHolderActuals = {
   facebookUmbrella: number;
   instagram: number;
   tiktok: number;
+  extraPlatforms: Record<AlphaaExtraPlatformKey, number>;
 };
 
 function countrySqlClause(paramIndex: number) {
@@ -36,6 +44,7 @@ function countrySqlClause(paramIndex: number) {
 /**
  * ALPHAA tab only — legacy users + social_media_accounts (TableCreations.sql).
  * Never reads temp_users or temp_social_media_accounts.
+ * Spare accounts (spare_acc = true) are excluded.
  */
 export async function fetchAlphaaCountryActuals(
   countries: string[]
@@ -54,14 +63,16 @@ export async function fetchAlphaaCountryActuals(
        GROUP BY ${ALPHAA_LEGACY_COUNTRY}`,
       [countries]
     ),
-    query<{
-      country: string;
-      x: string;
-      facebook_personal: string;
-      facebook_umbrella: string;
-      instagram: string;
-      tiktok: string;
-    }>(
+    query<
+      {
+        country: string;
+        x: string;
+        facebook_personal: string;
+        facebook_umbrella: string;
+        instagram: string;
+        tiktok: string;
+      } & Partial<Record<AlphaaExtraPlatformKey, string>>
+    >(
       `SELECT
          ${ALPHAA_LEGACY_COUNTRY} AS country,
          COUNT(sma.id) FILTER (WHERE ${ALPHAA_PLATFORM_IS_X})::text AS x,
@@ -72,7 +83,8 @@ export async function fetchAlphaaCountryActuals(
            WHERE ${ALPHAA_PLATFORM_IS_FACEBOOK} AND sma.umberlla IS TRUE
          )::text AS facebook_umbrella,
          COUNT(sma.id) FILTER (WHERE ${ALPHAA_PLATFORM_IS_INSTAGRAM})::text AS instagram,
-         COUNT(sma.id) FILTER (WHERE ${ALPHAA_PLATFORM_IS_TIKTOK})::text AS tiktok
+         COUNT(sma.id) FILTER (WHERE ${ALPHAA_PLATFORM_IS_TIKTOK})::text AS tiktok,
+         ${alphaaExtraPlatformCountColumns()}
        FROM social_media_accounts sma
        WHERE ${ALPHAA_LEGACY_ACCOUNT_WHERE}
          AND ${countrySqlClause(1)}
@@ -91,6 +103,7 @@ export async function fetchAlphaaCountryActuals(
       facebookUmbrella: 0,
       instagram: 0,
       tiktok: 0,
+      extraPlatforms: emptyAlphaaExtraPlatformCounts(),
     });
   }
 
@@ -103,6 +116,7 @@ export async function fetchAlphaaCountryActuals(
       facebookUmbrella: 0,
       instagram: 0,
       tiktok: 0,
+      extraPlatforms: emptyAlphaaExtraPlatformCounts(),
     };
     current.employees = Number(row.employees);
     actualByCountry.set(country, current);
@@ -117,12 +131,14 @@ export async function fetchAlphaaCountryActuals(
       facebookUmbrella: 0,
       instagram: 0,
       tiktok: 0,
+      extraPlatforms: emptyAlphaaExtraPlatformCounts(),
     };
     current.x = Number(row.x);
     current.facebookPersonal = Number(row.facebook_personal);
     current.facebookUmbrella = Number(row.facebook_umbrella);
     current.instagram = Number(row.instagram);
     current.tiktok = Number(row.tiktok);
+    current.extraPlatforms = parseAlphaaExtraPlatformRow(row);
     actualByCountry.set(country, current);
   }
 
@@ -135,17 +151,19 @@ export async function fetchAlphaaHolderActuals(
 ): Promise<Map<string, AlphaaHolderActuals[]>> {
   if (countries.length === 0) return new Map();
 
-  const rows = await query<{
-    id: number;
-    full_name: string;
-    email: string;
-    country: string;
-    x: string;
-    facebook_personal: string;
-    facebook_umbrella: string;
-    instagram: string;
-    tiktok: string;
-  }>(
+  const rows = await query<
+    {
+      id: number;
+      full_name: string;
+      email: string;
+      country: string;
+      x: string;
+      facebook_personal: string;
+      facebook_umbrella: string;
+      instagram: string;
+      tiktok: string;
+    } & Partial<Record<AlphaaExtraPlatformKey, string>>
+  >(
     `SELECT
        u.id,
        COALESCE(
@@ -162,7 +180,8 @@ export async function fetchAlphaaHolderActuals(
          WHERE ${ALPHAA_PLATFORM_IS_FACEBOOK} AND sma.umberlla IS TRUE
        )::text AS facebook_umbrella,
        COUNT(sma.id) FILTER (WHERE ${ALPHAA_PLATFORM_IS_INSTAGRAM})::text AS instagram,
-       COUNT(sma.id) FILTER (WHERE ${ALPHAA_PLATFORM_IS_TIKTOK})::text AS tiktok
+       COUNT(sma.id) FILTER (WHERE ${ALPHAA_PLATFORM_IS_TIKTOK})::text AS tiktok,
+       ${alphaaExtraPlatformCountColumns()}
      FROM users u
      INNER JOIN social_media_accounts sma ON sma.user_id = u.id
      WHERE ${ALPHAA_LEGACY_ACCOUNT_WHERE}
@@ -186,6 +205,7 @@ export async function fetchAlphaaHolderActuals(
       facebookUmbrella: Number(row.facebook_umbrella),
       instagram: Number(row.instagram),
       tiktok: Number(row.tiktok),
+      extraPlatforms: parseAlphaaExtraPlatformRow(row),
     });
     holdersByCountry.set(country, list);
   }

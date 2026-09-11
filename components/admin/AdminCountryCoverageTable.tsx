@@ -1,11 +1,18 @@
 import { AdminCountryCoverageRow } from "@/components/admin/AdminCountryCoverageRow";
 import { AdminCoverageCountCell } from "@/components/admin/AdminCoverageCountCell";
+import {
+  AlphaaCoveragePlatformFooterCells,
+  AlphaaCoveragePlatformHeaderCells,
+} from "@/components/admin/AlphaaCoveragePlatformColumns";
 import type { AdminCountryCoverageTableProps } from "@/types/admin";
 
 export function AdminCountryCoverageTable({
   rows,
   totals,
+  showAlphaaPlatforms = false,
 }: AdminCountryCoverageTableProps) {
+  const colSpan = showAlphaaPlatforms ? 18 : 9;
+
   return (
     <div className="overflow-x-auto rounded-[16px] border border-[var(--color-hairline)] bg-[var(--color-surface)]">
       <table className="w-full min-w-[1080px] border-collapse text-left">
@@ -35,6 +42,7 @@ export function AdminCountryCoverageTable({
             <th scope="col" className="px-3 py-2.5">
               TikTok
             </th>
+            {showAlphaaPlatforms ? <AlphaaCoveragePlatformHeaderCells /> : null}
             <th scope="col" className="px-3 py-2.5">
               Total
             </th>
@@ -42,7 +50,11 @@ export function AdminCountryCoverageTable({
         </thead>
         <tbody>
           {rows.map((row) => (
-            <AdminCountryCoverageRow key={row.country} row={row} />
+            <AdminCountryCoverageRow
+              key={row.country}
+              row={row}
+              showAlphaaPlatforms={showAlphaaPlatforms}
+            />
           ))}
         </tbody>
         <tfoot>
@@ -86,6 +98,9 @@ export function AdminCountryCoverageTable({
                 label="Total TikTok accounts"
               />
             </td>
+            {showAlphaaPlatforms ? (
+              <AlphaaCoveragePlatformFooterCells totals={totals.extraPlatforms} />
+            ) : null}
             <td className="px-3 py-2.5">
               <AdminCoverageCountCell
                 count={totals.totalAccounts}
@@ -95,6 +110,9 @@ export function AdminCountryCoverageTable({
           </tr>
         </tfoot>
       </table>
+      {showAlphaaPlatforms ? (
+        <p className="sr-only">Table has {colSpan} columns including ALPHAA platforms.</p>
+      ) : null}
     </div>
   );
 }

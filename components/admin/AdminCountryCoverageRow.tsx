@@ -5,10 +5,14 @@ import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { CountryFlag } from "@/lib/country-icons";
 import { AdminCoverageCountCell } from "@/components/admin/AdminCoverageCountCell";
+import { AlphaaCoveragePlatformBodyCells } from "@/components/admin/AlphaaCoveragePlatformColumns";
 import { AdminCountryHolderGapsTable } from "@/components/admin/AdminCountryHolderGapsTable";
 import type { AdminCountryCoverageRowProps } from "@/types/admin";
 
-export function AdminCountryCoverageRow({ row }: AdminCountryCoverageRowProps) {
+export function AdminCountryCoverageRow({
+  row,
+  showAlphaaPlatforms = false,
+}: AdminCountryCoverageRowProps) {
   const [expanded, setExpanded] = useState(false);
   const panelId = useId();
   const missingEmployees = Math.max(0, row.resources.target - row.resources.actual);
@@ -86,6 +90,12 @@ export function AdminCountryCoverageRow({ row }: AdminCountryCoverageRowProps) {
             label={`${row.country} TikTok accounts`}
           />
         </td>
+        {showAlphaaPlatforms ? (
+          <AlphaaCoveragePlatformBodyCells
+            platforms={row.extraPlatforms}
+            labelPrefix={row.country}
+          />
+        ) : null}
         <td className="px-3 py-2.5">
           <AdminCoverageCountCell
             count={row.totalAccounts}
@@ -96,7 +106,7 @@ export function AdminCountryCoverageRow({ row }: AdminCountryCoverageRowProps) {
       {expanded ? (
         <tr className="border-t border-[var(--color-hairline)] bg-[var(--color-cream-tint)]/40">
           <td
-            colSpan={9}
+            colSpan={showAlphaaPlatforms ? 18 : 9}
             className="px-3 py-3"
             id={panelId}
             onClick={(event) => event.stopPropagation()}
@@ -105,6 +115,7 @@ export function AdminCountryCoverageRow({ row }: AdminCountryCoverageRowProps) {
               country={row.country}
               holders={row.holders}
               missingEmployees={missingEmployees}
+              showAlphaaPlatforms={showAlphaaPlatforms}
             />
           </td>
         </tr>

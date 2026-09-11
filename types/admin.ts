@@ -184,6 +184,26 @@ export type AdminKpiTileProps = {
   subtitle?: string;
 };
 
+/** ALPHAA-only extended platforms (legacy social_media_accounts). */
+export type AlphaaExtraPlatformKey =
+  | "threads"
+  | "reddit"
+  | "youtube"
+  | "blogspot"
+  | "telegram"
+  | "website"
+  | "turkkitap"
+  | "kizlarsoruyor"
+  | "balatarin";
+
+export type AlphaaExtraPlatformCounts = Partial<
+  Record<AlphaaExtraPlatformKey, number>
+>;
+
+export type AlphaaExtraPlatformCoverage = Partial<
+  Record<AlphaaExtraPlatformKey, AdminCoverageCount>
+>;
+
 export type AdminCountrySeatQuota = {
   x: number;
   facebookPersonal: number;
@@ -191,6 +211,7 @@ export type AdminCountrySeatQuota = {
   instagram: number;
   tiktok: number;
   totalAccounts: number;
+  extraPlatforms?: AlphaaExtraPlatformCounts;
 };
 
 export type AdminCountryPlan = {
@@ -204,6 +225,7 @@ export type AdminCountryPlan = {
   instagram: number;
   tiktok: number;
   totalAccounts: number;
+  extraPlatforms?: AlphaaExtraPlatformCounts;
 };
 
 export type AdminCoverageCount = {
@@ -222,6 +244,7 @@ export type AdminCountryCoverageHolder = {
   instagram: AdminCoverageCount;
   tiktok: AdminCoverageCount;
   totalAccounts: AdminCoverageCount;
+  extraPlatforms?: AlphaaExtraPlatformCoverage;
 };
 
 export type AdminCountryCoverageRow = {
@@ -235,6 +258,7 @@ export type AdminCountryCoverageRow = {
   instagram: AdminCoverageCount;
   tiktok: AdminCoverageCount;
   totalAccounts: AdminCoverageCount;
+  extraPlatforms?: AlphaaExtraPlatformCoverage;
   holders: AdminCountryCoverageHolder[];
 };
 
@@ -275,21 +299,30 @@ export type AdminOverviewRegionTabsProps = {
 export type AdminCountryCoverageTableProps = {
   rows: AdminCountryCoverageRow[];
   totals: AdminCountryCoverageTotals;
+  showAlphaaPlatforms?: boolean;
 };
 
 export type AdminCountryCoverageRowProps = {
   row: AdminCountryCoverageRow;
+  showAlphaaPlatforms?: boolean;
 };
 
 export type AdminCountryHolderGapRowProps = {
   holder: AdminCountryCoverageHolder;
   country: string;
+  showAlphaaPlatforms?: boolean;
 };
 
 export type AdminCountryHolderGapsTableProps = {
   country: string;
   holders: AdminCountryCoverageHolder[];
   missingEmployees: number;
+  showAlphaaPlatforms?: boolean;
+};
+
+export type AlphaaCoveragePlatformColumnsProps = {
+  variant: "header" | "footer";
+  totals?: AlphaaExtraPlatformCoverage;
 };
 
 export type AdminCoverageCountCellProps = {
