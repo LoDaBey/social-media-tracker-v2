@@ -18,6 +18,11 @@ import {
   PLATFORM_METRICS,
   PLATFORM_TINTS,
 } from "@/lib/platform-config";
+import {
+  submissionDrawerStatusPill,
+  submissionDrawerSubmitAria,
+  submissionDrawerSubmitLabel,
+} from "@/lib/submission-copy";
 import type { PlatformSubmissionDrawerProps, SubmissionMetric } from "@/types/submissions";
 
 const EMPTY_VALUES: Record<SubmissionMetric, string> = {
@@ -42,43 +47,6 @@ function clampNumeric(value: string) {
 
 function formatNumber(value: number) {
   return value.toLocaleString("en-US");
-}
-
-function statusPill(
-  accountList: PlatformSubmissionDrawerProps["accounts"],
-  existingByAccountId: Map<number, PlatformSubmissionDrawerProps["existingSubmissions"][number]>
-) {
-  const total = accountList.length;
-  if (total === 0) {
-    return {
-      label: "No accounts",
-      className: "bg-[var(--color-cream)] text-[var(--color-muted)]",
-    };
-  }
-
-  const sent = accountList.filter((account) => {
-    const row = existingByAccountId.get(account.id);
-    return Boolean(row && !row.is_auto_reset);
-  }).length;
-
-  if (sent === 0) {
-    return {
-      label: "Not sent yet",
-      className: "bg-[var(--color-coral-tint)] text-[var(--color-coral)]",
-    };
-  }
-
-  if (sent >= total) {
-    return {
-      label: "All sent",
-      className: "bg-[var(--color-emerald-tint)] text-[var(--color-emerald)]",
-    };
-  }
-
-  return {
-    label: `${total - sent} left to send`,
-    className: "bg-[var(--color-cream)] text-[var(--color-muted)]",
-  };
 }
 
 const MD_UP_QUERY = "(min-width: 768px)";
@@ -133,7 +101,11 @@ export function PlatformSubmissionDrawer({
     }
     return parts.length > 0 ? parts.join("\n\n") : null;
   }, [existingSubmissions]);
-  const pill = statusPill(accounts, existingByAccountId);
+  const submittedAccountCount = accounts.filter((account) => {
+    const row = existingByAccountId.get(account.id);
+    return Boolean(row && !row.is_auto_reset);
+  }).length;
+  const pill = submissionDrawerStatusPill(accounts, submittedAccountCount);
 
   useEffect(() => {
     if (!open) return;
@@ -223,7 +195,7 @@ export function PlatformSubmissionDrawer({
     startTransition(async () => {
       const result = await submitPlatformBatch(platform, payload);
       if (!result.ok) {
-        setError(result.error ?? "Could not send. Try again.");
+        setError(result.error ?? "Could not submit metrics. Try again.");
         return;
       }
 
@@ -258,14 +230,14 @@ export function PlatformSubmissionDrawer({
         custom={isDesktop}
         variants={drawerPanelVariants}
         className={[
-          "absolute flex bg-[var(--color-cream-tint)] shadow-[-24px_0_64px_rgba(20,20,20,.14)]",
-          "inset-x-0 bottom-0 h-[92vh] flex-col rounded-t-[24px]",
-          "md:inset-y-0 md:right-0 md:left-auto md:h-auto md:w-[720px] md:rounded-none lg:w-[960px] xl:w-[1040px]",
+          "absolute flex min-h-0 flex-col bg-[var(--color-cream-tint)] shadow-[-24px_0_64px_rgba(20,20,20,.14)]",
+          "inset-x-0 bottom-0 h-[92vh] max-h-[92vh] rounded-t-[24px]",
+          "md:inset-y-0 md:right-0 md:left-auto md:h-full md:max-h-none md:w-[720px] md:rounded-none lg:w-[960px] xl:w-[1040px]",
         ].join(" ")}
       >
-        <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-[var(--color-hairline)] md:hidden" />
+        <div className="mx-auto mt-3 h-1.5 w-12 shrink-0 rounded-full bg-[var(--color-hairline)] md:hidden" />
 
-        <div className="flex-1 overflow-y-auto pb-[96px]">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           <header className="p-7 pb-5">
             <div className="flex items-start gap-4">
               <div
@@ -281,7 +253,7 @@ export function PlatformSubmissionDrawer({
                   id="platform-submission-title"
                   className="text-[24px] font-extrabold leading-tight text-[var(--color-ink)]"
                 >
-                  {PLATFORM_LABELS[platform]} update
+                  {PLATFORM_LABELS[platform]} · daily metrics
                 </h2>
                 <p className="mt-1 text-[13px] font-medium text-[var(--color-muted)]">
                   {accounts.length} {accounts.length === 1 ? "account" : "accounts"}
@@ -327,7 +299,7 @@ export function PlatformSubmissionDrawer({
                   <Info className="h-4 w-4" aria-hidden="true" />
                 </motion.button>
                 <div className="pointer-events-none absolute right-0 top-9 z-20 w-64 rounded-[12px] border border-[var(--color-hairline)] bg-white p-3 text-[12px] font-medium leading-5 text-[var(--color-muted)] opacity-0 shadow-[0_12px_32px_rgba(20,20,20,.08)] transition group-hover:opacity-100 group-focus-within:opacity-100">
-                  Each column shows the goal at the top. After you send, that row locks until tomorrow.
+                  Each column shows the goal at the top. After you submit, that row locks until tomorrow.
                 </div>
               </div>
             </div>
@@ -553,19 +525,21 @@ export function PlatformSubmissionDrawer({
                 </p>
               </section>
             ) : null}
+
+            <div className="h-6 shrink-0" aria-hidden="true" />
           </section>
         </div>
 
         <motion.footer
           layout
           transition={{ layout: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } }}
-          className="absolute inset-x-0 bottom-0 border-t border-[var(--color-hairline)] bg-white"
+          className="relative z-10 shrink-0 border-t border-[var(--color-hairline)] bg-white pb-[max(1rem,env(safe-area-inset-bottom))]"
         >
           <div className="flex flex-col gap-2 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div className="min-w-0">
               <p className="flex items-center gap-2 text-[12px] font-medium text-[var(--color-muted)]">
                 <Lock className="h-4 w-4 shrink-0" aria-hidden="true" />
-                After you send, you cannot change until tomorrow.
+                After you submit, you cannot change these numbers until tomorrow.
               </p>
               {error ? (
                 <p className="mt-1 text-[12px] font-semibold text-[var(--color-coral)]">{error}</p>
@@ -574,7 +548,7 @@ export function PlatformSubmissionDrawer({
             <div className="flex shrink-0 items-center justify-end gap-3">
               <motion.button
                 type="button"
-                aria-label="Close without sending"
+                aria-label="Close without submitting metrics"
                 onClick={onClose}
                 className="h-11 cursor-pointer rounded-lg px-4 text-[14px] font-semibold text-[var(--color-muted)] outline-none hover:bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
                 {...setupButtonMotion(false)}
@@ -583,20 +557,14 @@ export function PlatformSubmissionDrawer({
               </motion.button>
               <motion.button
                 type="button"
-                aria-label={`Send ${editableAccounts.length} accounts`}
+                aria-label={submissionDrawerSubmitAria(editableAccounts.length)}
                 disabled={editableAccounts.length === 0 || isPending}
                 onClick={submitBatch}
                 className="inline-flex h-12 cursor-pointer items-center gap-2 rounded-lg bg-[var(--color-emerald)] px-7 text-[14px] font-bold text-white outline-none hover:bg-[var(--color-emerald-hover)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
                 {...setupButtonMotion(editableAccounts.length === 0 || isPending)}
               >
                 <Check className="h-4 w-4" aria-hidden="true" />
-                {isPending
-                  ? "Sending..."
-                  : editableAccounts.length === 0
-                    ? "Nothing to send"
-                    : editableAccounts.length === 1
-                      ? "Send 1 account"
-                      : `Send ${editableAccounts.length} accounts`}
+                {submissionDrawerSubmitLabel(editableAccounts.length, isPending)}
               </motion.button>
             </div>
           </div>

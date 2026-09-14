@@ -37,7 +37,7 @@ export function SubmissionCountdownChip({ initialMs }: Props) {
         isUrgent ? "bg-[var(--color-coral-tint)]" : "bg-[var(--color-surface)]",
       ].join(" ")}
       style={{ borderRadius: 14 }}
-      aria-label="Time left to send your numbers today"
+      aria-label="Time left to submit today's metrics"
     >
       <Clock3
         className={[

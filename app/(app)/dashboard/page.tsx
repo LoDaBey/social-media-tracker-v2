@@ -138,7 +138,7 @@ export default async function DashboardPage() {
 
       <footer className="mt-8 text-center">
         <p className="text-[12px] font-normal text-[var(--color-muted)]">
-          Counts start fresh at midnight Cairo time.
+          Daily metrics reset at midnight Cairo time.
         </p>
       </footer>
     </main>
