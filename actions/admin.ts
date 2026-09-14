@@ -31,6 +31,8 @@ import type {
 } from "@/types/admin";
 import type { Role } from "@/types/db";
 import { publicAdminMutationError } from "@/lib/admin-action-error";
+import { assertValidReporting } from "@/lib/admin-reporting";
+import { normalizeReportingForRole } from "@/lib/role-hierarchy";
 
 const CYCLE_LENGTH_DAYS = 30;
 
@@ -96,9 +98,10 @@ const createEmployeeSchema = z
       .min(8, "Password must be at least 8 characters.")
       .max(128, "Password is too long."),
     phone: z.string().trim().max(50).optional().nullable(),
-    role: z.enum(["employee", "team_lead", "admin", "manager"]).optional(),
+    role: z.enum(["employee", "team_lead", "admin", "manager", "op"]).optional(),
     team_lead_id: z.number().int().positive().nullable().optional(),
     manager_id: z.number().int().positive().nullable().optional(),
+    op_id: z.number().int().positive().nullable().optional(),
     manager_countries: z.array(z.string()).optional(),
     base_salary: z.number().min(0).max(10_000_000).optional(),
     hire_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
@@ -112,7 +115,7 @@ const createEmployeeSchema = z
   })
   .superRefine((data, ctx) => {
     const role = data.role ?? "employee";
-    if (role === "manager") return;
+    if (role === "manager" || role === "admin" || role === "op") return;
     const country = data.country?.trim() ?? "";
     if (!country) {
       ctx.addIssue({
@@ -166,19 +169,6 @@ export async function createEmployee(
     const cycleStart = p.pay_cycle_start_date ?? today;
     const baseSalary = p.base_salary ?? 0;
     const level = p.current_level ?? 2;
-    let teamLeadId: number | null = p.team_lead_id ?? null;
-    let managerId: number | null = p.manager_id ?? null;
-    // Employees and managers can report to a team lead; only employees get a manager.
-    if (role === "team_lead" || role === "admin") {
-      teamLeadId = null;
-    }
-    if (role !== "employee") {
-      managerId = null;
-    }
-    if (role === "employee" && !managerId) {
-      return { error: "Select a manager for this employee." };
-    }
-
     let managerCountries: string[] = [];
     if (role === "manager") {
       const countriesParsed = managerCountriesSchema.safeParse(
@@ -198,27 +188,18 @@ export async function createEmployee(
     client = await pool.connect();
     await client.query("BEGIN");
 
-    if (managerId) {
-      const mgr = await client.query<{ id: number }>(
-        `SELECT id FROM temp_users WHERE id = $1 AND role = 'manager' AND is_active = TRUE`,
-        [managerId]
-      );
-      if (!mgr.rows[0]) {
-        await client.query("ROLLBACK");
-        return { error: "Selected manager is invalid." };
-      }
+    const reportingInput = normalizeReportingForRole(role, {
+      team_lead_id: p.team_lead_id ?? null,
+      manager_id: p.manager_id ?? null,
+      op_id: p.op_id ?? null,
+    });
+    const reportingCheck = await assertValidReporting(client, role, reportingInput);
+    if (reportingCheck.error) {
+      await client.query("ROLLBACK");
+      return { error: reportingCheck.error };
     }
-
-    if (teamLeadId) {
-      const tl = await client.query<{ id: number }>(
-        `SELECT id FROM temp_users WHERE id = $1 AND role = 'team_lead' AND is_active = TRUE`,
-        [teamLeadId]
-      );
-      if (!tl.rows[0]) {
-        await client.query("ROLLBACK");
-        return { error: "Selected team lead is invalid." };
-      }
-    }
+    const { team_lead_id: teamLeadId, manager_id: managerId, op_id: opId } =
+      reportingCheck.normalized;
 
     // Default assigned targets for new employees; other roles stay at 0.
     const defaultTargets =
@@ -241,15 +222,15 @@ export async function createEmployee(
     const ins = await client.query<{ id: number }>(
       `INSERT INTO temp_users (
          full_name, email, password_hash, role, phone, is_active,
-         team_lead_id, manager_id, base_salary, hire_date, pay_cycle_start_date, current_level,
+         team_lead_id, manager_id, op_id, base_salary, hire_date, pay_cycle_start_date, current_level,
          region, country,
          target_x_count, target_facebook_personal_count, target_facebook_umbrella_count,
          target_instagram_count, target_tiktok_count
        ) VALUES (
          $1, $2, $3, $4, $5, TRUE,
-         $6, $7, $8, $9::date, $10::date, $11,
-         $12, $13,
-         $14, $15, $16, $17, $18
+         $6, $7, $8, $9, $10::date, $11::date, $12,
+         $13, $14,
+         $15, $16, $17, $18, $19
        ) RETURNING id`,
       [
         p.full_name,
@@ -259,6 +240,7 @@ export async function createEmployee(
         p.phone ?? null,
         teamLeadId,
         managerId,
+        opId,
         baseSalary,
         hire,
         cycleStart,
@@ -307,7 +289,7 @@ const updateProfileSchema = z.object({
     .transform((s) =>
       s == null || String(s).trim() === "" ? null : String(s).trim().slice(0, 50)
     ),
-  role: z.enum(["employee", "team_lead", "admin", "manager"]),
+  role: z.enum(["employee", "team_lead", "admin", "manager", "op"]),
   is_active: z.boolean(),
   employee_code: z
     .union([z.string(), z.null()])
@@ -320,11 +302,31 @@ const updateProfileSchema = z.object({
   hire_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   team_lead_id: z.number().int().positive().nullable(),
   manager_id: z.number().int().positive().nullable(),
+  op_id: z.number().int().positive().nullable(),
   manager_countries: z.array(z.string()).optional(),
   base_salary: z.number().min(0).max(10_000_000),
   current_level: z.number().int().min(1).max(6),
   pay_cycle_start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
-  country: setupCountrySchema,
+  country: z.string().trim(),
+}).superRefine((data, ctx) => {
+  if (data.role === "manager" || data.role === "admin" || data.role === "op") {
+    return;
+  }
+  if (!data.country) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["country"],
+      message: "Select a country.",
+    });
+    return;
+  }
+  if (!isSetupCountry(data.country)) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["country"],
+      message: "Select a valid country.",
+    });
+  }
 });
 
 export async function updateEmployeeProfile(
@@ -334,18 +336,6 @@ export async function updateEmployeeProfile(
   const { adminId } = await requireAdminSession();
   if (!Number.isFinite(user_id)) throw new Error("Invalid user.");
   const p = updateProfileSchema.parse(payload);
-
-  let teamLeadId = p.team_lead_id;
-  let managerId = p.manager_id;
-  if (p.role === "team_lead" || p.role === "admin") {
-    teamLeadId = null;
-  }
-  if (p.role !== "employee") {
-    managerId = null;
-  }
-  if (p.role === "employee" && !managerId) {
-    throw new Error("Select a manager for this employee.");
-  }
 
   let managerCountries: string[] = [];
   if (p.role === "manager") {
@@ -366,21 +356,17 @@ export async function updateEmployeeProfile(
       throw new Error("Email already in use.");
     }
 
-    if (managerId) {
-      const mgr = await client.query<{ id: number }>(
-        `SELECT id FROM temp_users WHERE id = $1 AND role = 'manager' AND is_active = TRUE`,
-        [managerId]
-      );
-      if (!mgr.rows[0]) throw new Error("Selected manager is invalid.");
+    const reportingInput = normalizeReportingForRole(p.role, {
+      team_lead_id: p.team_lead_id,
+      manager_id: p.manager_id,
+      op_id: p.op_id,
+    });
+    const reportingCheck = await assertValidReporting(client, p.role, reportingInput);
+    if (reportingCheck.error) {
+      throw new Error(reportingCheck.error);
     }
-
-    if (teamLeadId) {
-      const tl = await client.query<{ id: number }>(
-        `SELECT id FROM temp_users WHERE id = $1 AND role = 'team_lead' AND is_active = TRUE`,
-        [teamLeadId]
-      );
-      if (!tl.rows[0]) throw new Error("Selected team lead is invalid.");
-    }
+    const { team_lead_id: teamLeadId, manager_id: managerId, op_id: opId } =
+      reportingCheck.normalized;
 
     const prevLevelRes = await client.query<{ current_level: number }>(
       `SELECT current_level FROM temp_users WHERE id = $1 FOR UPDATE`,
@@ -397,14 +383,15 @@ export async function updateEmployeeProfile(
          hire_date = $5::date,
          team_lead_id = $6,
          manager_id = $7,
-         base_salary = $8,
-         current_level = $9,
-         pay_cycle_start_date = $10::date,
-         region = $11,
-         country = $12,
-         employee_code = $13,
-         employment_status = $14
-       WHERE id = $15`,
+         op_id = $8,
+         base_salary = $9,
+         current_level = $10,
+         pay_cycle_start_date = $11::date,
+         region = $12,
+         country = $13,
+         employee_code = $14,
+         employment_status = $15
+       WHERE id = $16`,
       [
         p.full_name,
         p.email,
@@ -413,6 +400,7 @@ export async function updateEmployeeProfile(
         p.hire_date,
         teamLeadId,
         managerId,
+        opId,
         p.base_salary,
         p.current_level,
         p.pay_cycle_start_date,

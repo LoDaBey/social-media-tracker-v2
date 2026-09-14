@@ -96,8 +96,14 @@ export async function fetchManagerHomeGroups(
        FROM temp_users
       WHERE role = 'employee'
         AND is_active = TRUE
-        AND manager_id = $1
         AND country = ANY($2::text[])
+        AND EXISTS (
+          SELECT 1
+            FROM temp_users tl
+           WHERE tl.id = temp_users.team_lead_id
+             AND tl.role = 'team_lead'
+             AND tl.manager_id = $1
+        )
       ORDER BY country ASC, full_name ASC`,
     [managerId, managerCountries]
   );
@@ -196,8 +202,14 @@ export async function assertManagerCanEditEmployee(
          ON mc.user_id = $1 AND mc.country = e.country
       WHERE e.id = $2
         AND e.role = 'employee'
-        AND e.manager_id = $1
         AND e.is_active = TRUE
+        AND EXISTS (
+          SELECT 1
+            FROM temp_users tl
+           WHERE tl.id = e.team_lead_id
+             AND tl.role = 'team_lead'
+             AND tl.manager_id = $1
+        )
       LIMIT 1`,
     [managerId, employeeId]
   );

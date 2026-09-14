@@ -1,4 +1,5 @@
 import type { AdminEmployeePanel, AdminView } from "@/types/admin";
+import { ROLE_LABELS } from "@/lib/role-hierarchy";
 
 export function normalizeAdminEmployeePanel(
   raw: string | undefined
@@ -18,9 +19,9 @@ export function resolveAdminEmployeePanel(params: {
 }
 
 export function adminRoleBadge(role: string) {
-  if (role === "admin") return "Admin";
-  if (role === "team_lead") return "Team lead";
-  if (role === "manager") return "Manager";
+  if (role in ROLE_LABELS) {
+    return ROLE_LABELS[role as keyof typeof ROLE_LABELS];
+  }
   return "Employee";
 }
 

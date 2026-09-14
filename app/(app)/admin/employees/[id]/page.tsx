@@ -3,7 +3,9 @@ import { Suspense } from "react";
 import { queryOne } from "@/lib/db";
 import {
   fetchActiveAccountCountsByPlatform,
+  fetchAdminSupervisorOptions,
   fetchManagerCountriesForUser,
+  fetchOpOptions,
   fetchTeamLeadOptions,
 } from "@/lib/admin-data";
 import { fetchManagerOptions } from "@/lib/manager-data";
@@ -42,9 +44,11 @@ export default async function AdminEmployeeDetailPage({
   const user = await queryOne<TempUser>(`SELECT * FROM temp_users WHERE id = $1`, [id]);
   if (!user) notFound();
 
-  const [teamLeads, managers, managerCountries] = await Promise.all([
+  const [teamLeads, managers, ops, admins, managerCountries] = await Promise.all([
     fetchTeamLeadOptions(),
     fetchManagerOptions(),
+    fetchOpOptions(),
+    fetchAdminSupervisorOptions(),
     user.role === "manager"
       ? fetchManagerCountriesForUser(id)
       : Promise.resolve([] as string[]),
@@ -66,6 +70,7 @@ export default async function AdminEmployeeDetailPage({
     hire_date: normalizePgDateColumn(user.hire_date) ?? "",
     team_lead_id: user.team_lead_id,
     manager_id: user.manager_id,
+    op_id: user.op_id ?? null,
     manager_countries: managerCountries,
     base_salary: user.base_salary,
     current_level: user.current_level,
@@ -97,6 +102,8 @@ export default async function AdminEmployeeDetailPage({
           initial={initial}
           teamLeads={teamLeads}
           managers={managers}
+          ops={ops}
+          admins={admins}
         />
       ) : null}
 

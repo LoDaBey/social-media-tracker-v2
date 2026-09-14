@@ -80,7 +80,7 @@ function mapCycleStatus(
 export type AdminEmployeeListFilters = {
   q?: string;
   status?: "all" | "active" | "inactive";
-  role?: "all" | "employee" | "manager" | "team_lead";
+  role?: "all" | "employee" | "manager" | "team_lead" | "op";
   region?: "Africa" | "Balkan" | "Alphaa";
   country?: string;
   teamLeadId?: number | null;
@@ -98,9 +98,14 @@ export async function fetchAdminEmployeesList(
   const teamLeadId = filters.teamLeadId;
 
   const params: unknown[] = [];
-  const where: string[] = [`u.role IN ('employee', 'manager', 'team_lead')`];
+  const where: string[] = [`u.role IN ('employee', 'manager', 'team_lead', 'op')`];
 
-  if (role === "employee" || role === "manager" || role === "team_lead") {
+  if (
+    role === "employee" ||
+    role === "manager" ||
+    role === "team_lead" ||
+    role === "op"
+  ) {
     params.push(role);
     where.push(`u.role = $${params.length}`);
   }
@@ -177,6 +182,8 @@ export async function fetchAdminEmployeesList(
       tl.full_name AS team_lead_name,
       u.manager_id,
       mgr.full_name AS manager_name,
+      u.op_id,
+      op_u.full_name AS op_name,
       u.country,
       u.language,
       COALESCE(
@@ -194,6 +201,7 @@ export async function fetchAdminEmployeesList(
     FROM temp_users u
     LEFT JOIN temp_users tl ON tl.id = u.team_lead_id
     LEFT JOIN temp_users mgr ON mgr.id = u.manager_id
+    LEFT JOIN temp_users op_u ON op_u.id = u.op_id
     WHERE ${where.join(" AND ")}
     ORDER BY u.full_name ASC
   `;
@@ -210,6 +218,8 @@ export async function fetchAdminEmployeesList(
     team_lead_name: string | null;
     manager_id: number | null;
     manager_name: string | null;
+    op_id: number | null;
+    op_name: string | null;
     country: string | null;
     language: string | null;
     manager_countries: string[] | null;
@@ -244,6 +254,8 @@ export async function fetchAdminEmployeesList(
       team_lead_name: r.team_lead_name,
       manager_id: r.manager_id,
       manager_name: r.manager_name,
+      op_id: r.op_id,
+      op_name: r.op_name,
       country,
       language: r.language,
       countries,
@@ -256,10 +268,35 @@ export async function fetchAdminEmployeesList(
 }
 
 export async function fetchTeamLeadOptions(): Promise<
+  { id: number; full_name: string; manager_id: number | null }[]
+> {
+  return query(
+    `SELECT id, full_name, manager_id
+       FROM temp_users
+      WHERE role = 'team_lead' AND is_active = TRUE
+      ORDER BY full_name`
+  );
+}
+
+export async function fetchOpOptions(): Promise<
   { id: number; full_name: string }[]
 > {
   return query(
-    `SELECT id, full_name FROM temp_users WHERE role = 'team_lead' AND is_active = TRUE ORDER BY full_name`
+    `SELECT id, full_name
+       FROM temp_users
+      WHERE role = 'op' AND is_active = TRUE
+      ORDER BY full_name`
+  );
+}
+
+export async function fetchAdminSupervisorOptions(): Promise<
+  { id: number; full_name: string }[]
+> {
+  return query(
+    `SELECT id, full_name
+       FROM temp_users
+      WHERE role = 'admin' AND is_active = TRUE
+      ORDER BY full_name`
   );
 }
 
@@ -382,6 +419,8 @@ export async function fetchAdminEmployeeEditorBundle(
   const [
     teamLeads,
     managers,
+    ops,
+    admins,
     managerCountries,
     activeCounts,
     wallet,
@@ -390,6 +429,8 @@ export async function fetchAdminEmployeeEditorBundle(
   ] = await Promise.all([
     fetchTeamLeadOptions(),
     fetchManagerOptions(),
+    fetchOpOptions(),
+    fetchAdminSupervisorOptions(),
     user.role === "manager"
       ? fetchManagerCountriesForUser(userId)
       : Promise.resolve([] as string[]),
@@ -411,6 +452,7 @@ export async function fetchAdminEmployeeEditorBundle(
     hire_date: normalizePgDateColumn(user.hire_date) ?? "",
     team_lead_id: user.team_lead_id,
     manager_id: user.manager_id,
+    op_id: user.op_id ?? null,
     manager_countries: managerCountries,
     base_salary: user.base_salary,
     current_level: user.current_level,
@@ -428,6 +470,8 @@ export async function fetchAdminEmployeeEditorBundle(
     profile,
     teamLeads,
     managers,
+    ops,
+    admins,
     targets: {
       target_x_count: user.target_x_count,
       target_facebook_personal_count: user.target_facebook_personal_count,

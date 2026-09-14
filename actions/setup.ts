@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { pool, queryOne } from "@/lib/db";
 import type { TempUser } from "@/types/db";
 import type { Platform } from "@/lib/platform-config";
-import { SETUP_REGION, isSetupCountry } from "@/lib/setup-options";
+import { isSetupCountry, setupRegionForCountry } from "@/lib/setup-options";
 import {
   isPlatformAccountUrl,
   isValidAccountEmail,
@@ -138,7 +138,7 @@ export async function saveAccountsAction(formData: FormData) {
              country = $3,
              language = $4
          WHERE id = $1`,
-        [userId, SETUP_REGION, assignedCountry, parsed.data.language]
+        [userId, setupRegionForCountry(assignedCountry), assignedCountry, parsed.data.language]
       );
 
       await client.query(

@@ -3,9 +3,9 @@
 import { motion } from "framer-motion";
 import { Globe } from "lucide-react";
 import {
-  SETUP_COUNTRIES,
+  ALL_SETUP_COUNTRIES,
   SETUP_LANGUAGES,
-  SETUP_REGION,
+  setupRegionForCountry,
 } from "@/lib/setup-options";
 import { setupCardVariants } from "@/lib/setup-motion";
 import { SetupSelect } from "@/components/setup/SetupSelect";
@@ -18,6 +18,10 @@ export function SetupProfileFields({
   onChange,
   hint,
 }: SetupProfileFieldsProps) {
+  const regionLabel = country.trim()
+    ? setupRegionForCountry(country.trim())
+    : "—";
+
   return (
     <motion.section
       className="min-w-0 w-full max-w-full overflow-x-hidden bg-[var(--color-surface)] border border-[var(--color-hairline)] p-4 sm:p-6 md:p-7"
@@ -47,7 +51,7 @@ export function SetupProfileFields({
             className="text-[13px] text-[var(--color-muted)]"
             style={{ fontFamily: "var(--font-cairo)", fontWeight: 500 }}
           >
-            Region is {SETUP_REGION}.{" "}
+            Region is {regionLabel}.{" "}
             {hint ??
               "Country is assigned by your admin — choose your language."}
           </p>
@@ -59,7 +63,7 @@ export function SetupProfileFields({
           id="setup-country"
           label="Country"
           value={country}
-          options={SETUP_COUNTRIES}
+          options={ALL_SETUP_COUNTRIES}
           placeholder={country ? country : "Assigned by admin"}
           ariaLabel="Country assigned by admin"
           ariaInvalid={Boolean(fieldErrors.country)}

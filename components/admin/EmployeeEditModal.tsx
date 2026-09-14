@@ -111,6 +111,8 @@ function EmployeeEditModalFrame({
                   initial={bundle.profile}
                   teamLeads={bundle.teamLeads}
                   managers={bundle.managers}
+                  ops={bundle.ops}
+                  admins={bundle.admins}
                   embedded
                   onSaved={onReload}
                 />

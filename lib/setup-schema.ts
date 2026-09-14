@@ -2,8 +2,8 @@ import { z } from "zod";
 import type { Platform } from "@/lib/platform-config";
 import {
   SETUP_CATEGORIES,
-  SETUP_COUNTRIES,
   SETUP_LANGUAGES,
+  isSetupCountry,
 } from "@/lib/setup-options";
 
 /** Allowed host suffixes per platform (also matches subdomains like m.facebook.com). */
@@ -144,10 +144,7 @@ export const setupProfileSchema = z.object({
     .string()
     .trim()
     .min(1, "Ask your admin to assign a country.")
-    .refine(
-      (value) => (SETUP_COUNTRIES as readonly string[]).includes(value),
-      "Ask your admin to assign a country."
-    ),
+    .refine((value) => isSetupCountry(value), "Ask your admin to assign a country."),
   language: z
     .string()
     .trim()

@@ -8,20 +8,39 @@ import { updateEmployeeProfile } from "@/actions/admin";
 import { LEVEL_LABELS } from "@/lib/level-labels";
 import { EMPLOYMENT_STATUSES, EMPLOYMENT_STATUS_LABELS } from "@/lib/employment-status";
 import { setupRegionForCountry } from "@/lib/setup-options";
+import {
+  ROLE_LABELS,
+  reportingFieldsFromSupervisor,
+  supervisorIdFromReporting,
+} from "@/lib/role-hierarchy";
 import type { Role } from "@/types/db";
 import type { EmployeeFormProps, UpdateEmployeeProfilePayload } from "@/types/admin";
 import { AdminCountrySelect } from "@/components/admin/AdminCountrySelect";
 import { ManagerCountriesField } from "@/components/admin/ManagerCountriesField";
+import { SupervisorAssignField } from "@/components/admin/SupervisorAssignField";
 
 function normalizeDate(v: string | null): string {
   if (!v) return "";
   return v.length >= 10 ? v.slice(0, 10) : v;
 }
 
+function managerCountriesForTeamLead(
+  teamLeadId: number | null,
+  teamLeads: EmployeeFormProps["teamLeads"],
+  managers: EmployeeFormProps["managers"]
+): string[] {
+  if (!teamLeadId) return [];
+  const teamLead = teamLeads.find((tl) => tl.id === teamLeadId);
+  if (!teamLead?.manager_id) return [];
+  return managers.find((m) => m.id === teamLead.manager_id)?.countries ?? [];
+}
+
 export function EmployeeForm({
   initial,
   teamLeads,
   managers,
+  ops,
+  admins,
   embedded = false,
   onSaved,
   employmentStatusLocked = false,
@@ -42,6 +61,7 @@ export function EmployeeForm({
       hire_date: normalizeDate(initial.hire_date),
       team_lead_id: initial.team_lead_id,
       manager_id: initial.manager_id,
+      op_id: initial.op_id,
       manager_countries: initial.manager_countries,
       base_salary: String(initial.base_salary),
       current_level: initial.current_level,
@@ -55,27 +75,44 @@ export function EmployeeForm({
 
   const dirty = useMemo(() => JSON.stringify(form) !== JSON.stringify(base), [form, base]);
 
-  const teamLeadDisabled = form.role === "team_lead" || form.role === "admin";
-  const managerDisabled = form.role !== "employee";
+  const isManagerRole = form.role === "manager";
+  const isGlobalRole = form.role === "admin" || form.role === "op";
+  const showCountryFields = !isManagerRole && !isGlobalRole;
 
-  const selectedManager = useMemo(
-    () => managers.find((m) => m.id === form.manager_id) ?? null,
-    [managers, form.manager_id]
-  );
+  const supervisorId = supervisorIdFromReporting(form.role, {
+    team_lead_id: form.team_lead_id,
+    manager_id: form.manager_id,
+    op_id: form.op_id,
+  });
+
+  const regionalManagerCountries = useMemo(() => {
+    if (form.role !== "employee" || !form.team_lead_id) return [];
+    return managerCountriesForTeamLead(form.team_lead_id, teamLeads, managers);
+  }, [form.role, form.team_lead_id, teamLeads, managers]);
 
   const assignedRegion = useMemo(() => {
-    if (form.role === "manager" && form.manager_countries.length > 0) {
+    if (isManagerRole && form.manager_countries.length > 0) {
       return setupRegionForCountry(form.manager_countries[0]);
     }
     if (form.country) return setupRegionForCountry(form.country);
     return "";
-  }, [form.country, form.manager_countries, form.role]);
+  }, [form.country, form.manager_countries, isManagerRole]);
 
   const countryMismatch =
     form.role === "employee" &&
     Boolean(form.country) &&
-    Boolean(selectedManager) &&
-    !selectedManager!.countries.includes(form.country);
+    regionalManagerCountries.length > 0 &&
+    !regionalManagerCountries.includes(form.country);
+
+  function setSupervisor(nextSupervisorId: number | null) {
+    const reporting = reportingFieldsFromSupervisor(form.role, nextSupervisorId);
+    setForm((f) => ({
+      ...f,
+      team_lead_id: reporting.team_lead_id,
+      manager_id: reporting.manager_id,
+      op_id: reporting.op_id,
+    }));
+  }
 
   function toggleManagerCountry(option: string) {
     setForm((f) => ({
@@ -102,8 +139,9 @@ export function EmployeeForm({
       employee_code: form.employee_code.trim() === "" ? null : form.employee_code.trim(),
       employment_status: form.employment_status,
       hire_date: form.hire_date,
-      team_lead_id: teamLeadDisabled ? null : form.team_lead_id,
-      manager_id: managerDisabled ? null : form.manager_id,
+      team_lead_id: form.team_lead_id,
+      manager_id: form.manager_id,
+      op_id: form.op_id,
       manager_countries:
         form.role === "manager" ? form.manager_countries : undefined,
       base_salary: Number(form.base_salary),
@@ -144,9 +182,9 @@ export function EmployeeForm({
           role="status"
           className="rounded-lg bg-[var(--color-gold)]/15 px-4 py-2 text-[14px] text-[var(--color-ink)]"
         >
-          Warning: {form.country} is not in this manager&apos;s countries (
-          {selectedManager!.countries.join(", ") || "none"}). The employee will
-          stay hidden from that manager until countries overlap.
+          Warning: {form.country} is not in the regional manager&apos;s countries (
+          {regionalManagerCountries.join(", ") || "none"}). The employee may stay
+          hidden from that manager until countries overlap.
         </p>
       ) : null}
 
@@ -213,7 +251,7 @@ export function EmployeeForm({
           />
         </label>
 
-        {form.role === "manager" ? null : (
+        {showCountryFields ? (
           <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
             Country
             <AdminCountrySelect
@@ -222,9 +260,9 @@ export function EmployeeForm({
               ariaLabel="Employee country"
             />
           </label>
-        )}
+        ) : null}
 
-        {form.role === "manager" ? null : (
+        {showCountryFields ? (
           <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
             Region
             <input
@@ -240,31 +278,44 @@ export function EmployeeForm({
               className={`${fieldClass} cursor-not-allowed bg-[var(--color-cream-tint)] text-[var(--color-muted)]`}
             />
           </label>
-        )}
+        ) : null}
 
         <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
           Role
           <select
             value={form.role}
-            onChange={(e) =>
+            onChange={(e) => {
+              const nextRole = e.target.value as Role;
               setForm((f) => ({
                 ...f,
-                role: e.target.value as Role,
-                team_lead_id:
-                  e.target.value === "team_lead" || e.target.value === "admin"
-                    ? null
-                    : f.team_lead_id,
-                manager_id: e.target.value === "employee" ? f.manager_id : null,
-              }))
-            }
+                role: nextRole,
+                team_lead_id: null,
+                manager_id: null,
+                op_id: null,
+              }));
+            }}
+            aria-label="Select role"
             className={`cursor-pointer ${fieldClass}`}
           >
-            <option value="employee">Employee</option>
-            <option value="manager">Manager</option>
-            <option value="team_lead">Team lead</option>
-            <option value="admin">Admin</option>
+            <option value="employee">{ROLE_LABELS.employee}</option>
+            <option value="team_lead">{ROLE_LABELS.team_lead}</option>
+            <option value="manager">{ROLE_LABELS.manager}</option>
+            <option value="op">{ROLE_LABELS.op}</option>
+            <option value="admin">{ROLE_LABELS.admin}</option>
           </select>
         </label>
+
+        <SupervisorAssignField
+          userRole={form.role}
+          value={supervisorId}
+          onChange={setSupervisor}
+          teamLeads={teamLeads}
+          managers={managers}
+          ops={ops}
+          admins={admins}
+          fieldClass={fieldClass}
+          invalidFieldClass="border-[var(--color-coral)]"
+        />
 
         <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
           Hire date
@@ -276,55 +327,7 @@ export function EmployeeForm({
           />
         </label>
 
-        <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
-          Team lead
-          <select
-            disabled={teamLeadDisabled}
-            value={form.team_lead_id ?? ""}
-            onChange={(e) =>
-              setForm((f) => ({
-                ...f,
-                team_lead_id: e.target.value ? Number(e.target.value) : null,
-              }))
-            }
-            aria-label="Assign team lead"
-            className={`cursor-pointer ${fieldClass} disabled:cursor-not-allowed disabled:opacity-50`}
-          >
-            <option value="">None</option>
-            {teamLeads.map((tl) => (
-              <option key={tl.id} value={tl.id}>
-                {tl.full_name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        {form.role === "employee" ? (
-          <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
-            Manager
-            <select
-              value={form.manager_id ?? ""}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  manager_id: e.target.value ? Number(e.target.value) : null,
-                }))
-              }
-              aria-label="Assign manager"
-              className={`cursor-pointer ${fieldClass}`}
-            >
-              <option value="">Select a manager</option>
-              {managers.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.full_name}
-                  {m.countries.length ? ` (${m.countries.join(", ")})` : ""}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
-
-        {form.role === "manager" ? (
+        {isManagerRole ? (
           <ManagerCountriesField
             selected={form.manager_countries}
             onToggle={toggleManagerCountry}
