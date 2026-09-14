@@ -1,4 +1,5 @@
 import { query } from "@/lib/db";
+import { managerEmployeeScopeSql } from "@/lib/manager-employee-scope";
 import {
   groupAccountsByPlatform,
   isEmployeeSetupComplete,
@@ -79,6 +80,7 @@ export async function fetchManagerHomeGroups(
   const managerCountries = await fetchManagerCountries(managerId);
   if (!managerCountries.length) return [];
 
+  const scope = managerEmployeeScopeSql("temp_users", "$1", "$2");
   const holders = await query<HolderQueryRow>(
     `SELECT id,
             full_name,
@@ -94,16 +96,7 @@ export async function fetchManagerHomeGroups(
             target_instagram_count,
             target_tiktok_count
        FROM temp_users
-      WHERE role = 'employee'
-        AND is_active = TRUE
-        AND country = ANY($2::text[])
-        AND EXISTS (
-          SELECT 1
-            FROM temp_users tl
-           WHERE tl.id = temp_users.team_lead_id
-             AND tl.role = 'team_lead'
-             AND tl.manager_id = $1
-        )
+      WHERE ${scope}
       ORDER BY country ASC, full_name ASC`,
     [managerId, managerCountries]
   );
@@ -195,23 +188,17 @@ export async function assertManagerCanEditEmployee(
   managerId: number,
   employeeId: number
 ): Promise<boolean> {
+  const managerCountries = await fetchManagerCountries(managerId);
+  if (!managerCountries.length) return false;
+
+  const scope = managerEmployeeScopeSql("e", "$1", "$3");
   const rows = await query<{ ok: number }>(
     `SELECT 1 AS ok
        FROM temp_users e
-       INNER JOIN temp_manager_countries mc
-         ON mc.user_id = $1 AND mc.country = e.country
       WHERE e.id = $2
-        AND e.role = 'employee'
-        AND e.is_active = TRUE
-        AND EXISTS (
-          SELECT 1
-            FROM temp_users tl
-           WHERE tl.id = e.team_lead_id
-             AND tl.role = 'team_lead'
-             AND tl.manager_id = $1
-        )
+        AND ${scope}
       LIMIT 1`,
-    [managerId, employeeId]
+    [managerId, employeeId, managerCountries]
   );
   return rows.length > 0;
 }
