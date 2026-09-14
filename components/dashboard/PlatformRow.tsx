@@ -6,6 +6,11 @@ import {
   PLATFORM_LABELS,
   PLATFORM_TINTS,
 } from "@/lib/platform-config";
+import {
+  submissionPendingButtonAria,
+  submissionPendingButtonLabel,
+  submissionPlatformStatusChip,
+} from "@/lib/submission-copy";
 import type { PlatformDailyStatus, PlatformRowProps } from "@/types/dashboard";
 import type { TempSocialMediaAccount } from "@/types/db";
 
@@ -36,41 +41,10 @@ function formatSubmittedTime(value: string | null) {
 }
 
 function statusChip(status: PlatformDailyStatus) {
-  const { totalAccounts, submittedAccounts, autoResetAccounts, lastSubmittedAt } = status;
-
-  if (totalAccounts > 0 && autoResetAccounts === totalAccounts) {
-    return {
-      label: "All reset — add new numbers",
-      className: "bg-[var(--color-coral-tint)] text-[var(--color-coral)]",
-    };
-  }
-
-  if (autoResetAccounts > 0) {
-    return {
-      label: `Some sent, ${autoResetAccounts} reset`,
-      className: "bg-[var(--color-cream-tint)] text-[var(--color-muted)]",
-    };
-  }
-
-  if (totalAccounts > 0 && submittedAccounts === totalAccounts) {
-    const time = lastSubmittedAt ? formatSubmittedTime(lastSubmittedAt) : "";
-    return {
-      label: time ? `All sent · ${time}` : "All sent",
-      className: "bg-[var(--color-emerald-tint)] text-[var(--color-emerald)]",
-    };
-  }
-
-  if (submittedAccounts > 0) {
-    return {
-      label: `${submittedAccounts} of ${totalAccounts} sent`,
-      className: "bg-[var(--color-emerald-tint)] text-[var(--color-emerald)]",
-    };
-  }
-
-  return {
-    label: "Not sent yet",
-    className: "bg-[var(--color-coral-tint)] text-[var(--color-coral)]",
-  };
+  return submissionPlatformStatusChip({
+    ...status,
+    formatSubmittedTime: (value) => formatSubmittedTime(value),
+  });
 }
 
 export function PlatformRow({
@@ -150,10 +124,13 @@ export function PlatformRow({
           <button
             type="button"
             onClick={() => onSubmitPlatform?.(platform)}
-            aria-label={`Send ${PLATFORM_LABELS[platform]} accounts`}
+            aria-label={submissionPendingButtonAria(
+              PLATFORM_LABELS[platform],
+              pendingAccounts
+            )}
             className="inline-flex h-11 cursor-pointer items-center justify-center rounded-lg bg-[var(--color-emerald)] px-5 text-[14px] font-bold text-white outline-none transition-colors hover:bg-[var(--color-emerald-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
           >
-            {pendingAccounts === 1 ? "Send 1 account" : `Send ${pendingAccounts} accounts`}
+            {submissionPendingButtonLabel(pendingAccounts)}
           </button>
         ) : (
           <button
