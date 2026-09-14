@@ -17,6 +17,8 @@ export type AdminEmployeeListRow = {
   team_lead_name: string | null;
   manager_id: number | null;
   manager_name: string | null;
+  op_id: number | null;
+  op_name: string | null;
   country: string | null;
   language: string | null;
   countries: string[];
@@ -43,6 +45,7 @@ export type CreateEmployeePayload = {
   role?: Role;
   team_lead_id?: number | null;
   manager_id?: number | null;
+  op_id?: number | null;
   /** Required when role is manager — one or more countries this manager owns. */
   manager_countries?: string[];
   base_salary?: number;
@@ -59,7 +62,7 @@ export type CreateEmployeeFieldKey =
   | "email"
   | "password"
   | "country"
-  | "manager_id"
+  | "supervisor_id"
   | "manager_countries";
 
 export type CreateEmployeeFieldErrors = Partial<
@@ -72,7 +75,7 @@ export type ValidateCreateEmployeeInput = {
   password: string;
   role: Role;
   country: string;
-  manager_id: string;
+  supervisor_id: string;
   manager_countries: string[];
 };
 
@@ -98,6 +101,7 @@ export type UpdateEmployeeProfilePayload = {
   hire_date: string;
   team_lead_id: number | null;
   manager_id: number | null;
+  op_id: number | null;
   manager_countries?: string[];
   base_salary: number;
   current_level: number;
@@ -157,6 +161,7 @@ export type EmployeeFormInitial = {
   hire_date: string;
   team_lead_id: number | null;
   manager_id: number | null;
+  op_id: number | null;
   manager_countries: string[];
   base_salary: string;
   current_level: number;
@@ -166,15 +171,34 @@ export type EmployeeFormInitial = {
   updated_at: string;
 };
 
-export type AdminTeamLeadOption = {
+export type AdminSupervisorOption = {
   id: number;
   full_name: string;
+};
+
+export type AdminTeamLeadOption = AdminSupervisorOption & {
+  manager_id: number | null;
 };
 
 export type AdminManagerOption = {
   id: number;
   full_name: string;
   countries: string[];
+};
+
+export type SupervisorAssignFieldProps = {
+  userRole: Role;
+  value: number | null;
+  onChange: (supervisorId: number | null) => void;
+  teamLeads: AdminTeamLeadOption[];
+  managers: AdminManagerOption[];
+  ops: AdminSupervisorOption[];
+  admins: AdminSupervisorOption[];
+  disabled?: boolean;
+  error?: string;
+  errorId?: string;
+  fieldClass: string;
+  invalidFieldClass: string;
 };
 
 export type AdminKpiTileProps = {
@@ -349,6 +373,8 @@ export type AdminEmployeeEditorBundle = {
   profile: EmployeeFormInitial;
   teamLeads: AdminTeamLeadOption[];
   managers: AdminManagerOption[];
+  ops: AdminSupervisorOption[];
+  admins: AdminSupervisorOption[];
   targets: UpdateEmployeeTargetsPayload;
   activeCounts: Record<string, number>;
   wallet: WalletSummary;
@@ -372,6 +398,8 @@ export type EmployeeFormProps = {
   initial: EmployeeFormInitial;
   teamLeads: AdminTeamLeadOption[];
   managers: AdminManagerOption[];
+  ops: AdminSupervisorOption[];
+  admins: AdminSupervisorOption[];
   embedded?: boolean;
   onSaved?: () => void;
   employmentStatusLocked?: boolean;

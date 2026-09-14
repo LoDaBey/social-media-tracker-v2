@@ -9,7 +9,7 @@ import {
   targetsFromCounts,
 } from "@/lib/setup-complete";
 import type { Platform } from "@/lib/platform-config";
-import { SETUP_REGION, isSetupCountry } from "@/lib/setup-options";
+import { isSetupCountry, setupRegionForCountry } from "@/lib/setup-options";
 import {
   isPlatformAccountUrl,
   isValidAccountEmail,
@@ -236,7 +236,12 @@ export async function saveEmployeeAccountsAsManager(input: {
            language = $4,
            setup_needs_review = FALSE
        WHERE id = $1`,
-      [input.employeeId, SETUP_REGION, assignedCountry, languageParsed.data]
+      [
+        input.employeeId,
+        setupRegionForCountry(assignedCountry),
+        assignedCountry,
+        languageParsed.data,
+      ]
     );
 
     await client.query(

@@ -141,8 +141,9 @@ export function EmployeesFilters() {
           >
             <option value="">All roles</option>
             <option value="employee">Employees</option>
-            <option value="manager">Managers</option>
-            <option value="team_lead">Team leads</option>
+            <option value="team_lead">Team leaders regional</option>
+            <option value="manager">Managers regional</option>
+            <option value="op">OP</option>
           </select>
         </label>
       </div>

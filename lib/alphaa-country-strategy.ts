@@ -352,11 +352,11 @@ export const requiredProjectStrategyPerCategory: Record<
 
 /** Planned employee seats per ALPHAA country. */
 export const ALPHAA_COUNTRY_RESOURCES: Record<AlphaaCountryKey, number> = {
-  sudan: 12,
-  somalia: 7,
+  sudan: 13,
+  somalia: 10,
   palestine: 3,
-  turkey: 4,
-  iran: 7,
+  turkey: 6,
+  iran: 11,
 };
 
 export const ALPHAA_COUNTRY_LANGUAGES: Record<AlphaaCountryKey, string> = {

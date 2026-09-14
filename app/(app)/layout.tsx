@@ -3,15 +3,17 @@ import { redirect } from "next/navigation";
 import { Sparkles, ChevronDown } from "lucide-react";
 import { auth } from "@/auth";
 import type { Role } from "@/types/db";
+import { ROLE_LABELS } from "@/lib/role-hierarchy";
 import { DateBadge } from "@/components/dashboard/DateBadge";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { SignOutButton } from "@/components/layout/SignOutButton";
 import { fetchPendingCountForReviewer } from "@/lib/qc-data";
 
 function roleBadgeLabel(role: Role) {
-  if (role === "team_lead") return "QC · Team Lead";
-  if (role === "admin") return "Admin";
-  if (role === "manager") return "Manager";
+  if (role === "team_lead") return `QC · ${ROLE_LABELS.team_lead}`;
+  if (role === "admin") return ROLE_LABELS.admin;
+  if (role === "manager") return ROLE_LABELS.manager;
+  if (role === "op") return ROLE_LABELS.op;
   return null;
 }
 

@@ -1,4 +1,8 @@
 import { isSetupCountry } from "@/lib/setup-options";
+import {
+  reportingFieldsFromSupervisor,
+  reportingValidationMessage,
+} from "@/lib/role-hierarchy";
 import type {
   CreateEmployeeFieldErrors,
   ValidateCreateEmployeeInput,
@@ -24,14 +28,21 @@ export function validateCreateEmployeeForm(
       errors.manager_countries =
         "Select at least one country for this manager.";
     }
+  } else if (input.role === "admin" || input.role === "op") {
+    // Regional country is optional for global roles.
   } else if (!input.country.trim()) {
     errors.country = "Select a country.";
   } else if (!isSetupCountry(input.country.trim())) {
     errors.country = "Select a valid country.";
   }
 
-  if (input.role === "employee" && !input.manager_id) {
-    errors.manager_id = "Select a manager for this employee.";
+  const supervisorId = input.supervisor_id ? Number(input.supervisor_id) : null;
+  const reportingMessage = reportingValidationMessage(
+    input.role,
+    reportingFieldsFromSupervisor(input.role, supervisorId)
+  );
+  if (reportingMessage) {
+    errors.supervisor_id = reportingMessage;
   }
 
   return errors;
@@ -45,7 +56,7 @@ export function firstCreateEmployeeError(
     errors.email ??
     errors.password ??
     errors.country ??
-    errors.manager_id ??
+    errors.supervisor_id ??
     errors.manager_countries ??
     null
   );

@@ -1,4 +1,4 @@
-export type Role = "employee" | "team_lead" | "admin" | "manager";
+export type Role = "employee" | "team_lead" | "admin" | "manager" | "op";
 
 export type EmploymentStatus = "active" | "on_hold" | "deactivated";
 
@@ -31,6 +31,7 @@ export type TempUser = {
 
   team_lead_id: number | null;
   manager_id: number | null;
+  op_id: number | null;
 
   target_x_count: number;
   target_facebook_personal_count: number;

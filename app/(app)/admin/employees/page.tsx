@@ -31,7 +31,10 @@ export default async function AdminEmployeesPage({
     statusRaw === "active" || statusRaw === "inactive" ? statusRaw : "all";
   const roleRaw = typeof sp.role === "string" ? sp.role : "all";
   const role =
-    roleRaw === "employee" || roleRaw === "manager" || roleRaw === "team_lead"
+    roleRaw === "employee" ||
+    roleRaw === "manager" ||
+    roleRaw === "team_lead" ||
+    roleRaw === "op"
       ? roleRaw
       : "all";
 
