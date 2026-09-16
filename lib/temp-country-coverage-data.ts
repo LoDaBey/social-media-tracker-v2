@@ -13,6 +13,14 @@ export type TempCountryActuals = {
   tiktok: number;
 };
 
+export type TempHolderTargets = {
+  x: number;
+  facebookPersonal: number;
+  facebookUmbrella: number;
+  instagram: number;
+  tiktok: number;
+};
+
 export type TempHolderActuals = {
   id: number;
   fullName: string;
@@ -23,6 +31,7 @@ export type TempHolderActuals = {
   facebookUmbrella: number;
   instagram: number;
   tiktok: number;
+  targets: TempHolderTargets;
 };
 
 export type TempCoverageRegionScope = "Africa" | "Balkan" | "AfricaAndBalkan";
@@ -90,6 +99,11 @@ export async function fetchTempCountryCoverage(
       facebook_umbrella: string;
       instagram: string;
       tiktok: string;
+      target_x_count: number;
+      target_facebook_personal_count: number;
+      target_facebook_umbrella_count: number;
+      target_instagram_count: number;
+      target_tiktok_count: number;
     }>(
       `SELECT
          u.id,
@@ -100,14 +114,22 @@ export async function fetchTempCountryCoverage(
          COUNT(a.id) FILTER (WHERE a.platform = 'facebook_personal')::text AS facebook_personal,
          COUNT(a.id) FILTER (WHERE a.platform = 'facebook_umbrella')::text AS facebook_umbrella,
          COUNT(a.id) FILTER (WHERE a.platform = 'instagram')::text AS instagram,
-         COUNT(a.id) FILTER (WHERE a.platform = 'tiktok')::text AS tiktok
+         COUNT(a.id) FILTER (WHERE a.platform = 'tiktok')::text AS tiktok,
+         u.target_x_count,
+         u.target_facebook_personal_count,
+         u.target_facebook_umbrella_count,
+         u.target_instagram_count,
+         u.target_tiktok_count
        FROM temp_users u
        LEFT JOIN temp_social_media_accounts a
          ON a.user_id = u.id
         AND a.status = 'active'
       WHERE LOWER(u.role) = 'employee'
         AND u.is_active = TRUE${regionClause}${sqlCountryClause}
-      GROUP BY u.id, u.full_name, u.email, ${TEMP_USER_COUNTRY}
+      GROUP BY u.id, u.full_name, u.email, ${TEMP_USER_COUNTRY},
+               u.target_x_count, u.target_facebook_personal_count,
+               u.target_facebook_umbrella_count, u.target_instagram_count,
+               u.target_tiktok_count
       ORDER BY u.full_name ASC, u.id ASC`,
       sqlParams
     ),
@@ -153,6 +175,13 @@ export async function fetchTempCountryCoverage(
       facebookUmbrella: Number(row.facebook_umbrella),
       instagram: Number(row.instagram),
       tiktok: Number(row.tiktok),
+      targets: {
+        x: Number(row.target_x_count),
+        facebookPersonal: Number(row.target_facebook_personal_count),
+        facebookUmbrella: Number(row.target_facebook_umbrella_count),
+        instagram: Number(row.target_instagram_count),
+        tiktok: Number(row.target_tiktok_count),
+      },
     });
     holdersByCountry.set(country, list);
   }

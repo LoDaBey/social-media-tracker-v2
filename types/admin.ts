@@ -1,8 +1,6 @@
 import type { SetupRegion } from "@/lib/setup-options";
 import type { Platform, Role, EmploymentStatus, AccountScope } from "@/types/db";
 import type { ReactNode } from "react";
-import type { WalletSummary, WalletTransactionListRow } from "@/types/wallet";
-
 export type AdminEmployeeCycleStatus = "pending" | "mid-cycle" | "payable";
 
 export type AdminEmployeeListRow = {
@@ -26,15 +24,6 @@ export type AdminEmployeeListRow = {
   target_accounts_sum: number;
   cycle_status: AdminEmployeeCycleStatus;
   accounts: AdminSocialAccountListItem[];
-};
-
-export type AdminPayoutRow = {
-  id: number;
-  full_name: string;
-  email: string;
-  net_balance: number;
-  days_to_payout: number;
-  status: "Mid-cycle" | "Ready to pay" | "Overdue";
 };
 
 export type CreateEmployeePayload = {
@@ -121,10 +110,9 @@ export type AdminViewKind =
   | "overview"
   | "employees"
   | "employee_new"
-  | "employee"
-  | "payouts";
+  | "employee";
 
-export type AdminEmployeePanel = "profile" | "targets" | "wallet" | "activity";
+export type AdminEmployeePanel = "profile" | "targets" | "activity";
 
 export type AdminView =
   | { kind: "overview"; title: string }
@@ -137,8 +125,7 @@ export type AdminView =
       employeeName: string;
       roleBadge: string;
       panel: AdminEmployeePanel;
-    }
-  | { kind: "payouts"; title: string };
+    };
 
 export type AdminWorkspaceProps = {
   view: AdminView;
@@ -357,7 +344,7 @@ export type AdminCoverageCountCellProps = {
 export type AdminOverviewAction = {
   href: string;
   ariaLabel: string;
-  icon: "userPlus" | "users" | "banknote";
+  icon: "userPlus" | "users";
   variant: "primary" | "secondary";
 };
 
@@ -377,8 +364,6 @@ export type AdminEmployeeEditorBundle = {
   admins: AdminSupervisorOption[];
   targets: UpdateEmployeeTargetsPayload;
   activeCounts: Record<string, number>;
-  wallet: WalletSummary;
-  transactions: WalletTransactionListRow[];
   activity: EmployeeActivityItem[];
 };
 
@@ -509,28 +494,8 @@ export type EmployeeDeleteButtonProps = {
   fullName: string;
 };
 
-export type AdminEmployeeWalletViewProps = {
-  userId: number;
-  fullName: string;
-  wallet: WalletSummary;
-  transactions: WalletTransactionListRow[];
-  onWalletChanged?: () => void;
-};
-
 export type AdminEmployeeActivityListProps = {
   items: EmployeeActivityItem[];
-};
-
-export type IssueBonusFormProps = {
-  userId: number;
-  onSuccess?: () => void;
-};
-
-export type ProcessPayoutBarProps = {
-  userId: number;
-  daysToPayout: number;
-  canForce: boolean;
-  onSuccess?: () => void;
 };
 
 export type AdminSocialAccountListItem = {

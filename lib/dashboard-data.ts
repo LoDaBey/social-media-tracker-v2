@@ -5,7 +5,6 @@ import {
   facebookRequiredTarget,
   isFacebookPlatform,
 } from "@/lib/setup-facebook";
-import { computeWallet } from "@/lib/wallet";
 import type { DashboardData, PlatformDailyStatus } from "@/types/dashboard";
 import type { TempGrowth, TempSocialMediaAccount, TempUser } from "@/types/db";
 
@@ -237,7 +236,7 @@ export async function getDashboardData(userId: number): Promise<DashboardData | 
 
   if (!user) return null;
 
-  const [accounts, todaysSubmissions, wallet] = await Promise.all([
+  const [accounts, todaysSubmissions] = await Promise.all([
     query<TempSocialMediaAccount>(
       `SELECT *
        FROM temp_social_media_accounts
@@ -256,7 +255,6 @@ export async function getDashboardData(userId: number): Promise<DashboardData | 
        ORDER BY g.submitted_at DESC NULLS LAST, g.id DESC`,
       [userId, todayCairoDate]
     ),
-    computeWallet(user),
   ]);
 
   const normalizedAccounts = accounts.map(normalizeAccount);
@@ -270,7 +268,6 @@ export async function getDashboardData(userId: number): Promise<DashboardData | 
     todaysSubmissionsByAccountId,
     platformStatus: buildPlatformStatus(accountsByPlatform, todaysSubmissionsByAccountId),
     missingAccounts: buildMissingAccounts(user, accountsByPlatform),
-    wallet,
     windowClosesInMs: getWindowClosesInMs(),
     todayCairoDate,
   };

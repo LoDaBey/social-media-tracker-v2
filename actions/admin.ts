@@ -6,13 +6,7 @@ import { z } from "zod";
 import type { PoolClient } from "pg";
 import { auth } from "@/auth";
 import { pool, queryOne } from "@/lib/db";
-import {
-  addDaysToIsoDate,
-  formatShortDate,
-  getTodayCairoDate,
-  normalizePgDateColumn,
-  parseIsoDateUtc,
-} from "@/lib/cairo-date";
+import { getTodayCairoDate, normalizePgDateColumn } from "@/lib/cairo-date";
 import { LEVEL_LABELS, LEVEL_SALARY_PERCENT } from "@/lib/level-labels";
 import { createNotification } from "@/lib/notifications";
 import {
@@ -21,7 +15,6 @@ import {
 } from "@/lib/admin-country-targets";
 import { fetchAdminEmployeeEditorBundle } from "@/lib/admin-data";
 import { isSetupCountry, setupRegionForCountry } from "@/lib/setup-options";
-import { recordBaseSalary, recordBonus, recordPayout } from "@/lib/wallet-events";
 import type {
   AdminEmployeeEditorBundle,
   CreateEmployeePayload,
@@ -33,8 +26,6 @@ import type { Role } from "@/types/db";
 import { publicAdminMutationError } from "@/lib/admin-action-error";
 import { assertValidReporting } from "@/lib/admin-reporting";
 import { normalizeReportingForRole } from "@/lib/role-hierarchy";
-
-const CYCLE_LENGTH_DAYS = 30;
 
 const setupCountrySchema = z
   .string()
@@ -52,36 +43,10 @@ async function requireAdminSession() {
   return { adminId };
 }
 
-function daysToPayoutForCycle(cycleStartStr: string | null): number {
-  if (!cycleStartStr) return CYCLE_LENGTH_DAYS;
-  const cycleEnd = addDaysToIsoDate(cycleStartStr.slice(0, 10), CYCLE_LENGTH_DAYS);
-  const today = getTodayCairoDate();
-  const diff = Math.floor(
-    (parseIsoDateUtc(cycleEnd) - parseIsoDateUtc(today)) / (1000 * 60 * 60 * 24)
-  );
-  return Math.max(0, Math.min(CYCLE_LENGTH_DAYS, diff));
-}
-
-async function cycleNetBalance(
-  client: PoolClient,
-  userId: number,
-  cycleStart: string
-): Promise<number> {
-  const r = await client.query<{ n: string }>(
-    `SELECT COALESCE(SUM(amount), 0)::text AS n
-       FROM temp_wallet_transactions
-      WHERE user_id = $1 AND cycle_start_date = $2::date`,
-    [userId, cycleStart.slice(0, 10)]
-  );
-  return Number(r.rows[0]?.n ?? 0);
-}
-
 function revalidateAdminEmployee(userId: number) {
   revalidatePath("/admin");
   revalidatePath("/admin/employees");
-  revalidatePath("/admin/payouts");
   revalidatePath(`/admin/employees/${userId}`);
-  revalidatePath("/wallet");
   revalidatePath("/dashboard");
 }
 
@@ -263,12 +228,6 @@ export async function createEmployee(
     if (role === "manager") {
       await replaceManagerCountries(client, id, managerCountries);
     }
-
-    await recordBaseSalary(client, {
-      user_id: id,
-      cycle_start_date: cycleStart.slice(0, 10),
-      amount: baseSalary,
-    });
 
     await client.query("COMMIT");
     revalidateAdminEmployee(id);
@@ -540,7 +499,6 @@ export async function deleteEmployee(user_id: number): Promise<void> {
   await pool.query(`DELETE FROM temp_users WHERE id = $1`, [user_id]);
   revalidatePath("/admin");
   revalidatePath("/admin/employees");
-  revalidatePath("/admin/payouts");
   revalidatePath("/manager");
   revalidatePath("/dashboard");
 }
@@ -593,148 +551,3 @@ export async function updateEmployeeTargets(
   revalidateAdminEmployee(user_id);
 }
 
-const bonusSchema = z.object({
-  amount: z.number().positive().max(1_000_000),
-  reason: z.string().trim().min(1).max(500),
-});
-
-export async function issueBonus(
-  user_id: number,
-  amount: number,
-  reason: string
-): Promise<void> {
-  const { adminId } = await requireAdminSession();
-  const b = bonusSchema.parse({ amount, reason });
-
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-    await recordBonus(client, {
-      user_id,
-      amount: b.amount,
-      reason: b.reason,
-      created_by: adminId,
-    });
-
-    const amountRounded = Math.round(b.amount);
-    await createNotification(client, {
-      user_id,
-      type: "bonus_received",
-      category: "wallet",
-      title: "Bonus received",
-      body: `+${amountRounded} EGP · ${b.reason}. See it in your wallet.`,
-      action_route: "/wallet",
-      metadata: { amount: b.amount, reason: b.reason },
-      created_by: adminId,
-    });
-
-    await client.query("COMMIT");
-    revalidateAdminEmployee(user_id);
-  } catch (e) {
-    await client.query("ROLLBACK");
-    throw e;
-  } finally {
-    client.release();
-  }
-}
-
-export async function processPayout(
-  userIds: number | number[],
-  options?: { force?: boolean }
-): Promise<{ processed: number }> {
-  const { adminId } = await requireAdminSession();
-  void adminId;
-  const ids = Array.isArray(userIds) ? userIds : [userIds];
-  const unique = [...new Set(ids.filter((n) => Number.isFinite(n) && n > 0))];
-  if (unique.length === 0) throw new Error("No employees selected.");
-  const force = options?.force === true;
-
-  let processed = 0;
-  for (const user_id of unique) {
-    const client = await pool.connect();
-    let committed = false;
-    let payoutNet = 0;
-    let cycleStartForNotify: string | null = null;
-    try {
-      await client.query("BEGIN");
-      const lock = await client.query<{
-        id: number;
-        base_salary: string;
-        pay_cycle_start_date: unknown;
-      }>(
-        `SELECT id, base_salary::text, pay_cycle_start_date
-           FROM temp_users
-          WHERE id = $1
-          FOR UPDATE`,
-        [user_id]
-      );
-      const user = lock.rows[0];
-      if (!user) throw new Error(`User ${user_id} not found.`);
-
-      const cycleStartStr = normalizePgDateColumn(user.pay_cycle_start_date);
-      cycleStartForNotify = cycleStartStr;
-      if (!cycleStartStr) {
-        throw new Error(`${user_id}: missing pay_cycle_start_date.`);
-      }
-
-      const dtp = daysToPayoutForCycle(cycleStartStr);
-      if (!force && dtp > 0) {
-        throw new Error(
-          `Payout not due for user ${user_id} (${dtp} days remaining). Use admin override to force.`
-        );
-      }
-
-      const net = await cycleNetBalance(client, user_id, cycleStartStr);
-      payoutNet = net;
-      if (net > 0) {
-        await recordPayout(client, {
-          user_id,
-          cycle_start_date: cycleStartStr.slice(0, 10),
-          netAmount: net,
-        });
-      }
-
-      const today = getTodayCairoDate();
-      await client.query(
-        `UPDATE temp_users SET pay_cycle_start_date = $1::date WHERE id = $2`,
-        [today, user_id]
-      );
-
-      const salary = Number(user.base_salary);
-      await recordBaseSalary(client, {
-        user_id,
-        cycle_start_date: today.slice(0, 10),
-        amount: salary,
-      });
-
-      await client.query("COMMIT");
-      committed = true;
-      processed += 1;
-    } catch (e) {
-      await client.query("ROLLBACK").catch(() => {});
-      throw e;
-    } finally {
-      client.release();
-    }
-
-    if (committed && cycleStartForNotify) {
-      const cycleEndLabel = formatShortDate(
-        addDaysToIsoDate(cycleStartForNotify.slice(0, 10), CYCLE_LENGTH_DAYS)
-      );
-      const netRounded = Math.round(payoutNet);
-      await createNotification(pool, {
-        user_id,
-        type: "payout_processed",
-        category: "wallet",
-        title: "Payout for last cycle processed",
-        body: `${netRounded} EGP for cycle ending ${cycleEndLabel} has been processed. A new cycle started today.`,
-        action_route: "/wallet?tab=history",
-        metadata: { net: payoutNet, cycle_start: cycleStartForNotify },
-        created_by: adminId,
-      }).catch(() => {});
-      revalidateAdminEmployee(user_id);
-    }
-  }
-
-  return { processed };
-}

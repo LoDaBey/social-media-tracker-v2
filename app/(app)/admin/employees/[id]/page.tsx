@@ -14,7 +14,6 @@ import type { TempUser } from "@/types/db";
 import type { EmployeeFormInitial } from "@/types/admin";
 import { EmployeeForm } from "@/components/admin/EmployeeForm";
 import { EmployeeTargetsForm } from "@/components/admin/EmployeeTargetsForm";
-import { AdminEmployeeWalletEmbed } from "@/components/admin/AdminEmployeeWalletEmbed";
 import { AdminEmployeeActivity } from "@/components/admin/AdminEmployeeActivity";
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import {
@@ -114,16 +113,6 @@ export default async function AdminEmployeeDetailPage({
           initial={targetsInitial}
           activeCounts={counts}
         />
-      ) : null}
-
-      {panel === "wallet" ? (
-        <Suspense
-          fallback={
-            <div className="min-h-[200px] rounded-2xl bg-[var(--color-cream-tint)] animate-pulse" />
-          }
-        >
-          <AdminEmployeeWalletEmbed userId={id} />
-        </Suspense>
       ) : null}
 
       {panel === "activity" ? (

@@ -46,8 +46,8 @@ async function main() {
       type: "bonus_received",
       category: "wallet",
       title: "Bonus received",
-      body: "+500 EGP · Spot bonus. See it in your wallet.",
-      action_route: "/wallet",
+      body: "+500 EGP · Spot bonus.",
+      action_route: "/dashboard",
       metadata: { amount: 500 },
       created_by: null,
     });
@@ -58,7 +58,7 @@ async function main() {
       category: "wallet",
       title: "Payout for last cycle processed",
       body: "4,200 EGP for cycle ending 10 Apr has been processed. A new cycle started today.",
-      action_route: "/wallet?tab=history",
+      action_route: "/dashboard",
       metadata: {},
       created_by: null,
     });

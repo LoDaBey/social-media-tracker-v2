@@ -5,7 +5,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { adminRoleBadge } from "@/lib/admin-view";
 import { AdminEmployeeActivityList } from "@/components/admin/AdminEmployeeActivityList";
-import { AdminEmployeeWalletView } from "@/components/admin/AdminEmployeeWalletView";
 import { EmployeeEditModalTabs } from "@/components/admin/EmployeeEditModalTabs";
 import { EmployeeForm } from "@/components/admin/EmployeeForm";
 import { EmployeeTargetsForm } from "@/components/admin/EmployeeTargetsForm";
@@ -125,23 +124,6 @@ function EmployeeEditModalFrame({
                   activeCounts={bundle.activeCounts}
                   embedded
                   onSaved={onClose}
-                />
-              ) : null}
-              {panel === "wallet" ? (
-                <AdminEmployeeWalletView
-                  userId={userId}
-                  fullName={bundle.fullName}
-                  wallet={{
-                    ...bundle.wallet,
-                    cycleStart: bundle.wallet.cycleStart
-                      ? new Date(bundle.wallet.cycleStart)
-                      : null,
-                    cycleEnd: bundle.wallet.cycleEnd
-                      ? new Date(bundle.wallet.cycleEnd)
-                      : null,
-                  }}
-                  transactions={bundle.transactions}
-                  onWalletChanged={onReload}
                 />
               ) : null}
               {panel === "activity" ? (
