@@ -9,7 +9,6 @@ const PROTECTED_APP_PATHS = [
   "/dashboard",
   "/setup",
   "/accounts",
-  "/wallet",
   "/qc",
   "/submit",
   "/admin",

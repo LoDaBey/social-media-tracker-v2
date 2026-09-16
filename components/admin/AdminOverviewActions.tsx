@@ -2,18 +2,12 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import {
-  Banknote,
-  UserPlus,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+import { UserPlus, Users, type LucideIcon } from "lucide-react";
 import type { AdminOverviewAction } from "@/types/admin";
 
 const ICONS: Record<AdminOverviewAction["icon"], LucideIcon> = {
   userPlus: UserPlus,
   users: Users,
-  banknote: Banknote,
 };
 
 const ACTIONS: AdminOverviewAction[] = [
@@ -29,17 +23,11 @@ const ACTIONS: AdminOverviewAction[] = [
     icon: "users",
     variant: "secondary",
   },
-  {
-    href: "/admin/payouts",
-    ariaLabel: "Open payouts to run a payout cycle",
-    icon: "banknote",
-    variant: "secondary",
-  },
 ];
 
 export function AdminOverviewActions() {
   return (
-    <div className="grid grid-cols-3 gap-2 sm:gap-3">
+    <div className="grid grid-cols-2 gap-2 sm:gap-3">
       {ACTIONS.map((action) => {
         const Icon = ICONS[action.icon];
         const isPrimary = action.variant === "primary";

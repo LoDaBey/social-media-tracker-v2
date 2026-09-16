@@ -104,7 +104,7 @@ export function QcDecisionForm({ growthId, employeeName }: Props) {
           accent="coral"
           icon={<XCircle className="h-4 w-4 text-[var(--color-coral)]" aria-hidden="true" />}
           title="Reject — apply deduction"
-          caption="Numbers are wrong or fabricated. Penalize the wallet."
+          caption="Numbers are wrong or fabricated. Record a deduction on the submission."
           isSelected={selected === "reject_deduction"}
           onSelect={() => setSelected("reject_deduction")}
         >
@@ -215,7 +215,7 @@ export function QcDecisionForm({ growthId, employeeName }: Props) {
 
       <div className="mt-6 flex flex-col gap-3 border-t border-[var(--color-hairline)] pt-5 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-[13px] font-medium text-[var(--color-muted)]">
-          The employee will see your decision and any deduction in their wallet immediately.
+          The employee will see your decision and any deduction amount on their dashboard notifications.
         </p>
 
         <div className="flex items-center gap-2">

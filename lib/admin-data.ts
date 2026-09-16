@@ -10,12 +10,9 @@ import type {
   AdminEmployeeCycleStatus,
   AdminEmployeeEditorBundle,
   AdminEmployeeListRow,
-  AdminPayoutRow,
   EmployeeActivityItem,
   EmployeeFormInitial,
 } from "@/types/admin";
-import { computeWallet } from "@/lib/wallet";
-import { fetchWalletTransactionsThisCycle } from "@/lib/wallet-page-data";
 import { fetchAdminAccountsByUserIds } from "@/lib/admin-accounts-data";
 import { fetchManagerOptions } from "@/lib/manager-data";
 import { setupCountriesForRegion } from "@/lib/setup-options";
@@ -310,35 +307,6 @@ export async function fetchManagerCountriesForUser(
   return rows.map((r) => r.country);
 }
 
-export async function fetchAdminPayoutRows(): Promise<AdminPayoutRow[]> {
-  const users = await query<TempUser>(
-    `SELECT * FROM temp_users WHERE role = 'employee' AND is_active = TRUE ORDER BY full_name`
-  );
-
-  const today = getTodayCairoDate();
-  const rows: AdminPayoutRow[] = [];
-  for (const u of users) {
-    const w = await computeWallet(u);
-    const start = normalizePgDateColumn(u.pay_cycle_start_date);
-    const cycleEnd = start ? addDaysToIsoDate(start, 30) : null;
-    const pastEnd = cycleEnd != null && compareIsoDates(today, cycleEnd) > 0;
-
-    let status: AdminPayoutRow["status"] = "Mid-cycle";
-    if (pastEnd) status = "Overdue";
-    else if (w.daysToPayout <= 0) status = "Ready to pay";
-
-    rows.push({
-      id: u.id,
-      full_name: u.full_name,
-      email: u.email,
-      net_balance: w.netBalance,
-      days_to_payout: w.daysToPayout,
-      status,
-    });
-  }
-  return rows;
-}
-
 export type PlatformAccountCount = {
   platform: string;
   cnt: number;
@@ -415,7 +383,6 @@ export async function fetchAdminEmployeeEditorBundle(
   );
   if (!user) return null;
 
-  const cycleStartStr = normalizePgDateColumn(user.pay_cycle_start_date);
   const [
     teamLeads,
     managers,
@@ -423,8 +390,6 @@ export async function fetchAdminEmployeeEditorBundle(
     admins,
     managerCountries,
     activeCounts,
-    wallet,
-    transactions,
     activity,
   ] = await Promise.all([
     fetchTeamLeadOptions(),
@@ -435,8 +400,6 @@ export async function fetchAdminEmployeeEditorBundle(
       ? fetchManagerCountriesForUser(userId)
       : Promise.resolve([] as string[]),
     fetchActiveAccountCountsByPlatform(userId),
-    computeWallet(user),
-    fetchWalletTransactionsThisCycle(userId, cycleStartStr),
     fetchEmployeeActivityTimeline(userId),
   ]);
 
@@ -480,8 +443,6 @@ export async function fetchAdminEmployeeEditorBundle(
       target_tiktok_count: user.target_tiktok_count,
     },
     activeCounts,
-    wallet,
-    transactions,
     activity,
   };
 }

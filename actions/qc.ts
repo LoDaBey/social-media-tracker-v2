@@ -5,7 +5,6 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { pool } from "@/lib/db";
 import { createNotification } from "@/lib/notifications";
-import { recordDeduction } from "@/lib/wallet-events";
 import { formatShortDate } from "@/lib/cairo-date";
 import type { Role } from "@/types/db";
 import type { QcDecisionResult } from "@/types/qc";
@@ -82,20 +81,9 @@ async function lockPendingGrowthRow(
   return row;
 }
 
-function formatRejectionReason(_handle: string | null, name: string, submissionDate: string) {
-  const dateLabel = formatShortDate(submissionDate);
-  const who = name.trim()
-    ? name.startsWith("@")
-      ? name
-      : `@${name}`
-    : "account";
-  return `Rejected · ${who} · ${dateLabel}`;
-}
-
 function revalidateQcPaths() {
   revalidatePath("/qc");
   revalidatePath("/dashboard");
-  revalidatePath("/wallet");
 }
 
 export async function approveSubmission(
@@ -183,31 +171,17 @@ export async function rejectWithDeduction(
       [id, cleanAmount, trimmedComment, reviewerId]
     );
 
-    const deductionTxId = await recordDeduction(client, {
-      user_id: locked.user_id,
-      growth_id: id,
-      amount: cleanAmount,
-      reason: formatRejectionReason(
-        locked.account_handle,
-        locked.account_name,
-        locked.submission_date
-      ),
-      created_by: reviewerId,
-    });
-
     const who = submissionAccountLabel(locked.account_handle, locked.account_name);
     const dateLabel = formatShortDate(locked.submission_date);
     const amountRounded = Math.round(cleanAmount);
-    const highlight =
-      deductionTxId != null ? `/wallet?highlight=${deductionTxId}` : "/wallet";
 
     await createNotification(client, {
       user_id: locked.user_id,
       type: "submission_rejected",
       category: "qc",
       title: "Submission rejected — deduction applied",
-      body: `${who} · ${dateLabel} · −${amountRounded} EGP. Open your wallet to see the entry.`,
-      action_route: highlight,
+      body: `${who} · ${dateLabel} · −${amountRounded} EGP recorded on this submission.`,
+      action_route: "/dashboard",
       metadata: { growth_id: id, amount: cleanAmount },
       created_by: reviewerId,
     });

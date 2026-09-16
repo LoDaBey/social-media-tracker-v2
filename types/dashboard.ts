@@ -1,6 +1,4 @@
 import type { Platform, TempGrowth, TempSocialMediaAccount, TempUser } from "@/types/db";
-import type { WalletSummary } from "@/lib/wallet";
-
 export type PlatformDailyStatus = {
   totalAccounts: number;
   submittedAccounts: number;
@@ -14,7 +12,6 @@ export type DashboardData = {
   todaysSubmissionsByAccountId: Record<number, TempGrowth>;
   platformStatus: Record<Platform, PlatformDailyStatus>;
   missingAccounts: Partial<Record<Platform, number>>;
-  wallet: WalletSummary;
   windowClosesInMs: number;
   todayCairoDate: string;
 };

@@ -140,6 +140,25 @@ function emptyPlan(country: string): AdminCountryPlan {
   };
 }
 
+function seatQuotaFromTempUserTargets(
+  targets: TempHolderActuals["targets"]
+): AdminCountrySeatQuota {
+  const x = targets.x;
+  const facebookPersonal = targets.facebookPersonal;
+  const facebookUmbrella = targets.facebookUmbrella;
+  const instagram = targets.instagram;
+  const tiktok = targets.tiktok;
+  return {
+    x,
+    facebookPersonal,
+    facebookUmbrella,
+    instagram,
+    tiktok,
+    totalAccounts:
+      x + facebookPersonal + facebookUmbrella + instagram + tiktok,
+  };
+}
+
 function holderFromSeat(
   person: HolderActuals | null,
   seat: AdminCountrySeatQuota,
@@ -180,6 +199,7 @@ function holdersForCountry(
   plan: AdminCountryPlan,
   people: HolderActuals[]
 ): AdminCountryCoverageHolder[] {
+  const useEmployeeTargets = !isAlphaaPlan(plan);
   const seats = isAlphaaPlan(plan)
     ? splitAlphaaCountryPlanSeats(plan)
     : splitCountryPlanSeats(plan);
@@ -189,7 +209,10 @@ function holdersForCountry(
 
   for (let index = 0; index < seatCount; index += 1) {
     const person = people[index] ?? null;
-    const seat = seats[index] ?? EMPTY_SEAT;
+    let seat = seats[index] ?? EMPTY_SEAT;
+    if (useEmployeeTargets && person?.targets) {
+      seat = seatQuotaFromTempUserTargets(person.targets);
+    }
     if (!person) vacantIndex += 1;
     holders.push(holderFromSeat(person, seat, vacantIndex));
   }

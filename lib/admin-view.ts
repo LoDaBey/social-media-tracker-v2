@@ -4,7 +4,7 @@ import { ROLE_LABELS } from "@/lib/role-hierarchy";
 export function normalizeAdminEmployeePanel(
   raw: string | undefined
 ): AdminEmployeePanel {
-  if (raw === "targets" || raw === "wallet" || raw === "activity") {
+  if (raw === "targets" || raw === "activity") {
     return raw;
   }
   return "profile";
@@ -53,16 +53,11 @@ export function adminViewEmployee(input: {
   };
 }
 
-export function adminViewPayouts(): AdminView {
-  return { kind: "payouts", title: "Payouts" };
-}
-
 export function adminWorkspaceBackHref(view: AdminView): string | null {
   switch (view.kind) {
     case "overview":
       return null;
     case "employees":
-    case "payouts":
       return "/admin";
     case "employee_new":
     case "employee":
@@ -76,6 +71,5 @@ export const ADMIN_EMPLOYEE_PANELS: {
 }[] = [
   { id: "profile", label: "Profile" },
   { id: "targets", label: "Targets" },
-  { id: "wallet", label: "Wallet" },
   { id: "activity", label: "Activity" },
 ];
