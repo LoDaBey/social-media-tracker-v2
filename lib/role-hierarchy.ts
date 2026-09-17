@@ -36,7 +36,7 @@ export function supervisorLabelForUserRole(userRole: Role): string | null {
 }
 
 export function supervisorRequired(userRole: Role): boolean {
-  if (userRole === "manager") {
+  if (userRole === "manager" || userRole === "employee") {
     return false;
   }
   return supervisorRoleFor(userRole) !== null;
@@ -76,7 +76,11 @@ export function normalizeReportingForRole(
 
   switch (userRole) {
     case "employee":
-      return { ...emptyReportingFields(), team_lead_id: fields.team_lead_id };
+      return {
+        team_lead_id: fields.team_lead_id,
+        manager_id: fields.manager_id,
+        op_id: null,
+      };
     case "team_lead":
       return { ...emptyReportingFields(), manager_id: fields.manager_id };
     case "manager":
@@ -110,6 +114,13 @@ export function reportingValidationMessage(
   userRole: Role,
   fields: ReportingFields
 ): string | null {
+  if (userRole === "employee") {
+    if (!fields.manager_id) {
+      return `Select a ${ROLE_LABELS.manager}.`;
+    }
+    return null;
+  }
+
   if (!supervisorRequired(userRole)) return null;
 
   const supervisorRole = supervisorRoleFor(userRole);
