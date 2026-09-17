@@ -11,11 +11,13 @@ import { setupRegionForCountry } from "@/lib/setup-options";
 import {
   ROLE_LABELS,
   reportingFieldsFromSupervisor,
+  reportingValidationMessage,
   supervisorIdFromReporting,
 } from "@/lib/role-hierarchy";
 import type { Role } from "@/types/db";
 import type { EmployeeFormProps, UpdateEmployeeProfilePayload } from "@/types/admin";
 import { AdminCountrySelect } from "@/components/admin/AdminCountrySelect";
+import { EmployeeReportingFields } from "@/components/admin/EmployeeReportingFields";
 import { ManagerCountriesField } from "@/components/admin/ManagerCountriesField";
 import { SupervisorAssignField } from "@/components/admin/SupervisorAssignField";
 
@@ -24,11 +26,15 @@ function normalizeDate(v: string | null): string {
   return v.length >= 10 ? v.slice(0, 10) : v;
 }
 
-function managerCountriesForTeamLead(
+function managerCountriesForEmployee(
+  managerId: number | null,
   teamLeadId: number | null,
   teamLeads: EmployeeFormProps["teamLeads"],
   managers: EmployeeFormProps["managers"]
 ): string[] {
+  if (managerId) {
+    return managers.find((manager) => manager.id === managerId)?.countries ?? [];
+  }
   if (!teamLeadId) return [];
   const teamLead = teamLeads.find((tl) => tl.id === teamLeadId);
   if (!teamLead?.manager_id) return [];
@@ -85,10 +91,20 @@ export function EmployeeForm({
     op_id: form.op_id,
   });
 
+  const employeeManagerId =
+    form.manager_id ??
+    teamLeads.find((teamLead) => teamLead.id === form.team_lead_id)?.manager_id ??
+    null;
+
   const regionalManagerCountries = useMemo(() => {
-    if (form.role !== "employee" || !form.team_lead_id) return [];
-    return managerCountriesForTeamLead(form.team_lead_id, teamLeads, managers);
-  }, [form.role, form.team_lead_id, teamLeads, managers]);
+    if (form.role !== "employee") return [];
+    return managerCountriesForEmployee(
+      employeeManagerId,
+      form.team_lead_id,
+      teamLeads,
+      managers
+    );
+  }, [form.role, employeeManagerId, form.team_lead_id, teamLeads, managers]);
 
   const assignedRegion = useMemo(() => {
     if (isManagerRole && form.manager_countries.length > 0) {
@@ -130,6 +146,17 @@ export function EmployeeForm({
 
   function submit() {
     setError(null);
+    if (form.role === "employee") {
+      const reportingMessage = reportingValidationMessage(form.role, {
+        team_lead_id: form.team_lead_id,
+        manager_id: employeeManagerId,
+        op_id: null,
+      });
+      if (reportingMessage) {
+        toast.error(reportingMessage);
+        return;
+      }
+    }
     const payload: UpdateEmployeeProfilePayload = {
       full_name: form.full_name.trim(),
       email: form.email.trim(),
@@ -140,7 +167,8 @@ export function EmployeeForm({
       employment_status: form.employment_status,
       hire_date: form.hire_date,
       team_lead_id: form.team_lead_id,
-      manager_id: form.manager_id,
+      manager_id:
+        form.role === "employee" ? employeeManagerId : form.manager_id,
       op_id: form.op_id,
       manager_countries:
         form.role === "manager" ? form.manager_countries : undefined,
@@ -305,17 +333,38 @@ export function EmployeeForm({
           </select>
         </label>
 
-        <SupervisorAssignField
-          userRole={form.role}
-          value={supervisorId}
-          onChange={setSupervisor}
-          teamLeads={teamLeads}
-          managers={managers}
-          ops={ops}
-          admins={admins}
-          fieldClass={fieldClass}
-          invalidFieldClass="border-[var(--color-coral)]"
-        />
+        {form.role === "employee" ? (
+          <EmployeeReportingFields
+            value={{
+              managerId: employeeManagerId,
+              teamLeadId: form.team_lead_id,
+            }}
+            onChange={(next) =>
+              setForm((f) => ({
+                ...f,
+                manager_id: next.managerId,
+                team_lead_id: next.teamLeadId,
+              }))
+            }
+            teamLeads={teamLeads}
+            managers={managers}
+            country={form.country}
+            fieldClass={fieldClass}
+            invalidFieldClass="border-[var(--color-coral)]"
+          />
+        ) : (
+          <SupervisorAssignField
+            userRole={form.role}
+            value={supervisorId}
+            onChange={setSupervisor}
+            teamLeads={teamLeads}
+            managers={managers}
+            ops={ops}
+            admins={admins}
+            fieldClass={fieldClass}
+            invalidFieldClass="border-[var(--color-coral)]"
+          />
+        )}
 
         <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
           Hire date

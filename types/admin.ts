@@ -52,6 +52,7 @@ export type CreateEmployeeFieldKey =
   | "password"
   | "country"
   | "supervisor_id"
+  | "manager_id"
   | "manager_countries";
 
 export type CreateEmployeeFieldErrors = Partial<
@@ -65,6 +66,8 @@ export type ValidateCreateEmployeeInput = {
   role: Role;
   country: string;
   supervisor_id: string;
+  manager_id: number | null;
+  team_lead_id: number | null;
   manager_countries: string[];
 };
 
@@ -184,6 +187,24 @@ export type SupervisorAssignFieldProps = {
   disabled?: boolean;
   error?: string;
   errorId?: string;
+  fieldClass: string;
+  invalidFieldClass: string;
+};
+
+export type EmployeeReportingValue = {
+  managerId: number | null;
+  teamLeadId: number | null;
+};
+
+export type EmployeeReportingFieldsProps = {
+  value: EmployeeReportingValue;
+  onChange: (next: EmployeeReportingValue) => void;
+  teamLeads: AdminTeamLeadOption[];
+  managers: AdminManagerOption[];
+  country?: string;
+  disabled?: boolean;
+  managerError?: string;
+  managerErrorId?: string;
   fieldClass: string;
   invalidFieldClass: string;
 };

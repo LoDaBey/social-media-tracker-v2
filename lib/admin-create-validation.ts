@@ -36,13 +36,24 @@ export function validateCreateEmployeeForm(
     errors.country = "Select a valid country.";
   }
 
-  const supervisorId = input.supervisor_id ? Number(input.supervisor_id) : null;
-  const reportingMessage = reportingValidationMessage(
-    input.role,
-    reportingFieldsFromSupervisor(input.role, supervisorId)
-  );
+  const reporting =
+    input.role === "employee"
+      ? {
+          team_lead_id: input.team_lead_id,
+          manager_id: input.manager_id,
+          op_id: null,
+        }
+      : reportingFieldsFromSupervisor(
+          input.role,
+          input.supervisor_id ? Number(input.supervisor_id) : null
+        );
+  const reportingMessage = reportingValidationMessage(input.role, reporting);
   if (reportingMessage) {
-    errors.supervisor_id = reportingMessage;
+    if (input.role === "employee") {
+      errors.manager_id = reportingMessage;
+    } else {
+      errors.supervisor_id = reportingMessage;
+    }
   }
 
   return errors;
@@ -56,6 +67,7 @@ export function firstCreateEmployeeError(
     errors.email ??
     errors.password ??
     errors.country ??
+    errors.manager_id ??
     errors.supervisor_id ??
     errors.manager_countries ??
     null

@@ -16,6 +16,7 @@ import type {
   CreateEmployeeFieldErrors,
 } from "@/types/admin";
 import { AdminFieldError } from "@/components/admin/AdminFieldError";
+import { EmployeeReportingFields } from "@/components/admin/EmployeeReportingFields";
 import { ManagerCountriesField } from "@/components/admin/ManagerCountriesField";
 import { SupervisorAssignField } from "@/components/admin/SupervisorAssignField";
 import {
@@ -30,11 +31,15 @@ type Props = {
   admins: AdminSupervisorOption[];
 };
 
-function managerCountriesForTeamLead(
+function managerCountriesForEmployee(
+  managerId: number | null,
   teamLeadId: number | null,
   teamLeads: AdminTeamLeadOption[],
   managers: AdminManagerOption[]
 ): string[] {
+  if (managerId) {
+    return managers.find((manager) => manager.id === managerId)?.countries ?? [];
+  }
   if (!teamLeadId) return [];
   const teamLead = teamLeads.find((tl) => tl.id === teamLeadId);
   if (!teamLead?.manager_id) return [];
@@ -56,6 +61,12 @@ export function CreateEmployeeForm({
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState<Role>("employee");
   const [supervisor_id, setSupervisorId] = useState<string>("");
+  const [employee_manager_id, setEmployeeManagerId] = useState<number | null>(
+    null
+  );
+  const [employee_team_lead_id, setEmployeeTeamLeadId] = useState<number | null>(
+    null
+  );
   const [manager_countries, setManagerCountries] = useState<string[]>([]);
   const [base_salary, setBaseSalary] = useState("4500");
   const [country, setCountry] = useState("");
@@ -66,9 +77,14 @@ export function CreateEmployeeForm({
   const showCountryFields = !isManagerRole && !isGlobalRole;
 
   const regionalManagerCountries = useMemo(() => {
-    if (role !== "employee" || !supervisor_id) return [];
-    return managerCountriesForTeamLead(Number(supervisor_id), teamLeads, managers);
-  }, [role, supervisor_id, teamLeads, managers]);
+    if (role !== "employee") return [];
+    return managerCountriesForEmployee(
+      employee_manager_id,
+      employee_team_lead_id,
+      teamLeads,
+      managers
+    );
+  }, [role, employee_manager_id, employee_team_lead_id, teamLeads, managers]);
 
   const countryMismatch =
     role === "employee" &&
@@ -93,6 +109,8 @@ export function CreateEmployeeForm({
       role,
       country,
       supervisor_id,
+      manager_id: employee_manager_id,
+      team_lead_id: employee_team_lead_id,
       manager_countries,
     });
     setFieldErrors(nextFieldErrors);
@@ -102,10 +120,17 @@ export function CreateEmployeeForm({
       return;
     }
 
-    const reporting = reportingFieldsFromSupervisor(
-      role,
-      supervisor_id ? Number(supervisor_id) : null
-    );
+    const reporting =
+      role === "employee"
+        ? {
+            team_lead_id: employee_team_lead_id,
+            manager_id: employee_manager_id,
+            op_id: null,
+          }
+        : reportingFieldsFromSupervisor(
+            role,
+            supervisor_id ? Number(supervisor_id) : null
+          );
 
     startTransition(async () => {
       try {
@@ -166,7 +191,7 @@ export function CreateEmployeeForm({
       </h2>
       <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-[var(--color-muted)]">
         Create an account and assign their country. Reporting line: Employee →
-        Team Leader Regional → Manager Regional → OP → Admin.
+        Team Leader Regional (optional) → Manager Regional → OP → Admin.
       </p>
       {error ? (
         <p className="mt-4 rounded-lg bg-[var(--color-coral-tint)] px-4 py-3 text-[14px] text-[var(--color-coral)]">
@@ -301,6 +326,8 @@ export function CreateEmployeeForm({
             onChange={(e) => {
               setRole(e.target.value as Role);
               setSupervisorId("");
+              setEmployeeManagerId(null);
+              setEmployeeTeamLeadId(null);
               setFieldErrors({});
             }}
             aria-label="Select role"
@@ -313,22 +340,43 @@ export function CreateEmployeeForm({
             <option value="admin">{ROLE_LABELS.admin}</option>
           </select>
         </label>
-        <SupervisorAssignField
-          userRole={role}
-          value={supervisor_id ? Number(supervisor_id) : null}
-          onChange={(id) => {
-            setSupervisorId(id ? String(id) : "");
-            setFieldErrors((prev) => ({ ...prev, supervisor_id: undefined }));
-          }}
-          teamLeads={teamLeads}
-          managers={managers}
-          ops={ops}
-          admins={admins}
-          error={fieldErrors.supervisor_id}
-          errorId="create-supervisor-error"
-          fieldClass={fieldClass}
-          invalidFieldClass={invalidFieldClass}
-        />
+        {role === "employee" ? (
+          <EmployeeReportingFields
+            value={{
+              managerId: employee_manager_id,
+              teamLeadId: employee_team_lead_id,
+            }}
+            onChange={(next) => {
+              setEmployeeManagerId(next.managerId);
+              setEmployeeTeamLeadId(next.teamLeadId);
+              setFieldErrors((prev) => ({ ...prev, manager_id: undefined }));
+            }}
+            teamLeads={teamLeads}
+            managers={managers}
+            country={country}
+            managerError={fieldErrors.manager_id}
+            managerErrorId="create-manager-error"
+            fieldClass={fieldClass}
+            invalidFieldClass={invalidFieldClass}
+          />
+        ) : (
+          <SupervisorAssignField
+            userRole={role}
+            value={supervisor_id ? Number(supervisor_id) : null}
+            onChange={(id) => {
+              setSupervisorId(id ? String(id) : "");
+              setFieldErrors((prev) => ({ ...prev, supervisor_id: undefined }));
+            }}
+            teamLeads={teamLeads}
+            managers={managers}
+            ops={ops}
+            admins={admins}
+            error={fieldErrors.supervisor_id}
+            errorId="create-supervisor-error"
+            fieldClass={fieldClass}
+            invalidFieldClass={invalidFieldClass}
+          />
+        )}
         {isManagerRole ? (
           <ManagerCountriesField
             selected={manager_countries}
