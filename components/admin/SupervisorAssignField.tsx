@@ -52,10 +52,14 @@ export function SupervisorAssignField({
   fieldClass,
   invalidFieldClass,
 }: SupervisorAssignFieldProps) {
-  const label = supervisorLabelForUserRole(userRole);
-  if (!label) return null;
+  const baseLabel = supervisorLabelForUserRole(userRole);
+  if (!baseLabel) return null;
 
+  const label =
+    userRole === "manager" ? `${baseLabel} (optional)` : baseLabel;
   const options = optionsForRole(userRole, teamLeads, managers, ops, admins);
+  const emptyOptionLabel =
+    userRole === "manager" ? `No ${baseLabel}` : `Select ${baseLabel}`;
 
   return (
     <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
@@ -71,7 +75,7 @@ export function SupervisorAssignField({
         aria-describedby={error ? errorId : undefined}
         className={`cursor-pointer ${fieldClass} ${error ? invalidFieldClass : ""} disabled:cursor-not-allowed disabled:opacity-50`}
       >
-        <option value="">Select {label}</option>
+        <option value="">{emptyOptionLabel}</option>
         {options.map((option) => (
           <option key={option.id} value={option.id}>
             {option.label}
