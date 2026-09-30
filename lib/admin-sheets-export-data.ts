@@ -1,9 +1,11 @@
 import { query } from "@/lib/db";
+import { capBalkanAccountsToCountryPlan } from "@/lib/balkan-sheets-plan-cap";
 import type { Platform } from "@/lib/platform-config";
 import type { AccountScope } from "@/types/db";
 import type { SheetsExportAccountRow } from "@/types/admin";
 
 type SheetsExportQueryRow = {
+  user_id: number;
   region: string | null;
   country: string | null;
   language: string | null;
@@ -43,6 +45,7 @@ function mapSheetsExportRow(row: SheetsExportQueryRow): SheetsExportAccountRow {
 
 const SHEETS_EXPORT_QUERY = `
   SELECT
+      u.id AS user_id,
       u.region,
       u.country,
       u.language,
@@ -67,6 +70,7 @@ const SHEETS_EXPORT_QUERY = `
 const SHEETS_EXPORT_ORDER = `
   ORDER BY u.country ASC NULLS LAST,
            u.full_name ASC,
+           u.id ASC,
            CASE sma.platform
              WHEN 'facebook_personal' THEN 1
              WHEN 'facebook_umbrella' THEN 2
@@ -84,5 +88,6 @@ export async function fetchAccountsForSheetsExport(): Promise<SheetsExportAccoun
     `${SHEETS_EXPORT_QUERY}${SHEETS_EXPORT_ORDER}`
   );
 
-  return rows.map(mapSheetsExportRow);
+  const capped = capBalkanAccountsToCountryPlan(rows);
+  return capped.map(mapSheetsExportRow);
 }
