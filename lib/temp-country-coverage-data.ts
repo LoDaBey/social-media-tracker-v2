@@ -34,23 +34,30 @@ export type TempHolderActuals = {
   targets: TempHolderTargets;
 };
 
-export type TempCoverageRegionScope = "Africa" | "Balkan" | "AfricaAndBalkan";
+export type TempCoverageRegionScope =
+  | "Africa"
+  | "Europe"
+  | "AfricaAndEurope"
+  /** @deprecated Use Europe */
+  | "Balkan"
+  /** @deprecated Use AfricaAndEurope */
+  | "AfricaAndBalkan";
 
 function tempRegionClause(scope: TempCoverageRegionScope | undefined) {
   if (scope === "Africa") {
     return ` AND LOWER(TRIM(u.region)) = 'africa'`;
   }
-  if (scope === "Balkan") {
-    return ` AND LOWER(TRIM(u.region)) = 'balkan'`;
+  if (scope === "Europe" || scope === "Balkan") {
+    return ` AND LOWER(TRIM(u.region)) IN ('europe', 'balkan')`;
   }
-  if (scope === "AfricaAndBalkan") {
-    return ` AND LOWER(TRIM(u.region)) IN ('africa', 'balkan')`;
+  if (scope === "AfricaAndEurope" || scope === "AfricaAndBalkan") {
+    return ` AND LOWER(TRIM(u.region)) IN ('africa', 'europe', 'balkan')`;
   }
   return "";
 }
 
 /**
- * Africa / Balkan / Overview (Africa side) — temp_users + temp_social_media_accounts only.
+ * Africa / Europe / Overview (temp side) — temp_users + temp_social_media_accounts only.
  * Never reads legacy users or social_media_accounts.
  */
 export async function fetchTempCountryCoverage(

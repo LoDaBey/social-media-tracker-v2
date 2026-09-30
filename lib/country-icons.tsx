@@ -12,7 +12,7 @@ type FlagComponent = ComponentType<SVGProps<SVGSVGElement>>;
 /** ISO 3166-1 alpha-2 codes for setup countries. */
 const COUNTRY_ISO: Record<(typeof ALL_SETUP_COUNTRIES)[number], string> = {
   Angola: "AO",
-  "Burkina Faso": "BF",
+  Borkina: "BF",
   Cameroon: "CM",
   "Central African Republic": "CF",
   Chad: "TD",

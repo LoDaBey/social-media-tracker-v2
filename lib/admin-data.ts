@@ -78,7 +78,7 @@ export type AdminEmployeeListFilters = {
   q?: string;
   status?: "all" | "active" | "inactive";
   role?: "all" | "employee" | "manager" | "team_lead" | "op";
-  region?: "Africa" | "Balkan" | "Alphaa";
+  region?: "Africa" | "Europe" | "Alphaa";
   country?: string;
   teamLeadId?: number | null;
 };
@@ -106,13 +106,15 @@ export async function fetchAdminEmployeesList(
     params.push(role);
     where.push(`u.role = $${params.length}`);
   }
-  if (region === "Africa" || region === "Balkan" || region === "Alphaa") {
-    params.push(region);
+  if (region === "Africa" || region === "Europe" || region === "Alphaa") {
+    const regionAliases =
+      region === "Europe" ? ["Europe", "Balkan"] : [region];
+    params.push(regionAliases);
     const regionParam = params.length;
     params.push([...setupCountriesForRegion(region)]);
     const countriesParam = params.length;
     where.push(
-      `(u.region = $${regionParam}
+      `(u.region = ANY($${regionParam}::text[])
         OR INITCAP(TRIM(COALESCE(u.country, ''))) = ANY($${countriesParam}::text[])
         OR EXISTS (
             SELECT 1 FROM temp_manager_countries mc

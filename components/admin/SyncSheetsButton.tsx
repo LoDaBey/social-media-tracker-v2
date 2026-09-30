@@ -29,8 +29,8 @@ export function SyncSheetsButton({
       if (result.africaCount != null) {
         parts.push(`${result.africaCount} Africa`);
       }
-      if (result.balkanCount != null) {
-        parts.push(`${result.balkanCount} Balkan`);
+      if (result.europeCount != null || result.balkanCount != null) {
+        parts.push(`${result.europeCount ?? result.balkanCount} Europe`);
       }
       if (result.alphaaCount != null) {
         parts.push(`${result.alphaaCount} ALPHAA`);

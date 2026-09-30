@@ -22,7 +22,8 @@ export default async function AdminOverviewPage({
     fetchAdminCountryCoverage({ region }),
     fetchAdminSpareAccounts(),
   ]);
-  const showSpareActions = region === "Africa" || region === "Balkan" || region === "Overview";
+  const showSpareActions =
+    region === "Africa" || region === "Europe" || region === "Overview";
 
   return (
     <AdminWorkspace view={adminViewOverview()}>

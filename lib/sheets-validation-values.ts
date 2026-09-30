@@ -54,10 +54,11 @@ export const SHEET_STATUS_OPTIONS = [
 /** Africa tab — Categories column dropdown. */
 export const SHEET_CATEGORY_OPTIONS = ["GH-G", "GH-R"] as const;
 
-/** Africa tab — Language1 column dropdown. */
+/** Africa / Europe Language1 column dropdown (exact sheet spellings). */
 export const SHEET_LANGUAGE_OPTIONS = [
   "French",
   "Sango",
+  "Creole (Kriol)",
   "Twi",
   "Mauritian Creole",
   "English",
@@ -71,17 +72,24 @@ export const SHEET_LANGUAGE_OPTIONS = [
   "Kiswahili",
   "Slovak",
   "Romanian",
+  "Russian",
   "Slovenian",
-  "Macedonian",
+  "Macdonian",
+  "Albanian",
   "Bulgarian",
   "Bosnian",
+  "Serbian",
+  "Croatian",
+  // ALPHAA sheet languages (not used on Africa/Europe tabs)
   "Turkish",
   "Persian",
 ] as const;
 
 /** Sheet Region column values. */
 export const SHEET_REGION = "Africa" as const;
-export const SHEET_REGION_BALKAN = "Balkan" as const;
+export const SHEET_REGION_EUROPE = "Europe" as const;
+/** @deprecated Use SHEET_REGION_EUROPE */
+export const SHEET_REGION_BALKAN = SHEET_REGION_EUROPE;
 export const SHEET_REGION_ALPHAA = "ALPHAA" as const;
 
 export type SheetPlatform = (typeof SHEET_PLATFORM_OPTIONS)[number];
@@ -103,8 +111,9 @@ const STATUS_TO_SHEET: Record<SheetsExportAccountRow["status"], SheetStatus> = {
   suspended: "Suspended",
 };
 
+/** Legacy / alternate app labels → sheet Language1 values. */
 const APP_LANGUAGE_TO_SHEET: Record<string, SheetLanguage> = {
-  "Creole (Kriol)": "Kriol",
+  Macedonian: "Macdonian",
 };
 
 const SHEET_LANGUAGE_SET = new Set<string>(SHEET_LANGUAGE_OPTIONS);
@@ -134,10 +143,10 @@ export function normalizeSheetLanguage(
 }
 
 export function sheetRegion(
-  region: "Africa" | "Balkan" | "Alphaa" = SHEET_REGION
-): typeof SHEET_REGION | typeof SHEET_REGION_BALKAN | typeof SHEET_REGION_ALPHAA {
+  region: "Africa" | "Europe" | "Balkan" | "Alphaa" = SHEET_REGION
+): typeof SHEET_REGION | typeof SHEET_REGION_EUROPE | typeof SHEET_REGION_ALPHAA {
   if (region === "Alphaa") return SHEET_REGION_ALPHAA;
-  if (region === "Balkan") return SHEET_REGION_BALKAN;
+  if (region === "Europe" || region === "Balkan") return SHEET_REGION_EUROPE;
   return SHEET_REGION;
 }
 

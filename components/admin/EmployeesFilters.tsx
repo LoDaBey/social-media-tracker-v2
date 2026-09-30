@@ -110,7 +110,7 @@ export function EmployeesFilters() {
           >
             <option value="">All regions</option>
             <option value="africa">Africa</option>
-            <option value="balkan">Balkan</option>
+            <option value="europe">Europe</option>
             <option value="alphaa">ALPHAA</option>
           </select>
         </label>

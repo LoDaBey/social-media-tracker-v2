@@ -209,7 +209,7 @@ export function parseAfricaTemplateSheet(
     return {
       language: "",
       warnings: [
-        "Could not find URL or Username columns. Use the Africa or Balkan template spreadsheet.",
+        "Could not find URL or Username columns. Use the Africa or Europe template spreadsheet.",
       ],
       rows: [],
     };

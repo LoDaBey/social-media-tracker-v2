@@ -54,8 +54,11 @@ function getRegionSheetsTarget(region: SetupRegion): RegionSheetsTarget {
   }
 
   let sheetTab = process.env.GOOGLE_SHEETS_TAB?.trim() || "Africa";
-  if (region === "Balkan") {
-    sheetTab = process.env.GOOGLE_SHEETS_TAB_BALKAN?.trim() || "Balkan";
+  if (region === "Europe") {
+    sheetTab =
+      process.env.GOOGLE_SHEETS_TAB_EUROPE?.trim() ||
+      process.env.GOOGLE_SHEETS_TAB_BALKAN?.trim() ||
+      "Europe";
   } else if (region === "Alphaa") {
     sheetTab = process.env.GOOGLE_SHEETS_TAB_ALPHAA?.trim() || "ALPHAA";
   }
@@ -141,28 +144,30 @@ async function syncAlphaaAccountsToSheetTab(
 
 export type SheetsSyncSummary = {
   africaCount: number;
+  europeCount: number;
+  /** @deprecated Use europeCount */
   balkanCount: number;
   alphaaCount: number;
   total: number;
 };
 
-/** Sync Africa/Balkan (temp accounts) and ALPHAA (legacy social_media_accounts). */
+/** Sync Africa/Europe (temp accounts) and ALPHAA (legacy social_media_accounts). */
 export async function syncAccountsToGoogleSheets(
-  africaBalkanAccounts: SheetsExportAccountRow[],
+  africaEuropeAccounts: SheetsExportAccountRow[],
   alphaaAccounts: AlphaaSheetsExportAccountRow[]
 ): Promise<SheetsSyncSummary> {
   const credentials = getGoogleSheetsCredentials();
-  const { africa, balkan } = splitAccountsByExportRegion(africaBalkanAccounts);
+  const { africa, europe } = splitAccountsByExportRegion(africaEuropeAccounts);
 
-  const [africaCount, balkanCount, alphaaCount] = await Promise.all([
+  const [africaCount, europeCount, alphaaCount] = await Promise.all([
     syncStrategyAccountsToSheetTab(
       getRegionSheetsTarget("Africa"),
       africa,
       credentials
     ),
     syncStrategyAccountsToSheetTab(
-      getRegionSheetsTarget("Balkan"),
-      balkan,
+      getRegionSheetsTarget("Europe"),
+      europe,
       credentials
     ),
     syncAlphaaAccountsToSheetTab(
@@ -174,8 +179,9 @@ export async function syncAccountsToGoogleSheets(
 
   return {
     africaCount,
-    balkanCount,
+    europeCount,
+    balkanCount: europeCount,
     alphaaCount,
-    total: africaCount + balkanCount + alphaaCount,
+    total: africaCount + europeCount + alphaaCount,
   };
 }

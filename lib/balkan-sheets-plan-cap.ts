@@ -1,8 +1,8 @@
 import {
-  balkanCountryPlan,
+  europeCountryPlan,
   splitCountryPlanSeats,
 } from "@/lib/admin-country-targets";
-import { isBalkanCountry } from "@/lib/region-config";
+import { isEuropeCountry } from "@/lib/region-config";
 import type { Platform } from "@/lib/platform-config";
 import type { AdminCountrySeatQuota } from "@/types/admin";
 
@@ -56,11 +56,11 @@ function quotaForBucket(
 }
 
 /**
- * Keep only accounts that fit each Balkan country's planned seat quotas.
+ * Keep only accounts that fit each Europe country's planned seat quotas.
  * Extra accounts above the plan stay in the app/DB but are omitted from Sheets.
  * Seat order matches coverage: handlers sorted by name, then user id.
  */
-export function capBalkanAccountsToCountryPlan<T extends CapAccountRow>(
+export function capEuropeAccountsToCountryPlan<T extends CapAccountRow>(
   rows: T[]
 ): T[] {
   const keep = new Set<T>();
@@ -68,14 +68,14 @@ export function capBalkanAccountsToCountryPlan<T extends CapAccountRow>(
 
   for (const row of rows) {
     const country = row.country?.trim() ?? "";
-    if (!isBalkanCountry(country)) continue;
+    if (!isEuropeCountry(country)) continue;
     const list = byCountry.get(country) ?? [];
     list.push(row);
     byCountry.set(country, list);
   }
 
   for (const [country, countryRows] of byCountry) {
-    const plan = balkanCountryPlan(country);
+    const plan = europeCountryPlan(country);
     if (!plan) continue;
 
     const seats = splitCountryPlanSeats(plan);
@@ -97,7 +97,6 @@ export function capBalkanAccountsToCountryPlan<T extends CapAccountRow>(
 
     orderedHandlers.forEach(([, handler], seatIndex) => {
       const seat = seats[seatIndex];
-      // Beyond planned resources — omit this handler from Sheets.
       if (!seat) return;
 
       const used: Record<PlatformBucket, number> = {
@@ -120,7 +119,10 @@ export function capBalkanAccountsToCountryPlan<T extends CapAccountRow>(
 
   return rows.filter((row) => {
     const country = row.country?.trim() ?? "";
-    if (!isBalkanCountry(country)) return true;
+    if (!isEuropeCountry(country)) return true;
     return keep.has(row);
   });
 }
+
+/** @deprecated Use capEuropeAccountsToCountryPlan */
+export const capBalkanAccountsToCountryPlan = capEuropeAccountsToCountryPlan;

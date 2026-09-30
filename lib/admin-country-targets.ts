@@ -38,10 +38,10 @@ const SUDAN_ACCOUNTS = {
 } as const;
 
 /**
- * Balkan large markets (13 seats): 191 total accounts.
+ * Europe large markets (13 seats): 191 total accounts.
  * Average ~14.7/seat (nine seats at 15, four at 14) via splitCountryPlanSeats.
  */
-const BALKAN_LARGE_ACCOUNTS = {
+const EUROPE_LARGE_ACCOUNTS = {
   xPersonal: 126,
   facebookPersonal: 13,
   xUmbrella: 13,
@@ -51,10 +51,10 @@ const BALKAN_LARGE_ACCOUNTS = {
 } as const;
 
 /**
- * Balkan standard markets (6 seats): 78 total accounts (13/seat).
+ * Europe standard markets (6 seats): 78 total accounts (13/seat).
  * X is 9/seat (8 personal + 1 umbrella) instead of the inflated 11/seat mix.
  */
-const BALKAN_STANDARD_ACCOUNTS = {
+const EUROPE_STANDARD_ACCOUNTS = {
   xPersonal: 48,
   facebookPersonal: 6,
   xUmbrella: 6,
@@ -67,7 +67,7 @@ const BALKAN_STANDARD_ACCOUNTS = {
  * Bosnia (6 seats): 89 total accounts.
  * Same non-X mix as other 6-seat markets; extra slots are on X (65 vs 54).
  */
-const BALKAN_BOSNIA_ACCOUNTS = {
+const EUROPE_BOSNIA_ACCOUNTS = {
   xPersonal: 59,
   facebookPersonal: 6,
   xUmbrella: 6,
@@ -83,9 +83,9 @@ function planCountry(
   accounts:
     | typeof STANDARD_ACCOUNTS
     | typeof SUDAN_ACCOUNTS
-    | typeof BALKAN_LARGE_ACCOUNTS
-    | typeof BALKAN_STANDARD_ACCOUNTS
-    | typeof BALKAN_BOSNIA_ACCOUNTS
+    | typeof EUROPE_LARGE_ACCOUNTS
+    | typeof EUROPE_STANDARD_ACCOUNTS
+    | typeof EUROPE_BOSNIA_ACCOUNTS
 ): AdminCountryPlan {
   return {
     country,
@@ -104,7 +104,7 @@ function planCountry(
 
 /** Africa resource plan — 9×74 + 132 = 798 account slots project-wide. */
 export const ADMIN_COUNTRY_PLANS: AdminCountryPlan[] = [
-  planCountry("Burkina Faso", "French", AFRICA_STANDARD_RESOURCES, STANDARD_ACCOUNTS),
+  planCountry("Borkina", "French", AFRICA_STANDARD_RESOURCES, STANDARD_ACCOUNTS),
   planCountry("Angola", "Portuguese", AFRICA_STANDARD_RESOURCES, STANDARD_ACCOUNTS),
   planCountry("Tanzania", "Kiswahili", AFRICA_STANDARD_RESOURCES, STANDARD_ACCOUNTS),
   planCountry("Mozambique", "Portuguese", AFRICA_STANDARD_RESOURCES, STANDARD_ACCOUNTS),
@@ -116,31 +116,40 @@ export const ADMIN_COUNTRY_PLANS: AdminCountryPlan[] = [
   planCountry("Sudan", "Arabic", SUDAN_AFRICA_RESOURCES, SUDAN_ACCOUNTS),
 ];
 
-/** Balkan resource plan — 2×191 + 3×78 + 89 = 705 account slots project-wide. */
-export const BALKAN_COUNTRY_PLANS: AdminCountryPlan[] = [
-  planCountry("Slovakia", "Slovak", 13, BALKAN_LARGE_ACCOUNTS),
-  planCountry("Moldova", "Romanian", 13, BALKAN_LARGE_ACCOUNTS),
-  planCountry("Slovenia", "Slovenian", 6, BALKAN_STANDARD_ACCOUNTS),
-  planCountry("Macedonia", "Macedonian", 6, BALKAN_STANDARD_ACCOUNTS),
-  planCountry("Bulgaria", "Bulgarian", 6, BALKAN_STANDARD_ACCOUNTS),
-  planCountry("Bosnia", "Bosnian", 6, BALKAN_BOSNIA_ACCOUNTS),
+/** Europe resource plan — 2×191 + 3×78 + 89 = 705 account slots project-wide. */
+export const EUROPE_COUNTRY_PLANS: AdminCountryPlan[] = [
+  planCountry("Slovakia", "Slovak", 13, EUROPE_LARGE_ACCOUNTS),
+  planCountry("Moldova", "Romanian", 13, EUROPE_LARGE_ACCOUNTS),
+  planCountry("Slovenia", "Slovenian", 6, EUROPE_STANDARD_ACCOUNTS),
+  planCountry("Macedonia", "Macdonian", 6, EUROPE_STANDARD_ACCOUNTS),
+  planCountry("Bulgaria", "Bulgarian", 6, EUROPE_STANDARD_ACCOUNTS),
+  planCountry("Bosnia", "Bosnian", 6, EUROPE_BOSNIA_ACCOUNTS),
 ];
 
-export function balkanCountryPlan(country: string): AdminCountryPlan | null {
-  return BALKAN_COUNTRY_PLANS.find((plan) => plan.country === country) ?? null;
+/** @deprecated Use EUROPE_COUNTRY_PLANS */
+export const BALKAN_COUNTRY_PLANS = EUROPE_COUNTRY_PLANS;
+
+export function europeCountryPlan(country: string): AdminCountryPlan | null {
+  return EUROPE_COUNTRY_PLANS.find((plan) => plan.country === country) ?? null;
 }
 
-/** Default account targets for a new employee seat in a planned Balkan country. */
-export function balkanSeatTargetsForIndex(
+/** @deprecated Use europeCountryPlan */
+export const balkanCountryPlan = europeCountryPlan;
+
+/** Default account targets for a new employee seat in a planned Europe country. */
+export function europeSeatTargetsForIndex(
   country: string,
   seatIndex: number
 ): AdminCountrySeatQuota | null {
-  const plan = balkanCountryPlan(country);
+  const plan = europeCountryPlan(country);
   if (!plan) return null;
   const seats = splitCountryPlanSeats(plan);
   if (seats.length === 0) return null;
   return seats[Math.min(Math.max(seatIndex, 0), seats.length - 1)] ?? null;
 }
+
+/** @deprecated Use europeSeatTargetsForIndex */
+export const balkanSeatTargetsForIndex = europeSeatTargetsForIndex;
 
 export function xPlanTarget(plan: Pick<AdminCountryPlan, "xPersonal" | "xUmbrella">) {
   return plan.xPersonal + plan.xUmbrella;

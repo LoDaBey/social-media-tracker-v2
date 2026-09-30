@@ -57,7 +57,7 @@ export function BulkImportHolderStep({
           value={region}
           aria-label="Select region"
           onChange={(event) => {
-            const nextRegion = event.target.value as "" | "Africa" | "Balkan";
+            const nextRegion = event.target.value as "" | "Africa" | "Europe";
             onRegionChange(nextRegion);
             if (
               country &&
@@ -71,7 +71,7 @@ export function BulkImportHolderStep({
         >
           <option value="">Select a region</option>
           <option value="Africa">Africa</option>
-          <option value="Balkan">Balkan</option>
+          <option value="Europe">Europe</option>
           <option value="Alphaa">ALPHAA</option>
         </select>
       </label>

@@ -70,7 +70,7 @@ export async function fetchAdminAccountsByUserIds(
   return byUser;
 }
 
-/** Active spare accounts for Africa and Balkan handlers (admin modal). */
+/** Active spare accounts for Africa and Europe handlers (admin modal). */
 export async function fetchAdminSpareAccounts(): Promise<
   AdminSpareAccountListItem[]
 > {
@@ -93,7 +93,7 @@ export async function fetchAdminSpareAccounts(): Promise<
         AND a.status = 'active'
         AND LOWER(u.role) = 'employee'
         AND u.is_active = TRUE
-        AND LOWER(TRIM(u.region)) IN ('africa', 'balkan')
+        AND LOWER(TRIM(u.region)) IN ('africa', 'europe', 'balkan')
       ORDER BY u.region ASC, u.country ASC, u.full_name ASC, a.platform ASC, a.id ASC`
   );
 }
