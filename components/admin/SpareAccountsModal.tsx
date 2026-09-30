@@ -95,7 +95,7 @@ export function SpareAccountsModal({
                   Spare accounts
                 </h2>
                 <p className="mt-1 text-[14px] text-[var(--color-muted)]">
-                  Africa and Balkan accounts marked as spare. They stay on
+                  Africa and Europe accounts marked as spare. They stay on
                   handlers but count as extras in KPIs.
                 </p>
               </div>

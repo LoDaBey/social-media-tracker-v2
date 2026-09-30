@@ -7,7 +7,7 @@ export function AdminCountryCoverageSection({
 }: AdminCountryCoverageSectionProps) {
   const planLabel =
     region === "Overview"
-      ? "Africa, Balkan, and ALPHAA"
+      ? "Africa, Europe, and ALPHAA"
       : region === "Alphaa"
         ? "ALPHAA"
         : region;

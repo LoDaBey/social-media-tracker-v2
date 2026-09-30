@@ -1,43 +1,46 @@
 import {
   isAlphaaCountry,
-  isBalkanCountry,
+  isEuropeCountry,
   isTempPlanCountry,
   regionForCountry,
 } from "@/lib/region-config";
 
 export const SETUP_REGION = "Africa" as const;
 
+/** Africa countries — labels must match Google Sheets dropdowns. */
 export const SETUP_COUNTRIES = [
-  "Angola",
-  "Burkina Faso",
-  "Cameroon",
-  "Central African Republic",
-  "Chad",
-  "Comoros",
   "Congo",
-  "Djibouti",
-  "Gabon",
+  "Central African Republic",
   "Ghana",
   "Guinea",
-  "Ivory Coast",
-  "Libya",
-  "Madagascar",
-  "Mali",
-  "Mauritania",
   "Mauritius",
-  "Mozambique",
-  "Niger",
-  "Nigeria",
-  "Rwanda",
-  "Senegal",
-  "Sudan",
   "South Sudan",
-  "Tanzania",
+  "Niger",
+  "Djibouti",
+  "Comoros",
+  "Ivory Coast",
+  "Gabon",
   "Uganda",
+  "Libya",
+  "Rwanda",
+  "Mauritania",
+  "Senegal",
+  "Cameroon",
+  "Somalia",
+  "Borkina",
+  "Angola",
+  "Tanzania",
+  "Mozambique",
+  "Madagascar",
   "Zambia",
+  "Nigeria",
+  "Mali",
+  "Chad",
+  "Sudan",
 ] as const;
 
-export const BALKAN_SETUP_COUNTRIES = [
+/** Europe (formerly Balkan) countries — labels must match Google Sheets dropdowns. */
+export const EUROPE_SETUP_COUNTRIES = [
   "Slovakia",
   "Moldova",
   "Slovenia",
@@ -45,6 +48,9 @@ export const BALKAN_SETUP_COUNTRIES = [
   "Bulgaria",
   "Bosnia",
 ] as const;
+
+/** @deprecated Use EUROPE_SETUP_COUNTRIES */
+export const BALKAN_SETUP_COUNTRIES = EUROPE_SETUP_COUNTRIES;
 
 export const ALPHAA_SETUP_COUNTRIES = [
   "Sudan",
@@ -54,9 +60,8 @@ export const ALPHAA_SETUP_COUNTRIES = [
   "Iran",
 ] as const;
 
-/** ALPHAA countries not already listed under Africa/Balkan setup lists. */
+/** ALPHAA countries not already listed under Africa/Europe setup lists. */
 export const ALPHAA_EXCLUSIVE_SETUP_COUNTRIES = [
-  "Somalia",
   "Palestine",
   "Turkey",
   "Iran",
@@ -64,33 +69,38 @@ export const ALPHAA_EXCLUSIVE_SETUP_COUNTRIES = [
 
 export const ALL_SETUP_COUNTRIES = [
   ...SETUP_COUNTRIES,
-  ...BALKAN_SETUP_COUNTRIES,
+  ...EUROPE_SETUP_COUNTRIES,
   ...ALPHAA_EXCLUSIVE_SETUP_COUNTRIES,
 ] as const;
 
 export const SETUP_CATEGORIES = ["GH-G", "GH-R"] as const;
 
+/** Africa + Europe languages — values must match Google Sheets Language1 dropdown. */
 export const SETUP_LANGUAGES = [
-  "Arabic",
-  "Creole (Kriol)",
-  "English",
   "French",
-  "Kiswahili",
+  "Sango",
+  "Creole (Kriol)",
+  "Twi",
+  "Mauritian Creole",
+  "English",
   "Kriol",
   "Lingala",
-  "Malagasy",
-  "Mauritian Creole",
   "Olyad",
-  "Portuguese",
-  "Sango",
+  "Malagasy",
+  "Arabic",
   "Somali",
-  "Twi",
+  "Portuguese",
+  "Kiswahili",
   "Slovak",
   "Romanian",
+  "Russian",
   "Slovenian",
-  "Macedonian",
+  "Macdonian",
+  "Albanian",
   "Bulgarian",
   "Bosnian",
+  "Serbian",
+  "Croatian",
   "Turkish",
   "Persian",
 ] as const;
@@ -103,10 +113,10 @@ export function setupRegionForCountry(country: string) {
   return regionForCountry(country) ?? SETUP_REGION;
 }
 
-export type SetupRegion = "Africa" | "Balkan" | "Alphaa";
+export type SetupRegion = "Africa" | "Europe" | "Alphaa";
 
 export function setupCountriesForRegion(region: SetupRegion): readonly string[] {
-  if (region === "Balkan") return BALKAN_SETUP_COUNTRIES;
+  if (region === "Europe") return EUROPE_SETUP_COUNTRIES;
   if (region === "Alphaa") return ALPHAA_SETUP_COUNTRIES;
   return SETUP_COUNTRIES;
 }
@@ -115,14 +125,14 @@ export function employeeListRegionFromSlug(
   value: string | undefined
 ): "all" | SetupRegion {
   const normalized = value?.trim().toLowerCase();
-  if (normalized === "balkan") return "Balkan";
+  if (normalized === "europe" || normalized === "balkan") return "Europe";
   if (normalized === "africa") return "Africa";
   if (normalized === "alphaa") return "Alphaa";
   return "all";
 }
 
 export function employeeListRegionSlug(region: SetupRegion): string {
-  if (region === "Balkan") return "balkan";
+  if (region === "Europe") return "europe";
   if (region === "Alphaa") return "alphaa";
   return "africa";
 }
@@ -136,7 +146,9 @@ export function isCountryInEmployeeListRegion(
   return (setupCountriesForRegion(region) as readonly string[]).includes(country);
 }
 
-export { isAlphaaCountry, isBalkanCountry, isTempPlanCountry };
+export { isAlphaaCountry, isEuropeCountry, isTempPlanCountry };
+/** @deprecated Use isEuropeCountry */
+export { isEuropeCountry as isBalkanCountry };
 
 export function isSetupCategory(value: string) {
   return (SETUP_CATEGORIES as readonly string[]).includes(value);

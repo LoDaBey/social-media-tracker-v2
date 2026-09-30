@@ -21,18 +21,19 @@ export async function POST() {
   }
 
   try {
-    const [africaBalkanAccounts, alphaaAccounts] = await Promise.all([
+    const [africaEuropeAccounts, alphaaAccounts] = await Promise.all([
       fetchAccountsForSheetsExport(),
       fetchAlphaaAccountsForSheetsExport(),
     ]);
-    const { africaCount, balkanCount, alphaaCount, total } =
-      await syncAccountsToGoogleSheets(africaBalkanAccounts, alphaaAccounts);
+    const { africaCount, europeCount, balkanCount, alphaaCount, total } =
+      await syncAccountsToGoogleSheets(africaEuropeAccounts, alphaaAccounts);
 
     const result: SheetsSyncResult = {
       success: true,
       message: "Data successfully saved to Google Sheets",
       count: total,
       africaCount,
+      europeCount,
       balkanCount,
       alphaaCount,
     };

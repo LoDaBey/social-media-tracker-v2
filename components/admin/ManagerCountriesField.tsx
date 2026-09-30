@@ -1,7 +1,7 @@
 import { CountryFlag } from "@/lib/country-icons";
 import {
   ALPHAA_SETUP_COUNTRIES,
-  BALKAN_SETUP_COUNTRIES,
+  EUROPE_SETUP_COUNTRIES,
   SETUP_COUNTRIES,
   type SetupRegion,
 } from "@/lib/setup-options";
@@ -10,7 +10,7 @@ import { AdminFieldError } from "@/components/admin/AdminFieldError";
 
 const REGION_GROUPS: { region: SetupRegion; countries: readonly string[] }[] = [
   { region: "Africa", countries: SETUP_COUNTRIES },
-  { region: "Balkan", countries: BALKAN_SETUP_COUNTRIES },
+  { region: "Europe", countries: EUROPE_SETUP_COUNTRIES },
   { region: "Alphaa", countries: ALPHAA_SETUP_COUNTRIES },
 ];
 

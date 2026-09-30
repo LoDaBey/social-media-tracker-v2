@@ -1,5 +1,5 @@
 import { query } from "@/lib/db";
-import { capBalkanAccountsToCountryPlan } from "@/lib/balkan-sheets-plan-cap";
+import { capEuropeAccountsToCountryPlan } from "@/lib/balkan-sheets-plan-cap";
 import type { Platform } from "@/lib/platform-config";
 import type { AccountScope } from "@/types/db";
 import type { SheetsExportAccountRow } from "@/types/admin";
@@ -83,12 +83,12 @@ const SHEETS_EXPORT_ORDER = `
            sma.id ASC
 `;
 
-/** Africa/Balkan strategy export — temp_users + temp_social_media_accounts only. */
+/** Africa/Europe strategy export — temp_users + temp_social_media_accounts only. */
 export async function fetchAccountsForSheetsExport(): Promise<SheetsExportAccountRow[]> {
   const rows = await query<SheetsExportQueryRow>(
     `${SHEETS_EXPORT_QUERY}${SHEETS_EXPORT_ORDER}`
   );
 
-  const capped = capBalkanAccountsToCountryPlan(rows);
+  const capped = capEuropeAccountsToCountryPlan(rows);
   return capped.map(mapSheetsExportRow);
 }

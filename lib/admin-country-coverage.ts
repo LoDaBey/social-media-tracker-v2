@@ -307,9 +307,9 @@ function splitCoverageCountries(
   region: AdminRegion | undefined
 ) {
   const africaPlanCountries = adminPlanCountriesForRegion("Africa");
-  const balkanPlanCountries = adminPlanCountriesForRegion("Balkan");
+  const europePlanCountries = adminPlanCountriesForRegion("Europe");
   const alphaaPlanCountries = adminPlanCountriesForRegion("Alphaa");
-  const allTempPlanCountries = [...africaPlanCountries, ...balkanPlanCountries];
+  const allTempPlanCountries = [...africaPlanCountries, ...europePlanCountries];
 
   /** ALPHAA — legacy users + social_media_accounts only. */
   if (region === "Alphaa") {
@@ -339,21 +339,21 @@ function splitCoverageCountries(
     };
   }
 
-  /** Balkan — temp_users + temp_social_media_accounts only. */
-  if (region === "Balkan") {
+  /** Europe — temp_users + temp_social_media_accounts only. */
+  if (region === "Europe") {
     return {
       tempCountries: baseCountriesFromDisplayFilter(
         countryFilter,
-        balkanPlanCountries
+        europePlanCountries
       ),
       alphaaCountries: [] as string[],
-      tempRegionScope: "Balkan" as const,
+      tempRegionScope: "Europe" as const,
       fetchTemp: true,
       fetchAlphaa: false,
     };
   }
 
-  /** Overview — temp for Africa+Balkan rows, legacy for ALPHAA rows (dual Sudan). */
+  /** Overview — temp for Africa+Europe rows, legacy for ALPHAA rows (dual Sudan). */
   if (region === "Overview") {
     const tempFromFilter = countryFilter
       ? uniqueBaseCountries(countryFilter.filter(isTempPlanCountry))
@@ -365,7 +365,7 @@ function splitCoverageCountries(
     return {
       tempCountries: tempFromFilter,
       alphaaCountries: alphaaFromFilter,
-      tempRegionScope: "AfricaAndBalkan" as const,
+      tempRegionScope: "AfricaAndEurope" as const,
       fetchTemp: tempFromFilter.length > 0,
       fetchAlphaa: alphaaFromFilter.length > 0,
     };
@@ -375,7 +375,7 @@ function splitCoverageCountries(
     return {
       tempCountries: uniqueBaseCountries(countryFilter.filter(isTempPlanCountry)),
       alphaaCountries: uniqueBaseCountries(countryFilter.filter(isAlphaaCountry)),
-      tempRegionScope: "AfricaAndBalkan" as const,
+      tempRegionScope: "AfricaAndEurope" as const,
       fetchTemp: countryFilter.some(isTempPlanCountry),
       fetchAlphaa: countryFilter.some(isAlphaaCountry),
     };
@@ -437,7 +437,7 @@ export async function fetchAdminCountryCoverage(
     for (const [country, holders] of alphaaHoldersByCountry) {
       holdersByCountry.set(country, holders);
     }
-  } else if (filter?.region === "Africa" || filter?.region === "Balkan") {
+  } else if (filter?.region === "Africa" || filter?.region === "Europe") {
     for (const [country, actuals] of tempCoverage.actualByCountry) {
       actualByCountry.set(country, actuals);
     }

@@ -7,7 +7,7 @@ export const COUNTRY_SHEET_LANGUAGE: Partial<
   Record<(typeof ALL_SETUP_COUNTRIES)[number], SheetLanguage>
 > = {
   Angola: "Portuguese",
-  "Burkina Faso": "French",
+  Borkina: "French",
   Cameroon: "French",
   "Central African Republic": "Sango",
   Chad: "French",
@@ -37,7 +37,7 @@ export const COUNTRY_SHEET_LANGUAGE: Partial<
   Slovakia: "Slovak",
   Moldova: "Romanian",
   Slovenia: "Slovenian",
-  Macedonia: "Macedonian",
+  Macedonia: "Macdonian",
   Bulgaria: "Bulgarian",
   Bosnia: "Bosnian",
   Palestine: "Arabic",
@@ -45,16 +45,19 @@ export const COUNTRY_SHEET_LANGUAGE: Partial<
   Iran: "Persian",
 };
 
-/** Country labels as they appear on the Africa strategy sheet dropdown. */
+/** Country labels as they appear on the strategy sheet dropdown. */
 export const COUNTRY_SHEET_NAME: Partial<
   Record<(typeof ALL_SETUP_COUNTRIES)[number], string>
 > = {
-  "Burkina Faso": "Borkina",
+  // Legacy DB value → sheet / canonical app label
+  // (kept empty once migration renames Burkina Faso → Borkina)
 };
 
 export function sheetCountryName(country: string | null | undefined) {
   if (!country) return "";
-  const alias = COUNTRY_SHEET_NAME[country as (typeof ALL_SETUP_COUNTRIES)[number]];
+  if (country === "Burkina Faso") return "Borkina";
+  const alias =
+    COUNTRY_SHEET_NAME[country as (typeof ALL_SETUP_COUNTRIES)[number]];
   return alias ?? country;
 }
 
@@ -62,9 +65,12 @@ export function sheetLanguage1(
   country: string | null | undefined,
   storedLanguage: string | null | undefined
 ): SheetLanguage {
-  if (country) {
+  const sheetCountry = sheetCountryName(country);
+  if (sheetCountry) {
     const mapped =
-      COUNTRY_SHEET_LANGUAGE[country as (typeof ALL_SETUP_COUNTRIES)[number]];
+      COUNTRY_SHEET_LANGUAGE[
+        sheetCountry as (typeof ALL_SETUP_COUNTRIES)[number]
+      ];
     if (mapped) return mapped;
   }
 

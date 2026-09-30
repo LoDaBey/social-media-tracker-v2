@@ -311,13 +311,13 @@ export type AdminCountryCoverage = {
   rows: AdminCountryCoverageRow[];
   totals: AdminCountryCoverageTotals;
   onHoldCount: number;
-  /** Active Africa/Balkan accounts marked spare (excluded from plan actuals). */
+  /** Active Africa/Europe accounts marked spare (excluded from plan actuals). */
   spareCount: number;
 };
 
-export type AdminRegion = "Overview" | "Africa" | "Balkan" | "Alphaa";
+export type AdminRegion = "Overview" | "Africa" | "Europe" | "Alphaa";
 
-export type AdminRegionSlug = "overview" | "africa" | "balkan" | "alphaa";
+export type AdminRegionSlug = "overview" | "africa" | "europe" | "alphaa";
 
 export type AdminCountryCoverageFilter = {
   countries?: string[];
@@ -820,6 +820,8 @@ export type SheetsSyncResult = {
   message: string;
   count?: number;
   africaCount?: number;
+  europeCount?: number;
+  /** @deprecated Use europeCount */
   balkanCount?: number;
   alphaaCount?: number;
 };

@@ -150,7 +150,7 @@ export async function deleteAdminSocialAccount(
   }
 }
 
-/** Mark/unmark an Africa or Balkan account as spare (excluded from plan KPIs). */
+/** Mark/unmark an Africa or Europe account as spare (excluded from plan KPIs). */
 export async function setAdminSocialAccountSpare(
   accountId: number,
   isSpare: boolean
@@ -172,9 +172,9 @@ export async function setAdminSocialAccountSpare(
     if (!existing) return { error: "Account not found." };
 
     const region = existing.region?.trim().toLowerCase() ?? "";
-    if (region !== "africa" && region !== "balkan") {
+    if (region !== "africa" && region !== "europe" && region !== "balkan") {
       return {
-        error: "Spare marking is only available for Africa and Balkan accounts.",
+        error: "Spare marking is only available for Africa and Europe accounts.",
       };
     }
 

@@ -11,7 +11,7 @@ import type {
 const TABS: { region: AdminRegion; slug: AdminRegionSlug; label: string }[] = [
   { region: "Overview", slug: "overview", label: "Overview" },
   { region: "Africa", slug: "africa", label: "Africa" },
-  { region: "Balkan", slug: "balkan", label: "Balkan" },
+  { region: "Europe", slug: "europe", label: "Europe" },
   { region: "Alphaa", slug: "alphaa", label: "ALPHAA" },
 ];
 

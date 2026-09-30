@@ -12,10 +12,10 @@ import { createNotification } from "@/lib/notifications";
 import {
   AFRICA_SEAT_ACCOUNTS,
   AFRICA_X_PER_SEAT,
-  balkanSeatTargetsForIndex,
+  europeSeatTargetsForIndex,
 } from "@/lib/admin-country-targets";
 import { fetchAdminEmployeeEditorBundle } from "@/lib/admin-data";
-import { isBalkanCountry } from "@/lib/region-config";
+import { isEuropeCountry } from "@/lib/region-config";
 import { isSetupCountry, setupRegionForCountry } from "@/lib/setup-options";
 import type {
   AdminEmployeeEditorBundle,
@@ -169,7 +169,7 @@ export async function createEmployee(
       reportingCheck.normalized;
 
     // Default assigned targets for new employees; other roles stay at 0.
-    // Balkan countries use the next planned seat quota (13–15), not Africa's flat 15.
+    // Europe countries use the next planned seat quota (13–15), not Africa's flat 15.
     let defaultTargets = {
       x: 0,
       facebook_personal: 0,
@@ -185,7 +185,7 @@ export async function createEmployee(
         instagram: AFRICA_SEAT_ACCOUNTS.instagram,
         tiktok: AFRICA_SEAT_ACCOUNTS.tiktok,
       };
-      if (isBalkanCountry(primaryCountry)) {
+      if (isEuropeCountry(primaryCountry)) {
         const existing = await client.query<{ count: string }>(
           `SELECT COUNT(*)::text AS count
              FROM temp_users
@@ -195,14 +195,14 @@ export async function createEmployee(
           [primaryCountry]
         );
         const seatIndex = Number(existing.rows[0]?.count ?? 0);
-        const balkanSeat = balkanSeatTargetsForIndex(primaryCountry, seatIndex);
-        if (balkanSeat) {
+        const europeSeat = europeSeatTargetsForIndex(primaryCountry, seatIndex);
+        if (europeSeat) {
           defaultTargets = {
-            x: balkanSeat.x,
-            facebook_personal: balkanSeat.facebookPersonal,
-            facebook_umbrella: balkanSeat.facebookUmbrella,
-            instagram: balkanSeat.instagram,
-            tiktok: balkanSeat.tiktok,
+            x: europeSeat.x,
+            facebook_personal: europeSeat.facebookPersonal,
+            facebook_umbrella: europeSeat.facebookUmbrella,
+            instagram: europeSeat.instagram,
+            tiktok: europeSeat.tiktok,
           };
         }
       }
