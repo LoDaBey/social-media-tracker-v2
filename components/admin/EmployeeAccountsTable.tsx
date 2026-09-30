@@ -7,6 +7,7 @@ export function EmployeeAccountsTable({
   userId,
   fullName,
   accounts,
+  canMarkSpare = false,
   onChanged,
 }: EmployeeAccountsTableProps) {
   return (
@@ -41,6 +42,7 @@ export function EmployeeAccountsTable({
               holderId={userId}
               holderName={fullName}
               account={account}
+              canMarkSpare={canMarkSpare}
               onChanged={onChanged}
             />
           ))}

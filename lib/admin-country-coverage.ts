@@ -417,6 +417,7 @@ export async function fetchAdminCountryCoverage(
             actualByCountry: new Map<string, CountryActuals>(),
             holdersByCountry: new Map<string, HolderActuals[]>(),
             onHoldCount: 0,
+            spareCount: 0,
           }),
       fetchAlphaa
         ? fetchAlphaaCountryActuals(alphaaCountries)
@@ -563,5 +564,6 @@ export async function fetchAdminCountryCoverage(
     rows: coverageRows,
     totals,
     onHoldCount: tempCoverage.onHoldCount,
+    spareCount: tempCoverage.spareCount,
   };
 }

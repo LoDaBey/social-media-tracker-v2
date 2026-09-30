@@ -1,6 +1,9 @@
 import { query } from "@/lib/db";
 import type { Platform } from "@/lib/platform-config";
-import type { AdminSocialAccountListItem } from "@/types/admin";
+import type {
+  AdminSocialAccountListItem,
+  AdminSpareAccountListItem,
+} from "@/types/admin";
 
 type AccountQueryRow = {
   id: number;
@@ -16,6 +19,7 @@ type AccountQueryRow = {
   email_password: string | null;
   mobile_number: string | null;
   status: AdminSocialAccountListItem["status"];
+  is_spare: boolean;
 };
 
 function mapAccount(row: AccountQueryRow): AdminSocialAccountListItem {
@@ -32,6 +36,7 @@ function mapAccount(row: AccountQueryRow): AdminSocialAccountListItem {
     email_password: row.email_password,
     mobile_number: row.mobile_number,
     status: row.status,
+    is_spare: row.is_spare,
   };
 }
 
@@ -51,7 +56,7 @@ export async function fetchAdminAccountsByUserIds(
   const rows = await query<AccountQueryRow>(
     `SELECT id, user_id, platform, account_name, account_handle, account_url,
             category, username, account_email, account_password, email_password,
-            mobile_number, status
+            mobile_number, status, is_spare
        FROM temp_social_media_accounts
       WHERE user_id = ANY($1::int[])
       ORDER BY platform ASC, id ASC`,
@@ -63,4 +68,32 @@ export async function fetchAdminAccountsByUserIds(
     byUser.set(row.user_id, list);
   }
   return byUser;
+}
+
+/** Active spare accounts for Africa and Balkan handlers (admin modal). */
+export async function fetchAdminSpareAccounts(): Promise<
+  AdminSpareAccountListItem[]
+> {
+  return query<AdminSpareAccountListItem>(
+    `SELECT
+        a.id,
+        a.platform,
+        a.username,
+        a.account_name,
+        a.account_url,
+        a.category,
+        a.status,
+        u.id AS handler_id,
+        u.full_name AS handler_name,
+        u.country,
+        u.region
+       FROM temp_social_media_accounts a
+       INNER JOIN temp_users u ON u.id = a.user_id
+      WHERE a.is_spare = TRUE
+        AND a.status = 'active'
+        AND LOWER(u.role) = 'employee'
+        AND u.is_active = TRUE
+        AND LOWER(TRIM(u.region)) IN ('africa', 'balkan')
+      ORDER BY u.region ASC, u.country ASC, u.full_name ASC, a.platform ASC, a.id ASC`
+  );
 }

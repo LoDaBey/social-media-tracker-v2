@@ -62,7 +62,7 @@ export async function fetchTempCountryCoverage(
   const sqlParams = countries === null ? [] : [countries];
   const regionClause = tempRegionClause(options?.regionScope);
 
-  const [countryRows, holderRows, onHoldRow] = await Promise.all([
+  const [countryRows, holderRows, onHoldRow, spareRow] = await Promise.all([
     query<{
       country: string;
       employees: string;
@@ -84,6 +84,7 @@ export async function fetchTempCountryCoverage(
        LEFT JOIN temp_social_media_accounts a
          ON a.user_id = u.id
         AND a.status = 'active'
+        AND a.is_spare = FALSE
       WHERE LOWER(u.role) = 'employee'
         AND u.is_active = TRUE${regionClause}${sqlCountryClause}
       GROUP BY ${TEMP_USER_COUNTRY}`,
@@ -124,6 +125,7 @@ export async function fetchTempCountryCoverage(
        LEFT JOIN temp_social_media_accounts a
          ON a.user_id = u.id
         AND a.status = 'active'
+        AND a.is_spare = FALSE
       WHERE LOWER(u.role) = 'employee'
         AND u.is_active = TRUE${regionClause}${sqlCountryClause}
       GROUP BY u.id, u.full_name, u.email, ${TEMP_USER_COUNTRY},
@@ -143,6 +145,25 @@ export async function fetchTempCountryCoverage(
              FROM temp_users u
             WHERE employment_status = 'on_hold'
               AND LOWER(u.role) = 'employee'${regionClause}
+              AND ${tempUserCountryInList(1)}`,
+      sqlParams
+    ),
+    query<{ spare: string }>(
+      countries === null
+        ? `SELECT COUNT(a.id)::text AS spare
+             FROM temp_social_media_accounts a
+             INNER JOIN temp_users u ON u.id = a.user_id
+            WHERE a.is_spare = TRUE
+              AND a.status = 'active'
+              AND LOWER(u.role) = 'employee'
+              AND u.is_active = TRUE${regionClause}`
+        : `SELECT COUNT(a.id)::text AS spare
+             FROM temp_social_media_accounts a
+             INNER JOIN temp_users u ON u.id = a.user_id
+            WHERE a.is_spare = TRUE
+              AND a.status = 'active'
+              AND LOWER(u.role) = 'employee'
+              AND u.is_active = TRUE${regionClause}
               AND ${tempUserCountryInList(1)}`,
       sqlParams
     ),
@@ -190,5 +211,6 @@ export async function fetchTempCountryCoverage(
     actualByCountry,
     holdersByCountry,
     onHoldCount: Number(onHoldRow[0]?.on_hold ?? 0),
+    spareCount: Number(spareRow[0]?.spare ?? 0),
   };
 }

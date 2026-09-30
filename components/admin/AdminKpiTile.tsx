@@ -1,4 +1,5 @@
 import {
+  Bookmark,
   ClipboardCheck,
   Globe,
   Layers,
@@ -18,6 +19,7 @@ const ICONS: Record<AdminKpiTileProps["icon"], LucideIcon> = {
   globe: Globe,
   layers: Layers,
   pause: PauseCircle,
+  spare: Bookmark,
 };
 
 export function AdminKpiTile({ title, value, icon, subtitle }: AdminKpiTileProps) {

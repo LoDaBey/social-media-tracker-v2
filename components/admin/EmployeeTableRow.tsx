@@ -11,6 +11,7 @@ import { EmployeeCodeButton } from "@/components/admin/EmployeeCodeButton";
 import { EmployeeAccountsPanel } from "@/components/admin/EmployeeAccountsPanel";
 import { AccountTotalsCell } from "@/components/admin/AccountTotalsCell";
 import { EmployeeStatusSelect } from "@/components/admin/EmployeeStatusSelect";
+import { isTempPlanCountry } from "@/lib/region-config";
 import type { EmployeeTableRowProps } from "@/types/admin";
 
 export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
@@ -18,6 +19,10 @@ export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
   const initial = (row.full_name.trim()[0] ?? "?").toUpperCase();
   const canExpand = row.role === "employee";
   const panelId = `employee-accounts-${row.id}`;
+  const canMarkSpare = Boolean(
+    row.country && isTempPlanCountry(row.country)
+  );
+  const planAccounts = row.accounts.filter((account) => !account.is_spare).length;
 
   function toggle() {
     if (!canExpand) return;
@@ -93,7 +98,7 @@ export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
         </td>
         <td className="px-4 py-3">
           <AccountTotalsCell
-            added={row.accounts.length}
+            added={planAccounts}
             assigned={row.target_accounts_sum}
           />
         </td>
@@ -145,6 +150,7 @@ export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
               accounts={row.accounts}
               assignedCount={row.target_accounts_sum}
               canAdd
+              canMarkSpare={canMarkSpare}
               holders={holders}
             />
           </td>
