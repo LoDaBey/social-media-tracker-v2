@@ -63,6 +63,19 @@ const BALKAN_STANDARD_ACCOUNTS = {
   tiktok: 6,
 } as const;
 
+/**
+ * Bosnia (6 seats): 89 total accounts.
+ * Same non-X mix as other 6-seat markets; extra slots are on X (65 vs 54).
+ */
+const BALKAN_BOSNIA_ACCOUNTS = {
+  xPersonal: 59,
+  facebookPersonal: 6,
+  xUmbrella: 6,
+  facebookUmbrella: 6,
+  instagram: 6,
+  tiktok: 6,
+} as const;
+
 function planCountry(
   country: string,
   language: string,
@@ -72,6 +85,7 @@ function planCountry(
     | typeof SUDAN_ACCOUNTS
     | typeof BALKAN_LARGE_ACCOUNTS
     | typeof BALKAN_STANDARD_ACCOUNTS
+    | typeof BALKAN_BOSNIA_ACCOUNTS
 ): AdminCountryPlan {
   return {
     country,
@@ -102,14 +116,14 @@ export const ADMIN_COUNTRY_PLANS: AdminCountryPlan[] = [
   planCountry("Sudan", "Arabic", SUDAN_AFRICA_RESOURCES, SUDAN_ACCOUNTS),
 ];
 
-/** Balkan resource plan — 2×191 + 4×78 = 705 account slots project-wide. */
+/** Balkan resource plan — 2×191 + 3×78 + 89 = 705 account slots project-wide. */
 export const BALKAN_COUNTRY_PLANS: AdminCountryPlan[] = [
   planCountry("Slovakia", "Slovak", 13, BALKAN_LARGE_ACCOUNTS),
   planCountry("Moldova", "Romanian", 13, BALKAN_LARGE_ACCOUNTS),
   planCountry("Slovenia", "Slovenian", 6, BALKAN_STANDARD_ACCOUNTS),
   planCountry("Macedonia", "Macedonian", 6, BALKAN_STANDARD_ACCOUNTS),
   planCountry("Bulgaria", "Bulgarian", 6, BALKAN_STANDARD_ACCOUNTS),
-  planCountry("Bosnia", "Bosnian", 6, BALKAN_STANDARD_ACCOUNTS),
+  planCountry("Bosnia", "Bosnian", 6, BALKAN_BOSNIA_ACCOUNTS),
 ];
 
 export function balkanCountryPlan(country: string): AdminCountryPlan | null {
