@@ -133,7 +133,7 @@ export async function fetchManagerHomeGroups(
     if (!groups.has(country)) continue;
     const holderAccounts = accountsByUser.get(holder.id) ?? [];
     const activeAccounts = holderAccounts.filter(
-      (account) => account.status === "active"
+      (account) => account.status === "active" && !account.is_spare
     );
     const targets = targetsFromCounts(holder);
     const accountsByPlatform = groupAccountsByPlatform(activeAccounts);

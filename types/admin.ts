@@ -212,7 +212,15 @@ export type EmployeeReportingFieldsProps = {
 export type AdminKpiTileProps = {
   title: string;
   value: string;
-  icon: "users" | "clipboard" | "wallet" | "refresh" | "globe" | "layers" | "pause";
+  icon:
+    | "users"
+    | "clipboard"
+    | "wallet"
+    | "refresh"
+    | "globe"
+    | "layers"
+    | "pause"
+    | "spare";
   subtitle?: string;
 };
 
@@ -303,6 +311,8 @@ export type AdminCountryCoverage = {
   rows: AdminCountryCoverageRow[];
   totals: AdminCountryCoverageTotals;
   onHoldCount: number;
+  /** Active Africa/Balkan accounts marked spare (excluded from plan actuals). */
+  spareCount: number;
 };
 
 export type AdminRegion = "Overview" | "Africa" | "Balkan" | "Alphaa";
@@ -532,6 +542,21 @@ export type AdminSocialAccountListItem = {
   email_password: string | null;
   mobile_number: string | null;
   status: "active" | "archived" | "suspended";
+  is_spare: boolean;
+};
+
+export type AdminSpareAccountListItem = {
+  id: number;
+  platform: Platform;
+  username: string | null;
+  account_name: string;
+  account_url: string | null;
+  category: string | null;
+  status: AdminSocialAccountListItem["status"];
+  handler_id: number;
+  handler_name: string;
+  country: string | null;
+  region: string | null;
 };
 
 export type AccountHolderOption = {
@@ -565,6 +590,7 @@ export type EmployeeAccountsPanelProps = {
   accounts: AdminSocialAccountListItem[];
   assignedCount: number;
   canAdd: boolean;
+  canMarkSpare?: boolean;
   holders: BulkImportHolderOption[];
   onChanged?: () => void;
 };
@@ -573,6 +599,7 @@ export type EmployeeAccountsTableProps = {
   userId: number;
   fullName: string;
   accounts: AdminSocialAccountListItem[];
+  canMarkSpare?: boolean;
   onChanged?: () => void;
   readOnly?: boolean;
 };
@@ -581,8 +608,26 @@ export type AccountRowProps = {
   holderId: number;
   holderName: string;
   account: AdminSocialAccountListItem;
+  canMarkSpare?: boolean;
   onChanged?: () => void;
   readOnly?: boolean;
+};
+
+export type AccountSpareToggleButtonProps = {
+  accountId: number;
+  accountName: string;
+  isSpare: boolean;
+  onChanged?: () => void;
+};
+
+export type SpareAccountsModalProps = {
+  open: boolean;
+  onClose: () => void;
+  accounts: AdminSpareAccountListItem[];
+};
+
+export type SpareAccountsButtonProps = {
+  accounts: AdminSpareAccountListItem[];
 };
 
 export type AccountHolderSelectProps = {
@@ -620,6 +665,10 @@ export type AccountDeleteButtonProps = {
   accountId: number;
   accountName: string;
   onDeleted?: () => void;
+};
+
+export type AccountSpareBadgeProps = {
+  isSpare: boolean;
 };
 
 export type AccountCategoryBadgeProps = {

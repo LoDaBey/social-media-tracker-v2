@@ -6,7 +6,7 @@ function remaining(actual: number, target: number) {
 }
 
 export function AdminCoverageKpis({ coverage }: AdminCoverageKpisProps) {
-  const { totals, rows, onHoldCount } = coverage;
+  const { totals, rows, onHoldCount, spareCount } = coverage;
   const countriesOnPlan = rows.filter((row) => row.onPlan).length;
   const countriesFilled = rows.filter(
     (row) =>
@@ -16,7 +16,7 @@ export function AdminCoverageKpis({ coverage }: AdminCoverageKpisProps) {
   ).length;
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-6">
       <AdminKpiTile
         icon="users"
         title="Employees"
@@ -34,6 +34,12 @@ export function AdminCoverageKpis({ coverage }: AdminCoverageKpisProps) {
         title="Still to add"
         value={String(remaining(totals.totalAccounts.actual, totals.totalAccounts.target))}
         subtitle="Account slots left on the plan"
+      />
+      <AdminKpiTile
+        icon="spare"
+        title="Spare"
+        value={String(spareCount)}
+        subtitle="Extra accounts marked spare"
       />
       <AdminKpiTile
         icon="pause"

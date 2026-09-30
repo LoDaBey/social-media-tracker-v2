@@ -1,8 +1,10 @@
+import { fetchAdminSpareAccounts } from "@/lib/admin-accounts-data";
 import { fetchAdminEmployeesList } from "@/lib/admin-data";
 import { EmployeesTable } from "@/components/admin/EmployeesTable";
 import {
   EmployeesBulkImportButton,
 } from "@/components/admin/EmployeesBulkImportButton";
+import { SpareAccountsButton } from "@/components/admin/SpareAccountsButton";
 import { SyncSheetsButton } from "@/components/admin/SyncSheetsButton";
 import {
   EmployeesCreateButton,
@@ -47,13 +49,16 @@ export default async function AdminEmployeesPage({
     ? countryRaw
     : "";
 
-  const rows = await fetchAdminEmployeesList({
-    q,
-    status: status === "all" ? undefined : status,
-    role: role === "all" ? undefined : role,
-    region,
-    country: country || undefined,
-  });
+  const [rows, spareAccounts] = await Promise.all([
+    fetchAdminEmployeesList({
+      q,
+      status: status === "all" ? undefined : status,
+      role: role === "all" ? undefined : role,
+      region,
+      country: country || undefined,
+    }),
+    fetchAdminSpareAccounts(),
+  ]);
   const holders = rows
     .filter((row) => row.role === "employee" && row.is_active)
     .map((row) => ({
@@ -75,6 +80,7 @@ export default async function AdminEmployeesPage({
             hiddenCountry={country || undefined}
           />
           <EmployeesBulkImportButton holders={holders} />
+          <SpareAccountsButton accounts={spareAccounts} />
           <SyncSheetsButton />
           <EmployeesCreateButton />
         </div>

@@ -15,19 +15,23 @@ export function EmployeeAccountsPanel({
   accounts,
   assignedCount,
   canAdd,
+  canMarkSpare = false,
   holders,
   onChanged,
 }: EmployeeAccountsPanelProps) {
   const [addOpen, setAddOpen] = useState(false);
   const total = accounts.length;
+  const spareCount = accounts.filter((account) => account.is_spare).length;
+  const planCount = total - spareCount;
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-[14px] text-[var(--color-muted)]">
           {assignedCount > 0
-            ? `${total} of ${assignedCount} assigned accounts`
+            ? `${planCount} of ${assignedCount} assigned accounts`
             : `${total} ${total === 1 ? "account" : "accounts"}`}
+          {spareCount > 0 ? ` · ${spareCount} spare` : ""}
         </p>
         {canAdd ? (
           <div className="flex flex-wrap items-center gap-2">
@@ -60,6 +64,7 @@ export function EmployeeAccountsPanel({
           userId={userId}
           fullName={fullName}
           accounts={accounts}
+          canMarkSpare={canMarkSpare}
           onChanged={onChanged}
         />
       )}

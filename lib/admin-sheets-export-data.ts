@@ -65,6 +65,7 @@ const SHEETS_EXPORT_QUERY = `
     INNER JOIN temp_users u ON sma.user_id = u.id
     WHERE u.role = 'employee'
       AND u.is_active = TRUE
+      AND sma.is_spare = FALSE
 `;
 
 const SHEETS_EXPORT_ORDER = `

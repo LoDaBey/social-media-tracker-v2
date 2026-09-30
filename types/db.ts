@@ -70,6 +70,7 @@ export type TempSocialMediaAccount = {
   account_scope: AccountScope;
 
   status: "active" | "archived" | "suspended";
+  is_spare: boolean;
 
   created_at: string;
   updated_at: string;

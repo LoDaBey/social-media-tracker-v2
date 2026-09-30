@@ -149,3 +149,43 @@ export async function deleteAdminSocialAccount(
     return { error: publicAdminMutationError(error) };
   }
 }
+
+/** Mark/unmark an Africa or Balkan account as spare (excluded from plan KPIs). */
+export async function setAdminSocialAccountSpare(
+  accountId: number,
+  isSpare: boolean
+): Promise<AdminAccountMutationResult> {
+  try {
+    await requireAdmin();
+    if (!Number.isFinite(accountId)) return { error: "Invalid account." };
+
+    const existing = await queryOne<{
+      user_id: number;
+      region: string | null;
+    }>(
+      `SELECT a.user_id, u.region
+         FROM temp_social_media_accounts a
+         INNER JOIN temp_users u ON u.id = a.user_id
+        WHERE a.id = $1`,
+      [accountId]
+    );
+    if (!existing) return { error: "Account not found." };
+
+    const region = existing.region?.trim().toLowerCase() ?? "";
+    if (region !== "africa" && region !== "balkan") {
+      return {
+        error: "Spare marking is only available for Africa and Balkan accounts.",
+      };
+    }
+
+    await pool.query(
+      `UPDATE temp_social_media_accounts SET is_spare = $2 WHERE id = $1`,
+      [accountId, isSpare]
+    );
+    revalidateAccounts(existing.user_id);
+    revalidatePath("/admin");
+    return {};
+  } catch (error) {
+    return { error: publicAdminMutationError(error) };
+  }
+}
