@@ -12,8 +12,10 @@ import { createNotification } from "@/lib/notifications";
 import {
   AFRICA_SEAT_ACCOUNTS,
   AFRICA_X_PER_SEAT,
+  balkanSeatTargetsForIndex,
 } from "@/lib/admin-country-targets";
 import { fetchAdminEmployeeEditorBundle } from "@/lib/admin-data";
+import { isBalkanCountry } from "@/lib/region-config";
 import { isSetupCountry, setupRegionForCountry } from "@/lib/setup-options";
 import type {
   AdminEmployeeEditorBundle,
@@ -167,22 +169,44 @@ export async function createEmployee(
       reportingCheck.normalized;
 
     // Default assigned targets for new employees; other roles stay at 0.
-    const defaultTargets =
-      role === "employee"
-        ? {
-            x: AFRICA_X_PER_SEAT,
-            facebook_personal: AFRICA_SEAT_ACCOUNTS.facebookPersonal,
-            facebook_umbrella: AFRICA_SEAT_ACCOUNTS.facebookUmbrella,
-            instagram: AFRICA_SEAT_ACCOUNTS.instagram,
-            tiktok: AFRICA_SEAT_ACCOUNTS.tiktok,
-          }
-        : {
-            x: 0,
-            facebook_personal: 0,
-            facebook_umbrella: 0,
-            instagram: 0,
-            tiktok: 0,
+    // Balkan countries use the next planned seat quota (13–15), not Africa's flat 15.
+    let defaultTargets = {
+      x: 0,
+      facebook_personal: 0,
+      facebook_umbrella: 0,
+      instagram: 0,
+      tiktok: 0,
+    };
+    if (role === "employee") {
+      defaultTargets = {
+        x: AFRICA_X_PER_SEAT,
+        facebook_personal: AFRICA_SEAT_ACCOUNTS.facebookPersonal,
+        facebook_umbrella: AFRICA_SEAT_ACCOUNTS.facebookUmbrella,
+        instagram: AFRICA_SEAT_ACCOUNTS.instagram,
+        tiktok: AFRICA_SEAT_ACCOUNTS.tiktok,
+      };
+      if (isBalkanCountry(primaryCountry)) {
+        const existing = await client.query<{ count: string }>(
+          `SELECT COUNT(*)::text AS count
+             FROM temp_users
+            WHERE role = 'employee'
+              AND is_active = TRUE
+              AND country = $1`,
+          [primaryCountry]
+        );
+        const seatIndex = Number(existing.rows[0]?.count ?? 0);
+        const balkanSeat = balkanSeatTargetsForIndex(primaryCountry, seatIndex);
+        if (balkanSeat) {
+          defaultTargets = {
+            x: balkanSeat.x,
+            facebook_personal: balkanSeat.facebookPersonal,
+            facebook_umbrella: balkanSeat.facebookUmbrella,
+            instagram: balkanSeat.instagram,
+            tiktok: balkanSeat.tiktok,
           };
+        }
+      }
+    }
 
     const ins = await client.query<{ id: number }>(
       `INSERT INTO temp_users (

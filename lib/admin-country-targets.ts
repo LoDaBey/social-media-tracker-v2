@@ -37,23 +37,41 @@ const SUDAN_ACCOUNTS = {
   tiktok: 9,
 } as const;
 
-/** Per employee seat: 15 account slots — Balkan platform mix. */
-const BALKAN_SEAT_ACCOUNTS = {
-  xPersonal: 10,
-  facebookPersonal: 1,
-  xUmbrella: 1,
-  facebookUmbrella: 1,
-  instagram: 1,
-  tiktok: 1,
+/**
+ * Balkan large markets (13 seats): 191 total accounts.
+ * Average ~14.7/seat (nine seats at 15, four at 14) via splitCountryPlanSeats.
+ */
+const BALKAN_LARGE_ACCOUNTS = {
+  xPersonal: 126,
+  facebookPersonal: 13,
+  xUmbrella: 13,
+  facebookUmbrella: 13,
+  instagram: 13,
+  tiktok: 13,
 } as const;
 
-const BALKAN_ACCOUNTS_PER_SEAT = 15;
+/**
+ * Balkan standard markets (6 seats): 78 total accounts (13/seat).
+ * X is 9/seat (8 personal + 1 umbrella) instead of the inflated 11/seat mix.
+ */
+const BALKAN_STANDARD_ACCOUNTS = {
+  xPersonal: 48,
+  facebookPersonal: 6,
+  xUmbrella: 6,
+  facebookUmbrella: 6,
+  instagram: 6,
+  tiktok: 6,
+} as const;
 
 function planCountry(
   country: string,
   language: string,
   resources: number,
-  accounts: typeof STANDARD_ACCOUNTS | typeof SUDAN_ACCOUNTS
+  accounts:
+    | typeof STANDARD_ACCOUNTS
+    | typeof SUDAN_ACCOUNTS
+    | typeof BALKAN_LARGE_ACCOUNTS
+    | typeof BALKAN_STANDARD_ACCOUNTS
 ): AdminCountryPlan {
   return {
     country,
@@ -67,25 +85,6 @@ function planCountry(
       accounts.facebookUmbrella +
       accounts.instagram +
       accounts.tiktok,
-  };
-}
-
-function balkanPlanCountry(
-  country: string,
-  language: string,
-  resources: number
-): AdminCountryPlan {
-  return {
-    country,
-    language,
-    resources,
-    xPersonal: BALKAN_SEAT_ACCOUNTS.xPersonal * resources,
-    facebookPersonal: BALKAN_SEAT_ACCOUNTS.facebookPersonal * resources,
-    xUmbrella: BALKAN_SEAT_ACCOUNTS.xUmbrella * resources,
-    facebookUmbrella: BALKAN_SEAT_ACCOUNTS.facebookUmbrella * resources,
-    instagram: BALKAN_SEAT_ACCOUNTS.instagram * resources,
-    tiktok: BALKAN_SEAT_ACCOUNTS.tiktok * resources,
-    totalAccounts: BALKAN_ACCOUNTS_PER_SEAT * resources,
   };
 }
 
@@ -103,15 +102,31 @@ export const ADMIN_COUNTRY_PLANS: AdminCountryPlan[] = [
   planCountry("Sudan", "Arabic", SUDAN_AFRICA_RESOURCES, SUDAN_ACCOUNTS),
 ];
 
-/** Balkan resource plan: 15 account slots per employee seat. */
+/** Balkan resource plan — 2×191 + 4×78 = 705 account slots project-wide. */
 export const BALKAN_COUNTRY_PLANS: AdminCountryPlan[] = [
-  balkanPlanCountry("Slovakia", "Slovak", 13),
-  balkanPlanCountry("Moldova", "Romanian", 13),
-  balkanPlanCountry("Slovenia", "Slovenian", 6),
-  balkanPlanCountry("Macedonia", "Macedonian", 6),
-  balkanPlanCountry("Bulgaria", "Bulgarian", 6),
-  balkanPlanCountry("Bosnia", "Bosnian", 6),
+  planCountry("Slovakia", "Slovak", 13, BALKAN_LARGE_ACCOUNTS),
+  planCountry("Moldova", "Romanian", 13, BALKAN_LARGE_ACCOUNTS),
+  planCountry("Slovenia", "Slovenian", 6, BALKAN_STANDARD_ACCOUNTS),
+  planCountry("Macedonia", "Macedonian", 6, BALKAN_STANDARD_ACCOUNTS),
+  planCountry("Bulgaria", "Bulgarian", 6, BALKAN_STANDARD_ACCOUNTS),
+  planCountry("Bosnia", "Bosnian", 6, BALKAN_STANDARD_ACCOUNTS),
 ];
+
+export function balkanCountryPlan(country: string): AdminCountryPlan | null {
+  return BALKAN_COUNTRY_PLANS.find((plan) => plan.country === country) ?? null;
+}
+
+/** Default account targets for a new employee seat in a planned Balkan country. */
+export function balkanSeatTargetsForIndex(
+  country: string,
+  seatIndex: number
+): AdminCountrySeatQuota | null {
+  const plan = balkanCountryPlan(country);
+  if (!plan) return null;
+  const seats = splitCountryPlanSeats(plan);
+  if (seats.length === 0) return null;
+  return seats[Math.min(Math.max(seatIndex, 0), seats.length - 1)] ?? null;
+}
 
 export function xPlanTarget(plan: Pick<AdminCountryPlan, "xPersonal" | "xUmbrella">) {
   return plan.xPersonal + plan.xUmbrella;
