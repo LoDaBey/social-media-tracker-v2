@@ -113,7 +113,8 @@ export type AdminViewKind =
   | "overview"
   | "employees"
   | "employee_new"
-  | "employee";
+  | "employee"
+  | "extract";
 
 export type AdminEmployeePanel = "profile" | "targets" | "activity";
 
@@ -121,6 +122,7 @@ export type AdminView =
   | { kind: "overview"; title: string }
   | { kind: "employees"; title: string }
   | { kind: "employee_new"; title: string }
+  | { kind: "extract"; title: string }
   | {
       kind: "employee";
       title: string;
@@ -375,7 +377,7 @@ export type AdminCoverageCountCellProps = {
 export type AdminOverviewAction = {
   href: string;
   ariaLabel: string;
-  icon: "userPlus" | "users";
+  icon: "userPlus" | "users" | "extract";
   variant: "primary" | "secondary";
 };
 
@@ -831,4 +833,83 @@ export type SyncSheetsButtonProps = {
   ariaLabel?: string;
   title?: string;
   label?: string;
+};
+
+/** Admin data extract tool — filter temp social accounts and export Excel. */
+export type AdminExtractRegionFilter = "all" | "Africa" | "Europe";
+
+export type AdminExtractSpareFilter = "exclude" | "include" | "only";
+
+export type AdminExtractStatusFilter =
+  | "active"
+  | "all"
+  | "archived"
+  | "suspended";
+
+export type AdminExtractFilters = {
+  region: AdminExtractRegionFilter;
+  countries: string[];
+  platforms: Platform[];
+  scopes: AccountScope[];
+  status: AdminExtractStatusFilter;
+  spare: AdminExtractSpareFilter;
+};
+
+export type AdminExtractRow = {
+  id: number;
+  region: string | null;
+  country: string | null;
+  handler_name: string;
+  platform: Platform;
+  account_scope: AccountScope;
+  username: string | null;
+  account_name: string;
+  account_url: string | null;
+  category: string | null;
+  status: "active" | "archived" | "suspended";
+  is_spare: boolean;
+};
+
+export type AdminExtractBucketCount = {
+  key: string;
+  label: string;
+  count: number;
+};
+
+export type AdminExtractSummary = {
+  total: number;
+  byRegion: AdminExtractBucketCount[];
+  byCountry: AdminExtractBucketCount[];
+  byPlatform: AdminExtractBucketCount[];
+  byScope: AdminExtractBucketCount[];
+};
+
+export type AdminExtractResult = {
+  rows: AdminExtractRow[];
+  summary: AdminExtractSummary;
+};
+
+export type ExtractToolProps = {
+  countries: string[];
+};
+
+export type ExtractFiltersProps = {
+  value: AdminExtractFilters;
+  countries: string[];
+  onChange: (next: AdminExtractFilters) => void;
+  onRun: () => void;
+  pending: boolean;
+};
+
+export type ExtractSummaryProps = {
+  summary: AdminExtractSummary | null;
+};
+
+export type ExtractPreviewTableProps = {
+  rows: AdminExtractRow[];
+};
+
+export type ExtractExportButtonProps = {
+  rows: AdminExtractRow[];
+  disabled?: boolean;
 };
