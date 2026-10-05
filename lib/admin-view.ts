@@ -53,11 +53,16 @@ export function adminViewEmployee(input: {
   };
 }
 
+export function adminViewExtract(): AdminView {
+  return { kind: "extract", title: "Data extract" };
+}
+
 export function adminWorkspaceBackHref(view: AdminView): string | null {
   switch (view.kind) {
     case "overview":
       return null;
     case "employees":
+    case "extract":
       return "/admin";
     case "employee_new":
     case "employee":
