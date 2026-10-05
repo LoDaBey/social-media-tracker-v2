@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { emptyAdminExtractFilters } from "@/lib/admin-extract-filters";
+import { CountryFlag } from "@/lib/country-icons";
 import {
   ALL_SETUP_COUNTRIES,
   EUROPE_SETUP_COUNTRIES,
@@ -43,8 +44,6 @@ export function ExtractFilters({
   value,
   countries,
   onChange,
-  onRun,
-  pending,
 }: ExtractFiltersProps) {
   const countryOptions =
     countries.length > 0 ? countries : countriesForRegion(value.region);
@@ -206,10 +205,15 @@ export function ExtractFilters({
                       countries: toggleValue(value.countries, country),
                     })
                   }
-                  className={`cursor-pointer rounded-lg border px-2.5 py-1 text-[12px] font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] ${
+                  className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[12px] font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] ${
                     active ? chipActive : chipIdle
                   }`}
                 >
+                  <CountryFlag
+                    country={country}
+                    title={country}
+                    className="h-3.5 w-5 shrink-0"
+                  />
                   {country}
                 </button>
               );
@@ -231,24 +235,15 @@ export function ExtractFilters({
       <div className="flex flex-wrap items-center gap-2">
         <motion.button
           type="button"
-          aria-label="Run extract with selected filters"
+          aria-label="Reset extract filters"
           layout
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          disabled={pending}
-          onClick={onRun}
-          className="inline-flex h-11 cursor-pointer items-center justify-center rounded-lg bg-[var(--color-emerald)] px-5 text-[14px] font-bold text-white outline-none hover:bg-[var(--color-emerald-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {pending ? "Loading…" : "Show results"}
-        </motion.button>
-        <button
-          type="button"
-          aria-label="Reset extract filters"
           onClick={() => onChange(emptyAdminExtractFilters())}
           className="inline-flex h-11 cursor-pointer items-center justify-center rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface)] px-4 text-[14px] font-semibold text-[var(--color-ink)] outline-none hover:bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
         >
           Reset
-        </button>
+        </motion.button>
       </div>
     </section>
   );

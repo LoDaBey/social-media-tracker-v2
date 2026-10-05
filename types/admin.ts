@@ -897,8 +897,6 @@ export type ExtractFiltersProps = {
   value: AdminExtractFilters;
   countries: string[];
   onChange: (next: AdminExtractFilters) => void;
-  onRun: () => void;
-  pending: boolean;
 };
 
 export type ExtractSummaryProps = {

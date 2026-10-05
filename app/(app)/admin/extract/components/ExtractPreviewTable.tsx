@@ -18,8 +18,7 @@ export function ExtractPreviewTable({ rows }: ExtractPreviewTableProps) {
         className="rounded-[16px] bg-[var(--color-surface)] p-4 text-[14px] text-[var(--color-muted)] sm:p-5"
         style={{ boxShadow: "0 4px 24px rgba(20,20,20,.06)" }}
       >
-        No accounts match these filters yet. Adjust filters and click Show
-        results.
+        No accounts match these filters.
       </section>
     );
   }

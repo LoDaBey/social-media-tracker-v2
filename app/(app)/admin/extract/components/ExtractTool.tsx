@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { runAdminExtract } from "@/actions/admin-extract";
 import { emptyAdminExtractFilters } from "@/lib/admin-extract-filters";
 import type {
@@ -20,11 +20,16 @@ export function ExtractTool({ countries }: ExtractToolProps) {
   const [result, setResult] = useState<AdminExtractResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const requestIdRef = useRef(0);
 
-  function run() {
+  useEffect(() => {
+    const requestId = ++requestIdRef.current;
     setError(null);
+
     startTransition(async () => {
       const response = await runAdminExtract(filters);
+      if (requestId !== requestIdRef.current) return;
+
       if ("error" in response) {
         setResult(null);
         setError(response.error);
@@ -32,22 +37,20 @@ export function ExtractTool({ countries }: ExtractToolProps) {
       }
       setResult(response);
     });
-  }
+  }, [filters]);
 
   return (
     <div className="flex flex-col gap-4 sm:gap-5">
       <p className="max-w-2xl text-[14px] text-[var(--color-muted)]">
-        Pick region, country, platform, and account type (UMB / PER). Review the
-        totals and preview, then export an Excel sheet of exactly what you
-        filtered.
+        Pick region, country, platform, and account type (UMB / PER). Totals and
+        preview update as you change filters — then export an Excel sheet of
+        exactly what you filtered.
       </p>
 
       <ExtractFilters
         value={filters}
         countries={countries}
         onChange={setFilters}
-        onRun={run}
-        pending={pending}
       />
 
       {error ? (
@@ -59,15 +62,20 @@ export function ExtractTool({ countries }: ExtractToolProps) {
         </p>
       ) : null}
 
-      {result ? (
-        <>
-          <div className="flex flex-wrap items-center gap-2">
-            <ExtractExportButton rows={result.rows} disabled={pending} />
-          </div>
-          <ExtractSummary summary={result.summary} />
-          <ExtractPreviewTable rows={result.rows} />
-        </>
-      ) : null}
+      <div className="flex flex-wrap items-center gap-2">
+        <ExtractExportButton
+          rows={result?.rows ?? []}
+          disabled={pending || !result || result.rows.length === 0}
+        />
+        {pending ? (
+          <span className="text-[13px] font-medium text-[var(--color-muted)]">
+            Updating…
+          </span>
+        ) : null}
+      </div>
+
+      <ExtractSummary summary={result?.summary ?? null} />
+      <ExtractPreviewTable rows={result?.rows ?? []} />
     </div>
   );
 }
