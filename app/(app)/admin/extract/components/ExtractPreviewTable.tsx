@@ -1,4 +1,4 @@
-import { PLATFORM_LABELS } from "@/lib/platform-config";
+import { extractPlatformLabel } from "@/lib/admin-extract-platform";
 import { accountScopeLabel } from "@/lib/account-scope";
 import type { ExtractPreviewTableProps } from "@/types/admin";
 
@@ -60,7 +60,7 @@ export function ExtractPreviewTable({ rows }: ExtractPreviewTableProps) {
           <tbody>
             {preview.map((row) => (
               <tr
-                key={row.id}
+                key={`${row.source}-${row.id}`}
                 className="border-t border-[var(--color-hairline)] text-[var(--color-ink)]"
               >
                 <td className="px-3 py-2 whitespace-nowrap">
@@ -73,7 +73,7 @@ export function ExtractPreviewTable({ rows }: ExtractPreviewTableProps) {
                   {row.handler_name}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap">
-                  {PLATFORM_LABELS[row.platform] ?? row.platform}
+                  {extractPlatformLabel(row.platform)}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap">
                   {accountScopeLabel(row.account_scope)}

@@ -2,7 +2,7 @@
 
 import { auth } from "@/auth";
 import { fetchAdminExtract } from "@/lib/admin-extract-data";
-import { PLATFORMS, type Platform } from "@/lib/platform-config";
+import { isExtractPlatform } from "@/lib/admin-extract-platform";
 import { isSetupCountry } from "@/lib/setup-options";
 import type { AccountScope } from "@/types/db";
 import type {
@@ -25,11 +25,13 @@ function requireAdmin() {
 
 function normalizeFilters(input: AdminExtractFilters): AdminExtractFilters {
   const region: AdminExtractRegionFilter =
-    input.region === "Africa" || input.region === "Europe"
+    input.region === "Africa" ||
+    input.region === "Europe" ||
+    input.region === "Alphaa"
       ? input.region
       : "all";
-  const platforms = (input.platforms ?? []).filter((platform): platform is Platform =>
-    (PLATFORMS as readonly string[]).includes(platform)
+  const platforms = (input.platforms ?? []).filter((platform) =>
+    isExtractPlatform(platform)
   );
   const scopes = (input.scopes ?? []).filter((scope): scope is AccountScope =>
     scope === "personal" || scope === "umbrella"

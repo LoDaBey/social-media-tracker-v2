@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import * as XLSX from "xlsx";
-import { PLATFORM_LABELS } from "@/lib/platform-config";
+import { extractPlatformLabel } from "@/lib/admin-extract-platform";
 import { accountScopeLabel } from "@/lib/account-scope";
 import type { AdminExtractRow, ExtractExportButtonProps } from "@/types/admin";
 
@@ -17,7 +17,7 @@ function rowsToSheetRows(rows: AdminExtractRow[]) {
       Region: region,
       Country: row.country ?? "",
       Handler: row.handler_name,
-      Platform: PLATFORM_LABELS[row.platform] ?? row.platform,
+      Platform: extractPlatformLabel(row.platform),
       "Account type": accountScopeLabel(row.account_scope),
       Account: row.account_name,
       Username: row.username ?? "",
@@ -25,6 +25,7 @@ function rowsToSheetRows(rows: AdminExtractRow[]) {
       Category: row.category ?? "",
       Status: row.status,
       Spare: row.is_spare ? "Yes" : "No",
+      Source: row.source === "alphaa" ? "Alphaa" : "Temp",
     };
   });
 }

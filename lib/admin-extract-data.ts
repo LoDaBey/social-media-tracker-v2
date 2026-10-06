@@ -1,5 +1,6 @@
+import { fetchAlphaaAdminExtract } from "@/lib/admin-extract-alphaa-data";
+import { extractPlatformLabel } from "@/lib/admin-extract-platform";
 import { query } from "@/lib/db";
-import { PLATFORM_LABELS, type Platform } from "@/lib/platform-config";
 import type { AccountScope } from "@/types/db";
 import type {
   AdminExtractBucketCount,
@@ -60,7 +61,7 @@ function buildSummary(rows: AdminExtractRow[]): AdminExtractSummary {
     byPlatform: countBy(
       rows,
       (row) => row.platform,
-      (key) => PLATFORM_LABELS[key as Platform] ?? key
+      (key) => extractPlatformLabel(key)
     ),
     byScope: countBy(
       rows,
@@ -70,10 +71,23 @@ function buildSummary(rows: AdminExtractRow[]): AdminExtractSummary {
   };
 }
 
-/** Query temp social accounts with optional region/country/platform/scope filters. */
-export async function fetchAdminExtract(
+function sortExtractRows(rows: AdminExtractRow[]) {
+  return [...rows].sort((a, b) => {
+    const regionCmp = regionLabel(a.region).localeCompare(regionLabel(b.region));
+    if (regionCmp !== 0) return regionCmp;
+    const countryCmp = (a.country ?? "").localeCompare(b.country ?? "");
+    if (countryCmp !== 0) return countryCmp;
+    const handlerCmp = a.handler_name.localeCompare(b.handler_name);
+    if (handlerCmp !== 0) return handlerCmp;
+    const platformCmp = a.platform.localeCompare(b.platform);
+    if (platformCmp !== 0) return platformCmp;
+    return a.id - b.id;
+  });
+}
+
+async function fetchTempAdminExtract(
   filters: AdminExtractFilters
-): Promise<AdminExtractResult> {
+): Promise<AdminExtractRow[]> {
   const params: unknown[] = [];
   const where: string[] = [
     `LOWER(u.role) = 'employee'`,
@@ -84,10 +98,10 @@ export async function fetchAdminExtract(
     params.push(["Africa"]);
     where.push(`TRIM(u.region) = ANY($${params.length}::text[])`);
   } else if (filters.region === "Europe") {
-    // Europe replaced Balkan in temp tables; include legacy "Balkan" rows.
     params.push(["Europe", "Balkan"]);
     where.push(`TRIM(u.region) = ANY($${params.length}::text[])`);
   } else {
+    // "all" path for temp tables only (Alphaa comes from legacy).
     where.push(
       `LOWER(TRIM(COALESCE(u.region, ''))) IN ('africa', 'europe', 'balkan')`
     );
@@ -98,8 +112,21 @@ export async function fetchAdminExtract(
     where.push(`TRIM(u.country) = ANY($${params.length}::text[])`);
   }
 
-  if (filters.platforms.length > 0) {
-    params.push(filters.platforms);
+  // Alphaa-only extra platforms never exist on temp rows.
+  const tempPlatforms = filters.platforms.filter((platform) =>
+    [
+      "x",
+      "facebook_personal",
+      "facebook_umbrella",
+      "instagram",
+      "tiktok",
+    ].includes(platform)
+  );
+  if (filters.platforms.length > 0 && tempPlatforms.length === 0) {
+    return [];
+  }
+  if (tempPlatforms.length > 0) {
+    params.push(tempPlatforms);
     where.push(`a.platform = ANY($${params.length}::text[])`);
   }
 
@@ -121,7 +148,7 @@ export async function fetchAdminExtract(
     where.push(`a.is_spare = TRUE`);
   }
 
-  const rows = await query<AdminExtractRow>(
+  const rows = await query<Omit<AdminExtractRow, "source">>(
     `SELECT
         a.id,
         u.region,
@@ -146,6 +173,26 @@ export async function fetchAdminExtract(
     params
   );
 
+  return rows.map((row) => ({ ...row, source: "temp" as const }));
+}
+
+/** Query Africa/Europe temp accounts and/or ALPHAA legacy accounts. */
+export async function fetchAdminExtract(
+  filters: AdminExtractFilters
+): Promise<AdminExtractResult> {
+  const includeTemp =
+    filters.region === "all" ||
+    filters.region === "Africa" ||
+    filters.region === "Europe";
+  const includeAlphaa =
+    filters.region === "all" || filters.region === "Alphaa";
+
+  const [tempRows, alphaaRows] = await Promise.all([
+    includeTemp ? fetchTempAdminExtract(filters) : Promise.resolve([]),
+    includeAlphaa ? fetchAlphaaAdminExtract(filters) : Promise.resolve([]),
+  ]);
+
+  const rows = sortExtractRows([...tempRows, ...alphaaRows]);
   if (rows.length === 0) {
     return { rows: [], summary: EMPTY_SUMMARY };
   }
