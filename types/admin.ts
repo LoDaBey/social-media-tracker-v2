@@ -835,8 +835,8 @@ export type SyncSheetsButtonProps = {
   label?: string;
 };
 
-/** Admin data extract tool — filter temp social accounts and export Excel. */
-export type AdminExtractRegionFilter = "all" | "Africa" | "Europe";
+/** Admin data extract tool — filter Africa/Europe temp + ALPHAA legacy accounts. */
+export type AdminExtractRegionFilter = "all" | "Africa" | "Europe" | "Alphaa";
 
 export type AdminExtractSpareFilter = "exclude" | "include" | "only";
 
@@ -849,7 +849,8 @@ export type AdminExtractStatusFilter =
 export type AdminExtractFilters = {
   region: AdminExtractRegionFilter;
   countries: string[];
-  platforms: Platform[];
+  /** Temp Platform keys and/or AlphaaExtraPlatformKey values. */
+  platforms: string[];
   scopes: AccountScope[];
   status: AdminExtractStatusFilter;
   spare: AdminExtractSpareFilter;
@@ -857,10 +858,12 @@ export type AdminExtractFilters = {
 
 export type AdminExtractRow = {
   id: number;
+  source: "temp" | "alphaa";
   region: string | null;
   country: string | null;
   handler_name: string;
-  platform: Platform;
+  /** Normalized platform key (temp Platform or Alphaa extra / raw label). */
+  platform: string;
   account_scope: AccountScope;
   username: string | null;
   account_name: string;

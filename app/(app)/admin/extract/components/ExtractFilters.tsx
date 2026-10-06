@@ -5,12 +5,16 @@ import { emptyAdminExtractFilters } from "@/lib/admin-extract-filters";
 import { CountryFlag } from "@/lib/country-icons";
 import {
   ALL_SETUP_COUNTRIES,
+  ALPHAA_SETUP_COUNTRIES,
   EUROPE_SETUP_COUNTRIES,
   SETUP_COUNTRIES,
 } from "@/lib/setup-options";
-import { PLATFORM_LABELS, PLATFORMS } from "@/lib/platform-config";
+import {
+  EXTRACT_ALPHAA_EXTRA_PLATFORMS,
+  EXTRACT_CORE_PLATFORMS,
+  extractPlatformLabel,
+} from "@/lib/admin-extract-platform";
 import { accountScopeLabel, ACCOUNT_SCOPE_OPTIONS } from "@/lib/account-scope";
-import type { Platform } from "@/lib/platform-config";
 import type { AccountScope } from "@/types/db";
 import type {
   AdminExtractFilters,
@@ -37,6 +41,7 @@ function toggleValue<T extends string>(list: T[], value: T): T[] {
 function countriesForRegion(region: AdminExtractRegionFilter): string[] {
   if (region === "Africa") return [...SETUP_COUNTRIES];
   if (region === "Europe") return [...EUROPE_SETUP_COUNTRIES];
+  if (region === "Alphaa") return [...ALPHAA_SETUP_COUNTRIES];
   return [...ALL_SETUP_COUNTRIES];
 }
 
@@ -46,17 +51,36 @@ export function ExtractFilters({
   onChange,
 }: ExtractFiltersProps) {
   const countryOptions =
-    countries.length > 0 ? countries : countriesForRegion(value.region);
+    countries.length > 0
+      ? countries.filter((country) =>
+          countriesForRegion(value.region).includes(country)
+        )
+      : countriesForRegion(value.region);
+  const showAlphaaPlatforms =
+    value.region === "all" || value.region === "Alphaa";
+  const platformOptions = showAlphaaPlatforms
+    ? [...EXTRACT_CORE_PLATFORMS, ...EXTRACT_ALPHAA_EXTRA_PLATFORMS]
+    : [...EXTRACT_CORE_PLATFORMS];
 
   function patch(partial: Partial<AdminExtractFilters>) {
     onChange({ ...value, ...partial });
   }
 
   function setRegion(region: AdminExtractRegionFilter) {
-    const allowed = new Set(countriesForRegion(region));
+    const allowedCountries = new Set(countriesForRegion(region));
+    const allowedPlatforms = new Set<string>(
+      region === "all" || region === "Alphaa"
+        ? [...EXTRACT_CORE_PLATFORMS, ...EXTRACT_ALPHAA_EXTRA_PLATFORMS]
+        : [...EXTRACT_CORE_PLATFORMS]
+    );
     patch({
       region,
-      countries: value.countries.filter((country) => allowed.has(country)),
+      countries: value.countries.filter((country) =>
+        allowedCountries.has(country)
+      ),
+      platforms: value.platforms.filter((platform) =>
+        allowedPlatforms.has(platform)
+      ),
     });
   }
 
@@ -80,6 +104,7 @@ export function ExtractFilters({
             <option value="all">All regions</option>
             <option value="Africa">Africa</option>
             <option value="Europe">Europe</option>
+            <option value="Alphaa">Alphaa</option>
           </select>
         </label>
 
@@ -127,24 +152,24 @@ export function ExtractFilters({
           </span>
         </legend>
         <div className="flex flex-wrap gap-2">
-          {PLATFORMS.map((platform) => {
+          {platformOptions.map((platform) => {
             const active = value.platforms.includes(platform);
             return (
               <button
                 key={platform}
                 type="button"
-                aria-label={`Toggle ${PLATFORM_LABELS[platform]}`}
+                aria-label={`Toggle ${extractPlatformLabel(platform)}`}
                 aria-pressed={active}
                 onClick={() =>
                   patch({
-                    platforms: toggleValue<Platform>(value.platforms, platform),
+                    platforms: toggleValue(value.platforms, platform),
                   })
                 }
                 className={`cursor-pointer rounded-lg border px-3 py-1.5 text-[13px] font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] ${
                   active ? chipActive : chipIdle
                 }`}
               >
-                {PLATFORM_LABELS[platform]}
+                {extractPlatformLabel(platform)}
               </button>
             );
           })}
