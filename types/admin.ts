@@ -543,6 +543,7 @@ export type AdminSocialAccountListItem = {
   account_password: string | null;
   email_password: string | null;
   mobile_number: string | null;
+  account_scope: AccountScope;
   status: "active" | "archived" | "suspended";
   is_spare: boolean;
 };

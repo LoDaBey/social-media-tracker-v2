@@ -1,5 +1,6 @@
 import { query } from "@/lib/db";
 import type { Platform } from "@/lib/platform-config";
+import type { AccountScope } from "@/types/db";
 import type {
   AdminSocialAccountListItem,
   AdminSpareAccountListItem,
@@ -18,6 +19,7 @@ type AccountQueryRow = {
   account_password: string | null;
   email_password: string | null;
   mobile_number: string | null;
+  account_scope: AccountScope;
   status: AdminSocialAccountListItem["status"];
   is_spare: boolean;
 };
@@ -35,6 +37,7 @@ function mapAccount(row: AccountQueryRow): AdminSocialAccountListItem {
     account_password: row.account_password,
     email_password: row.email_password,
     mobile_number: row.mobile_number,
+    account_scope: row.account_scope,
     status: row.status,
     is_spare: row.is_spare,
   };
@@ -56,7 +59,7 @@ export async function fetchAdminAccountsByUserIds(
   const rows = await query<AccountQueryRow>(
     `SELECT id, user_id, platform, account_name, account_handle, account_url,
             category, username, account_email, account_password, email_password,
-            mobile_number, status, is_spare
+            mobile_number, account_scope, status, is_spare
        FROM temp_social_media_accounts
       WHERE user_id = ANY($1::int[])
       ORDER BY platform ASC, id ASC`,

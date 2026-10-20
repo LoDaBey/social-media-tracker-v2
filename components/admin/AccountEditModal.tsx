@@ -191,8 +191,7 @@ function AccountEditModalDialog({
           <AccountFormFields
             value={value}
             fieldErrors={fieldErrors}
-            platformLocked={mode === "edit" && !save}
-            showAccountScope={Boolean(save)}
+            showAccountScope
             holderOptions={holderOptions}
             onChange={(patch) => setValue((prev) => ({ ...prev, ...patch }))}
           />

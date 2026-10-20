@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { pool, queryOne } from "@/lib/db";
 import { publicAdminMutationError } from "@/lib/admin-action-error";
+import { normalizeSocialAccountInput } from "@/lib/account-scope";
 import {
   uniqueAccountUrlError,
   validateSocialAccountInput,
@@ -38,7 +39,7 @@ export async function createAdminSocialAccount(
     if (!Number.isFinite(userId)) return { error: "Invalid employee." };
     const checked = validateSocialAccountInput(payload);
     if ("error" in checked) return checked;
-    const data = checked.data;
+    const data = normalizeSocialAccountInput(checked.data);
 
     const user = await queryOne<{ id: number }>(
       `SELECT id FROM temp_users WHERE id = $1 AND role = 'employee'`,
@@ -51,8 +52,9 @@ export async function createAdminSocialAccount(
       `INSERT INTO temp_social_media_accounts
         (user_id, platform, account_name, account_handle, account_url,
          starting_followers, current_followers, category, username,
-         account_email, account_password, email_password, mobile_number, status)
-       VALUES ($1, $2, $3, $4, $5, 0, 0, $6, $7, $8, $9, $10, $11, $12)`,
+         account_email, account_password, email_password, mobile_number, status,
+         account_scope)
+       VALUES ($1, $2, $3, $4, $5, 0, 0, $6, $7, $8, $9, $10, $11, $12, $13)`,
       [
         userId,
         data.platform,
@@ -66,6 +68,7 @@ export async function createAdminSocialAccount(
         data.emailPassword,
         data.mobileNumber,
         data.status ?? "active",
+        data.accountScope,
       ]
     );
     revalidateAccounts(userId);
@@ -84,7 +87,7 @@ export async function updateAdminSocialAccount(
     if (!Number.isFinite(accountId)) return { error: "Invalid account." };
     const checked = validateSocialAccountInput(payload);
     if ("error" in checked) return checked;
-    const data = checked.data;
+    const data = normalizeSocialAccountInput(checked.data);
 
     const existing = await queryOne<{ id: number; user_id: number }>(
       `SELECT id, user_id FROM temp_social_media_accounts WHERE id = $1`,
@@ -105,7 +108,8 @@ export async function updateAdminSocialAccount(
               account_password = $9,
               email_password = $10,
               mobile_number = $11,
-              status = $12
+              status = $12,
+              account_scope = $13
         WHERE id = $1`,
       [
         accountId,
@@ -120,6 +124,7 @@ export async function updateAdminSocialAccount(
         data.emailPassword,
         data.mobileNumber,
         data.status ?? "active",
+        data.accountScope,
       ]
     );
     revalidateAccounts(existing.user_id);
