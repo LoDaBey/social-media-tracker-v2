@@ -1,13 +1,17 @@
 "use client";
 
 import { SETUP_CATEGORIES } from "@/lib/setup-options";
-import { PLATFORMS, PLATFORM_LABELS } from "@/lib/platform-config";
+import { PLATFORMS, PLATFORM_LABELS, type Platform } from "@/lib/platform-config";
 import { platformUrlPlaceholder } from "@/lib/setup-schema";
 import { SetupSelect } from "@/components/setup/SetupSelect";
 import { SetupTextField } from "@/components/setup/SetupTextField";
 import { AccountHolderSelect } from "@/components/admin/AccountHolderSelect";
 import { AccountScopeSelect } from "@/components/admin/AccountScopeSelect";
-import { resolveAccountScope } from "@/lib/account-scope";
+import {
+  accountScopeForPlatform,
+  applyAccountScopeToPlatform,
+  resolveAccountScope,
+} from "@/lib/account-scope";
 import type { AccountFormFieldsProps } from "@/types/admin";
 
 const fieldClass =
@@ -32,11 +36,13 @@ export function AccountFormFields({
           disabled={platformLocked}
           aria-label="Account platform"
           aria-invalid={Boolean(fieldErrors.platform)}
-          onChange={(e) =>
+          onChange={(e) => {
+            const platform = e.target.value as Platform;
             onChange({
-              platform: e.target.value as AccountFormFieldsProps["value"]["platform"],
-            })
-          }
+              platform,
+              accountScope: accountScopeForPlatform(platform, value.accountScope),
+            });
+          }}
           className={`cursor-pointer ${fieldClass}`}
         >
           {PLATFORMS.map((platform) => (
@@ -49,7 +55,12 @@ export function AccountFormFields({
       {showAccountScope ? (
         <AccountScopeSelect
           value={accountScope}
-          onChange={(accountScope) => onChange({ accountScope })}
+          onChange={(accountScope) =>
+            onChange({
+              accountScope,
+              platform: applyAccountScopeToPlatform(value.platform, accountScope),
+            })
+          }
         />
       ) : null}
       <label className="flex min-w-0 flex-col gap-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-muted)]">

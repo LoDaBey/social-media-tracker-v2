@@ -17,6 +17,16 @@ export function resolveAccountScope(
   return platform === "facebook_umbrella" ? "umbrella" : "personal";
 }
 
+/** Facebook platforms own the Personal/Umbrella type; other platforms keep the current flag. */
+export function accountScopeForPlatform(
+  platform: Platform,
+  currentScope?: AccountScope | null
+): AccountScope {
+  if (platform === "facebook_umbrella") return "umbrella";
+  if (platform === "facebook_personal") return "personal";
+  return resolveAccountScope(platform, currentScope);
+}
+
 export function applyAccountScopeToPlatform(
   platform: Platform,
   accountScope: AccountScope
@@ -30,7 +40,7 @@ export function applyAccountScopeToPlatform(
 export function normalizeSocialAccountInput<
   T extends { platform: Platform; accountScope?: AccountScope },
 >(input: T): T & { accountScope: AccountScope; platform: Platform } {
-  const accountScope = resolveAccountScope(input.platform, input.accountScope);
+  const accountScope = accountScopeForPlatform(input.platform, input.accountScope);
   return {
     ...input,
     accountScope,
