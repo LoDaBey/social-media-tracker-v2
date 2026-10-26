@@ -1,5 +1,8 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { CountryFlag } from "@/lib/country-icons";
+import { useEmployeeReporting } from "@/hooks/useEmployeeReporting";
 import type { BulkImportSelectedEmployeeProps } from "@/types/admin";
 
 function Value({ label, children }: { label: string; children: ReactNode }) {
@@ -18,6 +21,10 @@ function Value({ label, children }: { label: string; children: ReactNode }) {
 export function BulkImportSelectedEmployee({
   holder,
 }: BulkImportSelectedEmployeeProps) {
+  const { reporting, loading } = useEmployeeReporting(holder.source, holder.id);
+  const teamLeadName = reporting?.teamLeadName ?? holder.team_lead_name;
+  const managerName = reporting?.managerName ?? holder.manager_name;
+
   return (
     <div className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-cream-tint)] px-3 py-3">
       <p className="text-[12px] font-semibold text-[var(--color-ink)]">
@@ -44,8 +51,12 @@ export function BulkImportSelectedEmployee({
           )}
         </Value>
         <Value label="Language">{holder.language || "—"}</Value>
-        <Value label="Team lead">{holder.team_lead_name || "—"}</Value>
-        <Value label="Manager">{holder.manager_name || "—"}</Value>
+        <Value label="Team lead">
+          {loading ? "Loading…" : teamLeadName || "—"}
+        </Value>
+        <Value label="Manager">
+          {loading ? "Loading…" : managerName || "—"}
+        </Value>
       </div>
     </div>
   );

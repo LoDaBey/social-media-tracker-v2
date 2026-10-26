@@ -1,14 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { emptyAdminExtractFilters } from "@/lib/admin-extract-filters";
-import { CountryFlag } from "@/lib/country-icons";
 import {
-  ALL_SETUP_COUNTRIES,
-  ALPHAA_SETUP_COUNTRIES,
-  EUROPE_SETUP_COUNTRIES,
-  SETUP_COUNTRIES,
-} from "@/lib/setup-options";
+  emptyAdminExtractFilters,
+  extractCountryOptions,
+} from "@/lib/admin-extract-filters";
+import { CountryFlag } from "@/lib/country-icons";
+import { baseCountryFromDisplay } from "@/lib/overview-country-display";
 import {
   EXTRACT_ALPHAA_EXTRA_PLATFORMS,
   EXTRACT_CORE_PLATFORMS,
@@ -38,24 +36,16 @@ function toggleValue<T extends string>(list: T[], value: T): T[] {
     : [...list, value];
 }
 
-function countriesForRegion(region: AdminExtractRegionFilter): string[] {
-  if (region === "Africa") return [...SETUP_COUNTRIES];
-  if (region === "Europe") return [...EUROPE_SETUP_COUNTRIES];
-  if (region === "Alphaa") return [...ALPHAA_SETUP_COUNTRIES];
-  return [...ALL_SETUP_COUNTRIES];
-}
-
 export function ExtractFilters({
   value,
   countries,
   onChange,
 }: ExtractFiltersProps) {
-  const countryOptions =
-    countries.length > 0
-      ? countries.filter((country) =>
-          countriesForRegion(value.region).includes(country)
-        )
-      : countriesForRegion(value.region);
+  const countryOptions = extractCountryOptions(value.region).filter(
+    (country) =>
+      countries.length === 0 ||
+      countries.includes(baseCountryFromDisplay(country))
+  );
   const showAlphaaPlatforms =
     value.region === "all" || value.region === "Alphaa";
   const platformOptions = showAlphaaPlatforms
@@ -67,7 +57,7 @@ export function ExtractFilters({
   }
 
   function setRegion(region: AdminExtractRegionFilter) {
-    const allowedCountries = new Set(countriesForRegion(region));
+    const allowedCountries = new Set(extractCountryOptions(region));
     const allowedPlatforms = new Set<string>(
       region === "all" || region === "Alphaa"
         ? [...EXTRACT_CORE_PLATFORMS, ...EXTRACT_ALPHAA_EXTRA_PLATFORMS]
@@ -215,6 +205,11 @@ export function ExtractFilters({
             (empty = all in region)
           </span>
         </legend>
+        {value.region === "all" ? (
+          <p className="text-[12px] text-[var(--color-muted)]">
+            Sudan is listed twice: Africa (temp) and ALPHAA (legacy).
+          </p>
+        ) : null}
         <div className="max-h-40 overflow-y-auto rounded-lg border border-[var(--color-hairline)] p-2">
           <div className="flex flex-wrap gap-2">
             {countryOptions.map((country) => {

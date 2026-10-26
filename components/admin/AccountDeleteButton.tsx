@@ -13,6 +13,7 @@ export function AccountDeleteButton({
   accountId,
   accountName,
   onDeleted,
+  source = "temp",
 }: AccountDeleteButtonProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -20,7 +21,7 @@ export function AccountDeleteButton({
 
   function confirm() {
     startTransition(async () => {
-      const result = await deleteAdminSocialAccount(accountId);
+      const result = await deleteAdminSocialAccount(accountId, source);
       if (result.error) {
         toast.error(result.error);
         return;

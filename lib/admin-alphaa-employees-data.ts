@@ -34,6 +34,7 @@ type AlphaaAccountQueryRow = {
   acc_username: string | null;
   acc_url: string | null;
   acc_email: string | null;
+  acc_password_hash: string | null;
   acc_mobile: string | null;
   direction: string | null;
   acc_state: string | null;
@@ -42,7 +43,7 @@ type AlphaaAccountQueryRow = {
   language1: string | null;
 };
 
-function mapAlphaaRole(role: string): Role {
+export function mapAlphaaRole(role: string): Role {
   const value = role.trim().toLowerCase();
   if (value === "team leader" || value === "team_lead") return "team_lead";
   if (value === "manager") return "manager";
@@ -83,7 +84,7 @@ function mapAlphaaAccount(row: AlphaaAccountQueryRow): AdminSocialAccountListIte
     category: row.direction,
     username: row.acc_username,
     account_email: row.acc_email,
-    account_password: null,
+    account_password: row.acc_password_hash,
     email_password: null,
     mobile_number: row.acc_mobile,
     account_scope: mapAlphaaScope(row.personal, row.umberlla),
@@ -100,7 +101,7 @@ async function fetchAlphaaAccountsByUserIds(
 
   const rows = await query<AlphaaAccountQueryRow>(
     `SELECT id, user_id, platform, personal, umberlla, acc_name, acc_username,
-            acc_url, acc_email, acc_mobile, direction,
+            acc_url, acc_email, acc_password_hash, acc_mobile, direction,
             acc_state, spare_acc, country, language1
        FROM social_media_accounts
       WHERE user_id = ANY($1::int[])
@@ -192,10 +193,10 @@ export async function fetchAlphaaEmployeesList(
          )
     )`;
   if (status === "active") {
-    where.push(`(COALESCE(u.is_active, FALSE) = TRUE OR ${hasLiveAccountSql})`);
+    where.push(`(COALESCE(u.is_active, TRUE) = TRUE OR ${hasLiveAccountSql})`);
   }
   if (status === "inactive") {
-    where.push(`(COALESCE(u.is_active, FALSE) = FALSE AND NOT ${hasLiveAccountSql})`);
+    where.push(`(COALESCE(u.is_active, TRUE) = FALSE AND NOT ${hasLiveAccountSql})`);
   }
 
   const rows = await query<AlphaaUserQueryRow>(
@@ -204,7 +205,7 @@ export async function fetchAlphaaEmployeesList(
         COALESCE(NULLIF(TRIM(u.username), ''), 'Handler ' || u.id::text) AS full_name,
         COALESCE(NULLIF(TRIM(u.email), ''), '') AS email,
         COALESCE(u.role, 'Handler') AS role,
-        COALESCE(u.is_active, FALSE) AS is_active,
+        COALESCE(u.is_active, TRUE) AS is_active,
         NULLIF(INITCAP(TRIM(COALESCE(u.country, ''))), '') AS country,
         (
           SELECT INITCAP(TRIM(sma.language1))
@@ -344,7 +345,7 @@ export async function fetchAlphaaEmployeeById(
     country: countries[0] ?? null,
     countries,
     language: languageRow?.language ?? null,
-    isActive: Boolean(user.is_active) || hasLiveAccount,
+    isActive: user.is_active !== false || hasLiveAccount,
     department: user.department,
     location: user.location,
     projects: Array.isArray(user.projects)

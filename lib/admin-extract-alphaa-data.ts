@@ -9,6 +9,7 @@ import {
 } from "@/lib/alphaa-platform-sql";
 import { ALPHAA_EXTRA_PLATFORM_KEYS } from "@/lib/alphaa-coverage-platforms";
 import { query } from "@/lib/db";
+import { overviewDisplayCountry } from "@/lib/overview-country-display";
 import type {
   AdminExtractFilters,
   AdminExtractRow,
@@ -144,7 +145,9 @@ function mapAlphaaRow(row: AlphaaExtractQueryRow): AdminExtractRow {
     id: row.id,
     source: "alphaa",
     region: "Alphaa",
-    country: row.country?.trim() || null,
+    country: row.country?.trim()
+      ? overviewDisplayCountry(row.country.trim(), "Alphaa")
+      : null,
     handler_name: row.handler_name?.trim() || `Handler ${row.id}`,
     platform: normalizeAlphaaPlatformKey(row.platform, row.umberlla),
     account_scope: mapAlphaaScope(row.personal, row.umberlla),

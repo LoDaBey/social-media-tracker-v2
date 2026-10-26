@@ -12,6 +12,8 @@ export type AdminEmployeeListFilters = {
   teamLeadId?: number | null;
 };
 
+export type AdminEmployeeSource = "temp" | "alphaa";
+
 export type AdminEmployeeListRow = {
   id: number;
   /** temp = Africa/Europe roster; alphaa = legacy users + social_media_accounts. */
@@ -170,6 +172,35 @@ export type AlphaaEmployeeProfile = {
 
 export type AlphaaEmployeeProfileProps = {
   profile: AlphaaEmployeeProfile;
+};
+
+export type AlphaaEmployeeFormInitial = {
+  id: number;
+  fullName: string;
+  email: string;
+  phone: string;
+  roleLabel: string;
+  country: string;
+  department: string;
+  location: string;
+  projects: string[];
+  isActive: boolean;
+};
+
+export type UpdateAlphaaEmployeePayload = {
+  fullName: string;
+  email: string;
+  phone: string | null;
+  roleLabel: string;
+  country: string;
+  department: string | null;
+  location: string | null;
+  projects: string[];
+  isActive: boolean;
+};
+
+export type AlphaaEmployeeFormProps = {
+  initial: AlphaaEmployeeFormInitial;
 };
 
 export type AdminWorkspaceProps = {
@@ -523,6 +554,14 @@ export type EmployeeStatusSelectProps = {
   userId: number;
   fullName: string;
   status: EmploymentStatus;
+  source?: AdminEmployeeSource;
+};
+
+export type EmployeeActiveToggleProps = {
+  userId: number;
+  fullName: string;
+  isActive: boolean;
+  source?: AdminEmployeeSource;
 };
 
 export type EmployeeStatusBadgeProps = {
@@ -574,6 +613,7 @@ export type EmployeeEditModalTabsProps = {
 export type EmployeeDeleteButtonProps = {
   userId: number;
   fullName: string;
+  source?: AdminEmployeeSource;
 };
 
 export type AdminEmployeeActivityListProps = {
@@ -647,7 +687,7 @@ export type EmployeeAccountsPanelProps = {
   canMarkSpare?: boolean;
   readOnly?: boolean;
   holders: BulkImportHolderOption[];
-  holderSource?: "temp" | "alphaa";
+  holderSource?: AdminEmployeeSource;
   onChanged?: () => void;
 };
 
@@ -658,6 +698,7 @@ export type EmployeeAccountsTableProps = {
   canMarkSpare?: boolean;
   onChanged?: () => void;
   readOnly?: boolean;
+  source?: AdminEmployeeSource;
 };
 
 export type AccountRowProps = {
@@ -667,6 +708,7 @@ export type AccountRowProps = {
   canMarkSpare?: boolean;
   onChanged?: () => void;
   readOnly?: boolean;
+  source?: AdminEmployeeSource;
 };
 
 export type AccountSpareToggleButtonProps = {
@@ -674,6 +716,7 @@ export type AccountSpareToggleButtonProps = {
   accountName: string;
   isSpare: boolean;
   onChanged?: () => void;
+  source?: AdminEmployeeSource;
 };
 
 export type SpareAccountsModalProps = {
@@ -698,6 +741,7 @@ export type AccountFormFieldsProps = {
   fieldErrors: Partial<Record<keyof AdminSocialAccountInput, string>>;
   platformLocked?: boolean;
   showAccountScope?: boolean;
+  hideEmailPassword?: boolean;
   holderOptions?: AccountHolderOption[];
   onChange: (patch: Partial<AdminSocialAccountInput>) => void;
 };
@@ -710,6 +754,7 @@ export type AccountEditModalProps = {
   initial: AdminSocialAccountInput;
   accountId?: number;
   holderOptions?: AccountHolderOption[];
+  source?: AdminEmployeeSource;
   onClose: () => void;
   onSaved?: () => void;
   save?: (
@@ -721,6 +766,7 @@ export type AccountDeleteButtonProps = {
   accountId: number;
   accountName: string;
   onDeleted?: () => void;
+  source?: AdminEmployeeSource;
 };
 
 export type AccountSpareBadgeProps = {
@@ -752,6 +798,20 @@ export type BulkImportHolderOption = {
 
 export type BulkImportSelectedEmployeeProps = {
   holder: BulkImportHolderOption;
+};
+
+export type EmployeeReporting = {
+  teamLeadName: string | null;
+  managerName: string | null;
+};
+
+export type EmployeeReportingResponse =
+  | { ok: true; reporting: EmployeeReporting }
+  | { ok: false; error: string };
+
+export type UseEmployeeReportingResult = {
+  reporting: EmployeeReporting | null;
+  loading: boolean;
 };
 
 export type BulkImportAccountDraft = {

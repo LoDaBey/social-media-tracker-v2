@@ -25,6 +25,7 @@ export function AccountEditModal({
   initial,
   accountId,
   holderOptions,
+  source = "temp",
   onClose,
   onSaved,
   save,
@@ -39,6 +40,7 @@ export function AccountEditModal({
           initial={initial}
           accountId={accountId}
           holderOptions={holderOptions}
+          source={source}
           onClose={onClose}
           onSaved={onSaved}
           save={save}
@@ -55,6 +57,7 @@ function AccountEditModalDialog({
   initial,
   accountId,
   holderOptions,
+  source = "temp",
   onClose,
   onSaved,
   save,
@@ -91,7 +94,10 @@ function AccountEditModalDialog({
       username: value.username,
       email: value.email,
       accountPassword: value.accountPassword,
-      emailPassword: value.emailPassword,
+      emailPassword:
+        source === "alphaa"
+          ? value.emailPassword || value.accountPassword || "n/a"
+          : value.emailPassword,
       mobileNumber: value.mobileNumber,
     });
     if (!parsed.success) {
@@ -112,8 +118,8 @@ function AccountEditModalDialog({
       const result = save
         ? await save(value)
         : mode === "create"
-          ? await createAdminSocialAccount(holderId, value)
-          : await updateAdminSocialAccount(accountId!, value);
+          ? await createAdminSocialAccount(holderId, value, source)
+          : await updateAdminSocialAccount(accountId!, value, source);
       if (result.error) {
         setError(result.error);
         toast.error(result.error);
@@ -192,6 +198,7 @@ function AccountEditModalDialog({
             value={value}
             fieldErrors={fieldErrors}
             showAccountScope
+            hideEmailPassword={source === "alphaa"}
             holderOptions={holderOptions}
             onChange={(patch) => setValue((prev) => ({ ...prev, ...patch }))}
           />

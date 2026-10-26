@@ -5,14 +5,15 @@ import type { KeyboardEvent, MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { setEmployeeActive } from "@/actions/admin";
+import { setAlphaaEmployeeActive } from "@/actions/admin-alphaa";
+import type { EmployeeActiveToggleProps } from "@/types/admin";
 
-type Props = {
-  userId: number;
-  fullName: string;
-  isActive: boolean;
-};
-
-export function EmployeeActiveToggle({ userId, fullName, isActive }: Props) {
+export function EmployeeActiveToggle({
+  userId,
+  fullName,
+  isActive,
+  source = "temp",
+}: EmployeeActiveToggleProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -21,7 +22,11 @@ export function EmployeeActiveToggle({ userId, fullName, isActive }: Props) {
     event.stopPropagation();
     startTransition(async () => {
       try {
-        await setEmployeeActive(userId, !isActive);
+        if (source === "alphaa") {
+          await setAlphaaEmployeeActive(userId, !isActive);
+        } else {
+          await setEmployeeActive(userId, !isActive);
+        }
         toast.success(
           !isActive
             ? `${fullName} can now access the dashboard.`
