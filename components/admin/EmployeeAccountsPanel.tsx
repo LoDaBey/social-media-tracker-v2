@@ -75,6 +75,7 @@ export function EmployeeAccountsPanel({
           canMarkSpare={canMarkSpare}
           onChanged={onChanged}
           readOnly={readOnly}
+          source={holderSource}
         />
       )}
 
@@ -84,6 +85,7 @@ export function EmployeeAccountsPanel({
         holderId={userId}
         holderName={fullName}
         initial={emptyAdminSocialAccountInput(fullName)}
+        source={holderSource}
         onClose={() => setAddOpen(false)}
         onSaved={onChanged}
       />

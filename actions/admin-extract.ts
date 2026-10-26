@@ -3,7 +3,7 @@
 import { auth } from "@/auth";
 import { fetchAdminExtract } from "@/lib/admin-extract-data";
 import { isExtractPlatform } from "@/lib/admin-extract-platform";
-import { isSetupCountry } from "@/lib/setup-options";
+import { isExtractCountryFilter } from "@/lib/admin-extract-filters";
 import type { AccountScope } from "@/types/db";
 import type {
   AdminExtractFilters,
@@ -37,7 +37,7 @@ function normalizeFilters(input: AdminExtractFilters): AdminExtractFilters {
     scope === "personal" || scope === "umbrella"
   );
   const countries = (input.countries ?? []).filter((country) =>
-    isSetupCountry(country)
+    isExtractCountryFilter(country)
   );
   const status: AdminExtractStatusFilter =
     input.status === "all" ||

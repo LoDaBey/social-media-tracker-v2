@@ -1,5 +1,7 @@
 import { fetchAlphaaAdminExtract } from "@/lib/admin-extract-alphaa-data";
+import { countriesForExtractSource } from "@/lib/admin-extract-filters";
 import { extractPlatformLabel } from "@/lib/admin-extract-platform";
+import { overviewDisplayCountry } from "@/lib/overview-country-display";
 import { query } from "@/lib/db";
 import type { AccountScope } from "@/types/db";
 import type {
@@ -173,7 +175,13 @@ async function fetchTempAdminExtract(
     params
   );
 
-  return rows.map((row) => ({ ...row, source: "temp" as const }));
+  return rows.map((row) => ({
+    ...row,
+    source: "temp" as const,
+    country: row.country
+      ? overviewDisplayCountry(row.country, "Africa")
+      : row.country,
+  }));
 }
 
 /** Query Africa/Europe temp accounts and/or ALPHAA legacy accounts. */
@@ -186,10 +194,25 @@ export async function fetchAdminExtract(
     filters.region === "Europe";
   const includeAlphaa =
     filters.region === "all" || filters.region === "Alphaa";
+  const tempCountries = countriesForExtractSource(filters.countries, "temp");
+  const alphaaCountries = countriesForExtractSource(
+    filters.countries,
+    "alphaa"
+  );
 
   const [tempRows, alphaaRows] = await Promise.all([
-    includeTemp ? fetchTempAdminExtract(filters) : Promise.resolve([]),
-    includeAlphaa ? fetchAlphaaAdminExtract(filters) : Promise.resolve([]),
+    includeTemp && !tempCountries.skip
+      ? fetchTempAdminExtract({
+          ...filters,
+          countries: tempCountries.countries,
+        })
+      : Promise.resolve([]),
+    includeAlphaa && !alphaaCountries.skip
+      ? fetchAlphaaAdminExtract({
+          ...filters,
+          countries: alphaaCountries.countries,
+        })
+      : Promise.resolve([]),
   ]);
 
   const rows = sortExtractRows([...tempRows, ...alphaaRows]);

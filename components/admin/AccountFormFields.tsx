@@ -22,6 +22,7 @@ export function AccountFormFields({
   fieldErrors,
   platformLocked = false,
   showAccountScope = false,
+  hideEmailPassword = false,
   holderOptions,
   onChange,
 }: AccountFormFieldsProps) {
@@ -153,15 +154,17 @@ export function AccountFormFields({
         ariaInvalid={Boolean(fieldErrors.accountPassword)}
         onChange={(accountPassword) => onChange({ accountPassword })}
       />
-      <SetupTextField
-        label="Email password"
-        value={value.emailPassword}
-        ariaLabel="Email password"
-        autoComplete="off"
-        error={fieldErrors.emailPassword}
-        ariaInvalid={Boolean(fieldErrors.emailPassword)}
-        onChange={(emailPassword) => onChange({ emailPassword })}
-      />
+      {hideEmailPassword ? null : (
+        <SetupTextField
+          label="Email password"
+          value={value.emailPassword}
+          ariaLabel="Email password"
+          autoComplete="off"
+          error={fieldErrors.emailPassword}
+          ariaInvalid={Boolean(fieldErrors.emailPassword)}
+          onChange={(emailPassword) => onChange({ emailPassword })}
+        />
+      )}
     </div>
   );
 }

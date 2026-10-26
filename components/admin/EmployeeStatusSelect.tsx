@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { setEmployeeEmploymentStatus } from "@/actions/admin";
+import { setAlphaaEmployeeEmploymentStatus } from "@/actions/admin-alphaa";
 import {
   EMPLOYMENT_STATUSES,
   EMPLOYMENT_STATUS_LABELS,
@@ -23,6 +24,7 @@ export function EmployeeStatusSelect({
   userId,
   fullName,
   status,
+  source = "temp",
 }: EmployeeStatusSelectProps) {
   const router = useRouter();
   const [value, setValue] = useState(status);
@@ -38,7 +40,11 @@ export function EmployeeStatusSelect({
     setValue(next);
     startTransition(async () => {
       try {
-        await setEmployeeEmploymentStatus(userId, next);
+        if (source === "alphaa") {
+          await setAlphaaEmployeeEmploymentStatus(userId, next);
+        } else {
+          await setEmployeeEmploymentStatus(userId, next);
+        }
         toast.success(
           `${fullName} status updated to ${EMPLOYMENT_STATUS_LABELS[next]}.`
         );
@@ -61,7 +67,10 @@ export function EmployeeStatusSelect({
       onChange={(e) => handleChange(e.target.value as EmploymentStatus)}
       className={`min-w-[120px] cursor-pointer rounded-lg border px-2.5 py-1.5 text-[12px] font-semibold outline-none transition-opacity disabled:cursor-not-allowed disabled:opacity-60 ${toneClass[value]}`}
     >
-      {EMPLOYMENT_STATUSES.map((option) => (
+      {(source === "alphaa"
+        ? (["active", "deactivated"] as const)
+        : EMPLOYMENT_STATUSES
+      ).map((option) => (
         <option key={option} value={option}>
           {EMPLOYMENT_STATUS_LABELS[option]}
         </option>

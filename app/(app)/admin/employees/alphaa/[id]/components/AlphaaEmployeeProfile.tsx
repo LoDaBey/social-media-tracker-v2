@@ -1,86 +1,78 @@
-import type { ReactNode } from "react";
-import { EmployeeAccountsTable } from "@/components/admin/EmployeeAccountsTable";
-import { EmployeeCountryCell } from "@/components/admin/EmployeeCountryCell";
-import { EmployeeStatusBadge } from "@/components/admin/EmployeeStatusBadge";
-import { adminRoleBadge } from "@/lib/admin-view";
+import { EmployeeAccountsPanel } from "@/components/admin/EmployeeAccountsPanel";
+import { baseCountryFromDisplay } from "@/lib/overview-country-display";
+import { ALPHAA_SETUP_COUNTRIES } from "@/lib/setup-options";
+import { AlphaaEmployeeForm } from "./AlphaaEmployeeForm";
 import type { AlphaaEmployeeProfileProps } from "@/types/admin";
 
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: ReactNode;
-}) {
+function canonicalAlphaaCountry(value: string) {
+  const base = baseCountryFromDisplay(value);
   return (
-    <div className="flex flex-col gap-1">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-        {label}
-      </p>
-      <div className="text-[14px] font-medium text-[var(--color-ink)]">{children}</div>
-    </div>
+    ALPHAA_SETUP_COUNTRIES.find(
+      (country) => country.toLowerCase() === base.toLowerCase()
+    ) ?? base
   );
 }
 
 export function AlphaaEmployeeProfile({ profile }: AlphaaEmployeeProfileProps) {
-  const planCount = profile.accounts.filter((account) => !account.is_spare).length;
+  const country = canonicalAlphaaCountry(
+    profile.countries[0] ?? profile.country ?? ""
+  );
+  const holders = [
+    {
+      id: profile.id,
+      source: "alphaa" as const,
+      full_name: profile.fullName,
+      country: country || null,
+      language: profile.language,
+      team_lead_name: null,
+      manager_name: null,
+    },
+  ];
+  const planCount = profile.accounts.filter((account) => !account.is_spare)
+    .length;
 
   return (
     <div className="flex flex-col gap-5">
-      <section className="rounded-[16px] border border-[var(--color-hairline)] bg-[var(--color-surface)] p-5">
-        <p className="text-[13px] font-semibold text-[var(--color-ink)]">
-          ALPHAA profile
-        </p>
-        <p className="mt-1 text-[13px] text-[var(--color-muted)]">
-          Read-only record from the ALPHAA users table.
-        </p>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Field label="Name">{profile.fullName}</Field>
-          <Field label="Email">{profile.email || "—"}</Field>
-          <Field label="Role">
-            {profile.roleLabel} · {adminRoleBadge(profile.mappedRole)}
-          </Field>
-          <Field label="Phone">{profile.phone || "—"}</Field>
-          <Field label="Language">{profile.language || "—"}</Field>
-          <Field label="Status">
-            <EmployeeStatusBadge
-              status={profile.isActive ? "active" : "deactivated"}
-            />
-          </Field>
-          <Field label="Department">{profile.department || "—"}</Field>
-          <Field label="Location">{profile.location || "—"}</Field>
-          <Field label="Countries">
-            {profile.countries.length > 0 ? (
-              <EmployeeCountryCell countries={profile.countries} />
-            ) : (
-              "—"
-            )}
-          </Field>
-          <Field label="Projects">
-            {profile.projects.length > 0 ? profile.projects.join(", ") : "—"}
-          </Field>
-        </div>
-      </section>
+      <AlphaaEmployeeForm
+        key={[
+          profile.fullName,
+          profile.email,
+          profile.phone ?? "",
+          profile.roleLabel,
+          country,
+          profile.department ?? "",
+          profile.location ?? "",
+          profile.projects.join("|"),
+          String(profile.isActive),
+        ].join("::")}
+        initial={{
+          id: profile.id,
+          fullName: profile.fullName,
+          email: profile.email,
+          phone: profile.phone ?? "",
+          roleLabel: profile.roleLabel,
+          country,
+          department: profile.department ?? "",
+          location: profile.location ?? "",
+          projects: profile.projects,
+          isActive: profile.isActive,
+        }}
+      />
 
       <section className="flex flex-col gap-3">
-        <p className="text-[13px] font-semibold text-[var(--color-ink)]">
-          Social accounts
-          <span className="ml-2 text-[12px] font-medium text-[var(--color-muted)]">
-            {planCount} {planCount === 1 ? "account" : "accounts"}
-          </span>
-        </p>
-        {profile.accounts.length === 0 ? (
-          <p className="rounded-lg bg-[var(--color-cream-tint)] px-4 py-6 text-center text-[14px] text-[var(--color-muted)]">
-            No social accounts are linked to {profile.fullName}.
-          </p>
-        ) : (
-          <EmployeeAccountsTable
-            userId={profile.id}
-            fullName={profile.fullName}
-            accounts={profile.accounts}
-            readOnly
-          />
-        )}
+        <EmployeeAccountsPanel
+          userId={profile.id}
+          fullName={profile.fullName}
+          country={country || null}
+          language={profile.language}
+          accounts={profile.accounts}
+          assignedCount={planCount}
+          canAdd
+          canImport
+          canMarkSpare
+          holders={holders}
+          holderSource="alphaa"
+        />
       </section>
     </div>
   );

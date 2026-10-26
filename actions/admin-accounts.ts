@@ -9,8 +9,15 @@ import {
   uniqueAccountUrlError,
   validateSocialAccountInput,
 } from "@/lib/social-account-validation";
+import {
+  createAlphaaSocialAccountRow,
+  deleteAlphaaSocialAccountRow,
+  setAlphaaSocialAccountSpareRow,
+  updateAlphaaSocialAccountRow,
+} from "@/lib/admin-alphaa-mutate";
 import type {
   AdminAccountMutationResult,
+  AdminEmployeeSource,
   AdminSocialAccountInput,
 } from "@/types/admin";
 
@@ -23,23 +30,51 @@ async function requireAdmin() {
   }
 }
 
-function revalidateAccounts(userId?: number) {
+function revalidateAccounts(
+  userId?: number,
+  source: AdminEmployeeSource = "temp"
+) {
   revalidatePath("/admin/employees");
-  if (userId) revalidatePath(`/admin/employees/${userId}`);
+  if (userId) {
+    revalidatePath(
+      source === "alphaa"
+        ? `/admin/employees/alphaa/${userId}`
+        : `/admin/employees/${userId}`
+    );
+  }
   revalidatePath("/manager");
   revalidatePath("/dashboard");
 }
 
+function withAlphaaEmailPassword(
+  payload: AdminSocialAccountInput
+): AdminSocialAccountInput {
+  const emailPassword = payload.emailPassword.trim();
+  if (emailPassword) return payload;
+  return {
+    ...payload,
+    emailPassword: payload.accountPassword || "n/a",
+  };
+}
+
 export async function createAdminSocialAccount(
   userId: number,
-  payload: AdminSocialAccountInput
+  payload: AdminSocialAccountInput,
+  source: AdminEmployeeSource = "temp"
 ): Promise<AdminAccountMutationResult> {
   try {
     await requireAdmin();
     if (!Number.isFinite(userId)) return { error: "Invalid employee." };
-    const checked = validateSocialAccountInput(payload);
+    const checked = validateSocialAccountInput(
+      source === "alphaa" ? withAlphaaEmailPassword(payload) : payload
+    );
     if ("error" in checked) return checked;
     const data = normalizeSocialAccountInput(checked.data);
+    if (source === "alphaa") {
+      const result = await createAlphaaSocialAccountRow(userId, data);
+      if (!result.error) revalidateAccounts(userId, source);
+      return result;
+    }
 
     const user = await queryOne<{ id: number }>(
       `SELECT id FROM temp_users WHERE id = $1 AND role = 'employee'`,
@@ -80,14 +115,26 @@ export async function createAdminSocialAccount(
 
 export async function updateAdminSocialAccount(
   accountId: number,
-  payload: AdminSocialAccountInput
+  payload: AdminSocialAccountInput,
+  source: AdminEmployeeSource = "temp"
 ): Promise<AdminAccountMutationResult> {
   try {
     await requireAdmin();
     if (!Number.isFinite(accountId)) return { error: "Invalid account." };
-    const checked = validateSocialAccountInput(payload);
+    const checked = validateSocialAccountInput(
+      source === "alphaa" ? withAlphaaEmailPassword(payload) : payload
+    );
     if ("error" in checked) return checked;
     const data = normalizeSocialAccountInput(checked.data);
+    if (source === "alphaa") {
+      const existing = await queryOne<{ user_id: number }>(
+        `SELECT user_id FROM social_media_accounts WHERE id = $1`,
+        [accountId]
+      );
+      const result = await updateAlphaaSocialAccountRow(accountId, data);
+      if (!result.error) revalidateAccounts(existing?.user_id, source);
+      return result;
+    }
 
     const existing = await queryOne<{ id: number; user_id: number }>(
       `SELECT id, user_id FROM temp_social_media_accounts WHERE id = $1`,
@@ -135,11 +182,21 @@ export async function updateAdminSocialAccount(
 }
 
 export async function deleteAdminSocialAccount(
-  accountId: number
+  accountId: number,
+  source: AdminEmployeeSource = "temp"
 ): Promise<AdminAccountMutationResult> {
   try {
     await requireAdmin();
     if (!Number.isFinite(accountId)) return { error: "Invalid account." };
+    if (source === "alphaa") {
+      const existing = await queryOne<{ user_id: number }>(
+        `SELECT user_id FROM social_media_accounts WHERE id = $1`,
+        [accountId]
+      );
+      const result = await deleteAlphaaSocialAccountRow(accountId);
+      if (!result.error) revalidateAccounts(existing?.user_id, source);
+      return result;
+    }
     const existing = await queryOne<{ user_id: number }>(
       `SELECT user_id FROM temp_social_media_accounts WHERE id = $1`,
       [accountId]
@@ -158,11 +215,24 @@ export async function deleteAdminSocialAccount(
 /** Mark/unmark an Africa or Europe account as spare (excluded from plan KPIs). */
 export async function setAdminSocialAccountSpare(
   accountId: number,
-  isSpare: boolean
+  isSpare: boolean,
+  source: AdminEmployeeSource = "temp"
 ): Promise<AdminAccountMutationResult> {
   try {
     await requireAdmin();
     if (!Number.isFinite(accountId)) return { error: "Invalid account." };
+    if (source === "alphaa") {
+      const existing = await queryOne<{ user_id: number }>(
+        `SELECT user_id FROM social_media_accounts WHERE id = $1`,
+        [accountId]
+      );
+      const result = await setAlphaaSocialAccountSpareRow(accountId, isSpare);
+      if (!result.error) {
+        revalidateAccounts(existing?.user_id, source);
+        revalidatePath("/admin");
+      }
+      return result;
+    }
 
     const existing = await queryOne<{
       user_id: number;

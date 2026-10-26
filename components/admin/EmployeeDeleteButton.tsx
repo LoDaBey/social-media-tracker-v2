@@ -6,12 +6,14 @@ import { motion } from "framer-motion";
 import { Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { deleteEmployee } from "@/actions/admin";
+import { deleteAlphaaEmployee } from "@/actions/admin-alphaa";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import type { EmployeeDeleteButtonProps } from "@/types/admin";
 
 export function EmployeeDeleteButton({
   userId,
   fullName,
+  source = "temp",
 }: EmployeeDeleteButtonProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -20,7 +22,11 @@ export function EmployeeDeleteButton({
   function confirm() {
     startTransition(async () => {
       try {
-        await deleteEmployee(userId);
+        if (source === "alphaa") {
+          await deleteAlphaaEmployee(userId);
+        } else {
+          await deleteEmployee(userId);
+        }
         toast.success(`${fullName} was deleted.`);
         setOpen(false);
         router.refresh();

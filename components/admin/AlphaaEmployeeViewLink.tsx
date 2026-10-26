@@ -21,7 +21,7 @@ export function AlphaaEmployeeViewLink({
     >
       <Link
         href={adminEmployeeHref(employeeId, "alphaa")}
-        aria-label={`View ${fullName} ALPHAA profile`}
+        aria-label={`View and edit ${fullName} ALPHAA profile`}
         className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-[var(--color-emerald)] outline-none hover:bg-[var(--color-emerald-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
       >
         <Eye className="h-5 w-5" aria-hidden="true" strokeWidth={2} />

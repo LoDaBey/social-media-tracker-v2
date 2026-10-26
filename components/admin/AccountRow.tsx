@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Pencil } from "lucide-react";
 import { extractPlatformLabel } from "@/lib/admin-extract-platform";
+import { PLATFORMS } from "@/lib/platform-config";
 import { adminSocialAccountToInput } from "@/lib/admin-account-input";
 import { AccountDeleteButton } from "@/components/admin/AccountDeleteButton";
 import { AccountEditModal } from "@/components/admin/AccountEditModal";
@@ -21,10 +22,14 @@ export function AccountRow({
   canMarkSpare = false,
   onChanged,
   readOnly = false,
+  source = "temp",
 }: AccountRowProps) {
   const [editOpen, setEditOpen] = useState(false);
   const displayName =
     account.account_name || account.username || account.account_url || "Account";
+  const canEditPlatform = (PLATFORMS as readonly string[]).includes(
+    account.platform
+  );
 
   return (
     <tr className="border-t border-[var(--color-hairline)]">
@@ -57,26 +62,30 @@ export function AccountRow({
                 accountName={displayName}
                 isSpare={account.is_spare}
                 onChanged={onChanged}
+                source={source}
               />
             ) : null}
-            <motion.div layout whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <button
-                type="button"
-                aria-label={`Edit ${displayName}`}
-                onClick={() => setEditOpen(true)}
-                className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-[var(--color-emerald)] outline-none hover:bg-[var(--color-emerald-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
-              >
-                <Pencil className="h-4 w-4" aria-hidden="true" strokeWidth={2} />
-              </button>
-            </motion.div>
+            {canEditPlatform ? (
+              <motion.div layout whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <button
+                  type="button"
+                  aria-label={`Edit ${displayName}`}
+                  onClick={() => setEditOpen(true)}
+                  className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-[var(--color-emerald)] outline-none hover:bg-[var(--color-emerald-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+                >
+                  <Pencil className="h-4 w-4" aria-hidden="true" strokeWidth={2} />
+                </button>
+              </motion.div>
+            ) : null}
             <AccountDeleteButton
               accountId={account.id}
               accountName={displayName}
               onDeleted={onChanged}
+              source={source}
             />
           </div>
         )}
-        {readOnly ? null : (
+        {readOnly || !canEditPlatform ? null : (
           <AccountEditModal
             open={editOpen}
             mode="edit"
@@ -84,6 +93,7 @@ export function AccountRow({
             holderName={holderName}
             accountId={account.id}
             initial={adminSocialAccountToInput(account)}
+            source={source}
             onClose={() => setEditOpen(false)}
             onSaved={onChanged}
           />

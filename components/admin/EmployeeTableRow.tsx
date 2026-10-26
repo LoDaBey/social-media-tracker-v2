@@ -12,7 +12,6 @@ import { EmployeeCodeButton } from "@/components/admin/EmployeeCodeButton";
 import { EmployeeAccountsPanel } from "@/components/admin/EmployeeAccountsPanel";
 import { AccountTotalsCell } from "@/components/admin/AccountTotalsCell";
 import { EmployeeStatusSelect } from "@/components/admin/EmployeeStatusSelect";
-import { EmployeeStatusBadge } from "@/components/admin/EmployeeStatusBadge";
 import { isTempPlanCountry } from "@/lib/region-config";
 import type { EmployeeTableRowProps } from "@/types/admin";
 
@@ -25,6 +24,21 @@ export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
   const canMarkSpare =
     !isAlphaa && Boolean(row.country && isTempPlanCountry(row.country));
   const planAccounts = row.accounts.filter((account) => !account.is_spare).length;
+  const rowHolder = {
+    id: row.id,
+    source: row.source,
+    full_name: row.full_name,
+    country: row.country,
+    language: row.language,
+    team_lead_name: row.team_lead_name,
+    manager_name: row.manager_name,
+  };
+  const importHolders = holders.some(
+    (holder) => holder.id === row.id && holder.source === row.source
+  )
+    ? holders
+    : [rowHolder, ...holders];
+  const canImport = row.role === "employee";
 
   function toggle() {
     if (!canExpand) return;
@@ -110,52 +124,50 @@ export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
           />
         </td>
         <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-          {isAlphaa ? (
-            <EmployeeStatusBadge status={row.employment_status} />
-          ) : (
-            <EmployeeStatusSelect
-              userId={row.id}
-              fullName={row.full_name}
-              status={row.employment_status}
-            />
-          )}
+          <EmployeeStatusSelect
+            userId={row.id}
+            fullName={row.full_name}
+            status={row.employment_status}
+            source={row.source}
+          />
         </td>
         <td className="px-4 py-3">
-          {isAlphaa ? (
-            <div
-              className="flex items-center gap-1.5"
-              onClick={(e) => e.stopPropagation()}
-              onKeyDown={(e) => e.stopPropagation()}
-            >
+          <div
+            className="flex items-center gap-1.5"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            {isAlphaa ? (
               <AlphaaEmployeeViewLink
                 employeeId={row.id}
                 fullName={row.full_name}
               />
-            </div>
-          ) : (
-            <div
-              className="flex items-center gap-1.5"
-              onClick={(e) => e.stopPropagation()}
-              onKeyDown={(e) => e.stopPropagation()}
-            >
-              <EmployeeCodeButton
-                employeeId={row.id}
-                fullName={row.full_name}
-                employeeCode={row.employee_code}
-              />
-              <EmployeeViewButton
-                employeeId={row.id}
-                fullName={row.full_name}
-                role={row.role}
-              />
-              <EmployeeDeleteButton userId={row.id} fullName={row.full_name} />
-              <EmployeeActiveToggle
-                userId={row.id}
-                fullName={row.full_name}
-                isActive={row.is_active}
-              />
-            </div>
-          )}
+            ) : (
+              <>
+                <EmployeeCodeButton
+                  employeeId={row.id}
+                  fullName={row.full_name}
+                  employeeCode={row.employee_code}
+                />
+                <EmployeeViewButton
+                  employeeId={row.id}
+                  fullName={row.full_name}
+                  role={row.role}
+                />
+              </>
+            )}
+            <EmployeeDeleteButton
+              userId={row.id}
+              fullName={row.full_name}
+              source={row.source}
+            />
+            <EmployeeActiveToggle
+              userId={row.id}
+              fullName={row.full_name}
+              isActive={row.is_active}
+              source={row.source}
+            />
+          </div>
         </td>
       </tr>
       {canExpand && expanded ? (
@@ -173,13 +185,11 @@ export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
               language={row.language}
               accounts={row.accounts}
               assignedCount={row.target_accounts_sum}
-              canAdd={!isAlphaa}
-              canImport={holders.some(
-                (holder) => holder.id === row.id && holder.source === row.source
-              )}
-              canMarkSpare={canMarkSpare}
-              readOnly={isAlphaa}
-              holders={holders}
+              canAdd
+              canImport={canImport}
+              canMarkSpare={canMarkSpare || isAlphaa}
+              readOnly={false}
+              holders={importHolders}
               holderSource={row.source}
             />
           </td>
