@@ -49,6 +49,7 @@ const ALPHAA_EXTRA_PLATFORM_SQL: Record<AlphaaExtraPlatformKey, string> = {
   `,
   telegram: `LOWER(TRIM(sma.platform)) LIKE '%telegram%'`,
   website: `LOWER(TRIM(sma.platform)) LIKE '%website%'`,
+  pinterest: `LOWER(TRIM(sma.platform)) LIKE '%pinterest%'`,
   turkkitap: `
     LOWER(TRIM(sma.platform)) LIKE '%turkkitap%'
     OR LOWER(TRIM(sma.platform)) LIKE '%1000kitap%'

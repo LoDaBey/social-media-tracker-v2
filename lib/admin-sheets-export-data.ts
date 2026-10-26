@@ -89,6 +89,6 @@ export async function fetchAccountsForSheetsExport(): Promise<SheetsExportAccoun
     `${SHEETS_EXPORT_QUERY}${SHEETS_EXPORT_ORDER}`
   );
 
-  const capped = capEuropeAccountsToCountryPlan(rows);
+  const capped = await capEuropeAccountsToCountryPlan(rows);
   return capped.map(mapSheetsExportRow);
 }

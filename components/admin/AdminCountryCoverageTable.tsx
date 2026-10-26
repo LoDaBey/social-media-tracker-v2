@@ -4,6 +4,7 @@ import {
   AlphaaCoveragePlatformFooterCells,
   AlphaaCoveragePlatformHeaderCells,
 } from "@/components/admin/AlphaaCoveragePlatformColumns";
+import { ALPHAA_EXTRA_PLATFORM_KEYS } from "@/lib/alphaa-coverage-platforms";
 import type { AdminCountryCoverageTableProps } from "@/types/admin";
 
 export function AdminCountryCoverageTable({
@@ -11,7 +12,7 @@ export function AdminCountryCoverageTable({
   totals,
   showAlphaaPlatforms = false,
 }: AdminCountryCoverageTableProps) {
-  const colSpan = showAlphaaPlatforms ? 18 : 9;
+  const colSpan = showAlphaaPlatforms ? 9 + ALPHAA_EXTRA_PLATFORM_KEYS.length : 9;
 
   return (
     <div className="overflow-x-auto rounded-[16px] border border-[var(--color-hairline)] bg-[var(--color-surface)]">

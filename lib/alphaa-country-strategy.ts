@@ -1,5 +1,6 @@
 /**
- * ALPHAA strategic countries — project-level account architecture.
+ * ALPHAA strategic countries — seed/fallback architecture only.
+ * Runtime plans live in `alphaa_country_plans` and are edited on /admin/strategy.
  * Platform keys use spreadsheet naming; the app maps `twitter` → X targets.
  */
 
@@ -179,14 +180,15 @@ export const requiredProjectStrategy: Record<
     threads: 9,
     reddit: 9,
     youtube: 1,
-    tiktok: 4,
+    tiktok: 5,
     blogspot: 5,
+    website: 1,
     pinterest: 1,
     turkkitap: 9,
     kizlarsoruyor: 5,
   },
   palestine: {
-    twitter: 31,
+    twitter: 32,
     facebook: 4,
     instagram: 6,
     threads: 3,
@@ -214,11 +216,11 @@ export const requiredProjectStrategy: Record<
   somalia: {
     twitter: 76,
     facebook: 20,
-    instagram: 9,
-    threads: 9,
+    instagram: 10,
+    threads: 10,
     reddit: 0,
     youtube: 9,
-    tiktok: 9,
+    tiktok: 10,
     blogspot: 7,
     website: 2,
   },
@@ -249,7 +251,7 @@ export const requiredProjectStrategyPerCategory: Record<
       instagram: 4,
       threads: 4,
       reddit: 4,
-      tiktok: 2,
+      tiktok: 3,
     },
     umberlla: {
       website: 1,
@@ -309,7 +311,7 @@ export const requiredProjectStrategyPerCategory: Record<
     },
     umberlla: {
       website: 0,
-      twitter: 1,
+      twitter: 2,
       facebook: 1,
       instagram: 3,
       threads: 0,
@@ -324,12 +326,12 @@ export const requiredProjectStrategyPerCategory: Record<
     personal: {
       twitter: 74,
       facebook: 18,
-      instagram: 7,
-      threads: 7,
+      instagram: 8,
+      threads: 8,
       pinterest: 0,
       blogspot: 7,
       youtube: 7,
-      tiktok: 7,
+      tiktok: 8,
     },
     umberlla: {
       website: 2,

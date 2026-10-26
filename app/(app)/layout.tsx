@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Sparkles, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { auth } from "@/auth";
 import type { Role } from "@/types/db";
 import { ROLE_LABELS } from "@/lib/role-hierarchy";
 import { DateBadge } from "@/components/dashboard/DateBadge";
+import { BrandLogo } from "@/components/layout/BrandLogo";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { SignOutButton } from "@/components/layout/SignOutButton";
 import { fetchPendingCountForReviewer } from "@/lib/qc-data";
@@ -57,29 +58,19 @@ export default async function AppLayout({
           ].join(" ")}
         >
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[var(--color-emerald-tint)]">
-              <Sparkles
-                className="h-[18px] w-[18px] text-[var(--color-emerald)]"
-                aria-hidden="true"
-              />
-            </div>
+            <Link
+              href="/"
+              aria-label="Orbit home"
+              className="inline-flex shrink-0 items-center rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+            >
+              <BrandLogo size="header" priority />
+            </Link>
             {role === "admin" ? (
-              <>
-                <span className="sr-only">ALPHAA</span>
-                <div className="hidden min-w-0 items-center gap-3 lg:flex">
-                  <p className="text-[16px] font-bold text-[var(--color-ink)]">
-                    ALPHAA
-                  </p>
-                  <DateBadge />
-                </div>
-              </>
-            ) : (
-              <div className="flex min-w-0 items-center gap-3">
-                <p className="text-[16px] font-bold text-[var(--color-ink)]">
-                  ALPHAA
-                </p>
+              <div className="hidden min-w-0 items-center gap-3 lg:flex">
                 <DateBadge />
               </div>
+            ) : (
+              <DateBadge />
             )}
           </div>
 

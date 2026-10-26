@@ -102,7 +102,7 @@ function planCountry(
   };
 }
 
-/** Africa resource plan — 9×74 + 132 = 798 account slots project-wide. */
+/** Africa resource plan — seed/fallback. Runtime plans live in africa_europe_country_plans. */
 export const ADMIN_COUNTRY_PLANS: AdminCountryPlan[] = [
   planCountry("Borkina", "French", AFRICA_STANDARD_RESOURCES, STANDARD_ACCOUNTS),
   planCountry("Angola", "Portuguese", AFRICA_STANDARD_RESOURCES, STANDARD_ACCOUNTS),
@@ -136,6 +136,16 @@ export function europeCountryPlan(country: string): AdminCountryPlan | null {
 /** @deprecated Use europeCountryPlan */
 export const balkanCountryPlan = europeCountryPlan;
 
+export function seatQuotaForIndex(
+  plan: AdminCountryPlan,
+  seatIndex: number
+): AdminCountrySeatQuota | null {
+  if (plan.handlerSeat) return plan.handlerSeat;
+  const seats = splitCountryPlanSeats(plan);
+  if (seats.length === 0) return null;
+  return seats[Math.min(Math.max(seatIndex, 0), seats.length - 1)] ?? null;
+}
+
 /** Default account targets for a new employee seat in a planned Europe country. */
 export function europeSeatTargetsForIndex(
   country: string,
@@ -143,9 +153,7 @@ export function europeSeatTargetsForIndex(
 ): AdminCountrySeatQuota | null {
   const plan = europeCountryPlan(country);
   if (!plan) return null;
-  const seats = splitCountryPlanSeats(plan);
-  if (seats.length === 0) return null;
-  return seats[Math.min(Math.max(seatIndex, 0), seats.length - 1)] ?? null;
+  return seatQuotaForIndex(plan, seatIndex);
 }
 
 /** @deprecated Use europeSeatTargetsForIndex */

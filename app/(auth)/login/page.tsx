@@ -1,5 +1,5 @@
-import { Sparkles } from "lucide-react";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { BrandLogo } from "@/components/layout/BrandLogo";
 
 type Props = {
   searchParams?: Promise<{
@@ -39,10 +39,8 @@ export default async function LoginPage({ searchParams }: Props) {
         >
           <header className="flex flex-col items-start">
             <div className="flex w-full flex-col items-center gap-2 text-center">
-              <div className="flex flex-col gap-1">
-                <p className="text-[18px] font-bold text-[var(--color-ink)]">
-                  ALPHAA
-                </p>
+              <div className="flex flex-col items-center gap-1">
+                <BrandLogo size="login" priority />
                 <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--color-muted)]">
                   EMPLOYEE PORTAL
                 </p>

@@ -114,7 +114,8 @@ export type AdminViewKind =
   | "employees"
   | "employee_new"
   | "employee"
-  | "extract";
+  | "extract"
+  | "strategy";
 
 export type AdminEmployeePanel = "profile" | "targets" | "activity";
 
@@ -123,6 +124,7 @@ export type AdminView =
   | { kind: "employees"; title: string }
   | { kind: "employee_new"; title: string }
   | { kind: "extract"; title: string }
+  | { kind: "strategy"; title: string }
   | {
       kind: "employee";
       title: string;
@@ -234,6 +236,7 @@ export type AlphaaExtraPlatformKey =
   | "blogspot"
   | "telegram"
   | "website"
+  | "pinterest"
   | "turkkitap"
   | "kizlarsoruyor"
   | "balatarin";
@@ -268,6 +271,8 @@ export type AdminCountryPlan = {
   tiktok: number;
   totalAccounts: number;
   extraPlatforms?: AlphaaExtraPlatformCounts;
+  /** Per-handler template from strategy tables. Same quota for every seat. */
+  handlerSeat?: AdminCountrySeatQuota;
 };
 
 export type AdminCoverageCount = {
@@ -377,7 +382,7 @@ export type AdminCoverageCountCellProps = {
 export type AdminOverviewAction = {
   href: string;
   ariaLabel: string;
-  icon: "userPlus" | "users" | "extract";
+  icon: "userPlus" | "users" | "extract" | "strategy";
   variant: "primary" | "secondary";
 };
 

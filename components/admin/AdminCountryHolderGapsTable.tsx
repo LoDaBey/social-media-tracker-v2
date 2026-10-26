@@ -1,6 +1,7 @@
 import { AdminCountryHolderGapRow } from "@/components/admin/AdminCountryHolderGapRow";
 import { AlphaaCoveragePlatformHeaderCells } from "@/components/admin/AlphaaCoveragePlatformColumns";
 import { holderHasCoverageGap } from "@/lib/admin-coverage-gaps";
+import { ALPHAA_EXTRA_PLATFORM_KEYS } from "@/lib/alphaa-coverage-platforms";
 import type { AdminCountryHolderGapsTableProps } from "@/types/admin";
 
 export function AdminCountryHolderGapsTable({
@@ -64,7 +65,7 @@ export function AdminCountryHolderGapsTable({
             {holders.length === 0 ? (
               <tr>
                 <td
-                  colSpan={showAlphaaPlatforms ? 16 : 7}
+                  colSpan={showAlphaaPlatforms ? 7 + ALPHAA_EXTRA_PLATFORM_KEYS.length : 7}
                   className="px-3 py-6 text-center text-[13px] text-[var(--color-muted)]"
                 >
                   No account holders to review.

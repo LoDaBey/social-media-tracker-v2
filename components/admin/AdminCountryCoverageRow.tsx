@@ -7,6 +7,7 @@ import { CountryFlag } from "@/lib/country-icons";
 import { AdminCoverageCountCell } from "@/components/admin/AdminCoverageCountCell";
 import { AlphaaCoveragePlatformBodyCells } from "@/components/admin/AlphaaCoveragePlatformColumns";
 import { AdminCountryHolderGapsTable } from "@/components/admin/AdminCountryHolderGapsTable";
+import { ALPHAA_EXTRA_PLATFORM_KEYS } from "@/lib/alphaa-coverage-platforms";
 import type { AdminCountryCoverageRowProps } from "@/types/admin";
 
 export function AdminCountryCoverageRow({
@@ -106,7 +107,7 @@ export function AdminCountryCoverageRow({
       {expanded ? (
         <tr className="border-t border-[var(--color-hairline)] bg-[var(--color-cream-tint)]/40">
           <td
-            colSpan={showAlphaaPlatforms ? 18 : 9}
+            colSpan={showAlphaaPlatforms ? 9 + ALPHAA_EXTRA_PLATFORM_KEYS.length : 9}
             className="px-3 py-3"
             id={panelId}
             onClick={(event) => event.stopPropagation()}
