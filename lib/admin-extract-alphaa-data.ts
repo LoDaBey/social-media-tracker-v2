@@ -1,7 +1,8 @@
 import {
   ALPHAA_LEGACY_ACCOUNT_WHERE,
   ALPHAA_LEGACY_COUNTRY,
-  ALPHAA_PLATFORM_IS_FACEBOOK,
+  ALPHAA_PLATFORM_IS_FACEBOOK_PERSONAL,
+  ALPHAA_PLATFORM_IS_FACEBOOK_UMBRELLA,
   ALPHAA_PLATFORM_IS_INSTAGRAM,
   ALPHAA_PLATFORM_IS_TIKTOK,
   ALPHAA_PLATFORM_IS_X,
@@ -123,9 +124,9 @@ function alphaaPlatformSql(platform: string): string | null {
     case "x":
       return `(${ALPHAA_PLATFORM_IS_X})`;
     case "facebook_personal":
-      return `((${ALPHAA_PLATFORM_IS_FACEBOOK}) AND sma.personal IS TRUE)`;
+      return `(${ALPHAA_PLATFORM_IS_FACEBOOK_PERSONAL})`;
     case "facebook_umbrella":
-      return `((${ALPHAA_PLATFORM_IS_FACEBOOK}) AND sma.umberlla IS TRUE)`;
+      return `(${ALPHAA_PLATFORM_IS_FACEBOOK_UMBRELLA})`;
     case "instagram":
       return `(${ALPHAA_PLATFORM_IS_INSTAGRAM})`;
     case "tiktok":

@@ -4,9 +4,10 @@ import {
 } from "@/lib/alphaa-coverage-platforms";
 import { query } from "@/lib/db";
 import {
-  ALPHAA_LEGACY_ACCOUNT_WHERE,
+  ALPHAA_COVERAGE_ACCOUNT_WHERE,
   ALPHAA_LEGACY_COUNTRY,
-  ALPHAA_PLATFORM_IS_FACEBOOK,
+  ALPHAA_PLATFORM_IS_FACEBOOK_PERSONAL,
+  ALPHAA_PLATFORM_IS_FACEBOOK_UMBRELLA,
   ALPHAA_PLATFORM_IS_INSTAGRAM,
   ALPHAA_PLATFORM_IS_TIKTOK,
   ALPHAA_PLATFORM_IS_X,
@@ -22,6 +23,8 @@ export type AlphaaCountryActuals = {
   instagram: number;
   tiktok: number;
   extraPlatforms: Record<AlphaaExtraPlatformKey, number>;
+  /** Unique live non-spare accounts — matches extract. */
+  accounts: number;
 };
 
 export type AlphaaHolderActuals = {
@@ -35,6 +38,7 @@ export type AlphaaHolderActuals = {
   instagram: number;
   tiktok: number;
   extraPlatforms: Record<AlphaaExtraPlatformKey, number>;
+  accounts: number;
 };
 
 function countrySqlClause(paramIndex: number) {
@@ -44,7 +48,8 @@ function countrySqlClause(paramIndex: number) {
 /**
  * ALPHAA tab only — legacy users + social_media_accounts (TableCreations.sql).
  * Never reads temp_users or temp_social_media_accounts.
- * Spare accounts (spare_acc = true) are excluded.
+ * Spare accounts (spare_acc = true) and inactive acc_state rows are excluded.
+ * TOTAL uses unique account ids so it matches extract.
  */
 export async function fetchAlphaaCountryActuals(
   countries: string[]
@@ -58,7 +63,7 @@ export async function fetchAlphaaCountryActuals(
          COUNT(DISTINCT u.id)::text AS employees
        FROM users u
        INNER JOIN social_media_accounts sma ON sma.user_id = u.id
-       WHERE ${ALPHAA_LEGACY_ACCOUNT_WHERE}
+       WHERE ${ALPHAA_COVERAGE_ACCOUNT_WHERE}
          AND ${countrySqlClause(1)}
        GROUP BY ${ALPHAA_LEGACY_COUNTRY}`,
       [countries]
@@ -66,6 +71,7 @@ export async function fetchAlphaaCountryActuals(
     query<
       {
         country: string;
+        accounts: string;
         x: string;
         facebook_personal: string;
         facebook_umbrella: string;
@@ -75,18 +81,19 @@ export async function fetchAlphaaCountryActuals(
     >(
       `SELECT
          ${ALPHAA_LEGACY_COUNTRY} AS country,
+         COUNT(sma.id)::text AS accounts,
          COUNT(sma.id) FILTER (WHERE ${ALPHAA_PLATFORM_IS_X})::text AS x,
          COUNT(sma.id) FILTER (
-           WHERE ${ALPHAA_PLATFORM_IS_FACEBOOK} AND sma.personal IS TRUE
+           WHERE ${ALPHAA_PLATFORM_IS_FACEBOOK_PERSONAL}
          )::text AS facebook_personal,
          COUNT(sma.id) FILTER (
-           WHERE ${ALPHAA_PLATFORM_IS_FACEBOOK} AND sma.umberlla IS TRUE
+           WHERE ${ALPHAA_PLATFORM_IS_FACEBOOK_UMBRELLA}
          )::text AS facebook_umbrella,
          COUNT(sma.id) FILTER (WHERE ${ALPHAA_PLATFORM_IS_INSTAGRAM})::text AS instagram,
          COUNT(sma.id) FILTER (WHERE ${ALPHAA_PLATFORM_IS_TIKTOK})::text AS tiktok,
          ${alphaaExtraPlatformCountColumns()}
        FROM social_media_accounts sma
-       WHERE ${ALPHAA_LEGACY_ACCOUNT_WHERE}
+       WHERE ${ALPHAA_COVERAGE_ACCOUNT_WHERE}
          AND ${countrySqlClause(1)}
        GROUP BY ${ALPHAA_LEGACY_COUNTRY}`,
       [countries]
@@ -104,6 +111,7 @@ export async function fetchAlphaaCountryActuals(
       instagram: 0,
       tiktok: 0,
       extraPlatforms: emptyAlphaaExtraPlatformCounts(),
+      accounts: 0,
     });
   }
 
@@ -117,6 +125,7 @@ export async function fetchAlphaaCountryActuals(
       instagram: 0,
       tiktok: 0,
       extraPlatforms: emptyAlphaaExtraPlatformCounts(),
+      accounts: 0,
     };
     current.employees = Number(row.employees);
     actualByCountry.set(country, current);
@@ -132,6 +141,7 @@ export async function fetchAlphaaCountryActuals(
       instagram: 0,
       tiktok: 0,
       extraPlatforms: emptyAlphaaExtraPlatformCounts(),
+      accounts: 0,
     };
     current.x = Number(row.x);
     current.facebookPersonal = Number(row.facebook_personal);
@@ -139,6 +149,7 @@ export async function fetchAlphaaCountryActuals(
     current.instagram = Number(row.instagram);
     current.tiktok = Number(row.tiktok);
     current.extraPlatforms = parseAlphaaExtraPlatformRow(row);
+    current.accounts = Number(row.accounts);
     actualByCountry.set(country, current);
   }
 
@@ -177,6 +188,7 @@ export async function fetchAlphaaHolderActuals(
       facebook_umbrella: string;
       instagram: string;
       tiktok: string;
+      accounts: string;
     } & Partial<Record<AlphaaExtraPlatformKey, string>>
   >(
     `SELECT
@@ -187,19 +199,20 @@ export async function fetchAlphaaHolderActuals(
        ) AS full_name,
        COALESCE(NULLIF(TRIM(u.email), ''), '') AS email,
        ${ALPHAA_LEGACY_COUNTRY} AS country,
+       COUNT(sma.id)::text AS accounts,
        COUNT(sma.id) FILTER (WHERE ${ALPHAA_PLATFORM_IS_X})::text AS x,
        COUNT(sma.id) FILTER (
-         WHERE ${ALPHAA_PLATFORM_IS_FACEBOOK} AND sma.personal IS TRUE
+         WHERE ${ALPHAA_PLATFORM_IS_FACEBOOK_PERSONAL}
        )::text AS facebook_personal,
        COUNT(sma.id) FILTER (
-         WHERE ${ALPHAA_PLATFORM_IS_FACEBOOK} AND sma.umberlla IS TRUE
+         WHERE ${ALPHAA_PLATFORM_IS_FACEBOOK_UMBRELLA}
        )::text AS facebook_umbrella,
        COUNT(sma.id) FILTER (WHERE ${ALPHAA_PLATFORM_IS_INSTAGRAM})::text AS instagram,
        COUNT(sma.id) FILTER (WHERE ${ALPHAA_PLATFORM_IS_TIKTOK})::text AS tiktok,
        ${alphaaExtraPlatformCountColumns()}
      FROM users u
      INNER JOIN social_media_accounts sma ON sma.user_id = u.id
-     WHERE ${ALPHAA_LEGACY_ACCOUNT_WHERE}
+     WHERE ${ALPHAA_COVERAGE_ACCOUNT_WHERE}
        AND ${countrySqlClause(1)}
      GROUP BY u.id, u.username, u.email, ${ALPHAA_LEGACY_COUNTRY}
      ORDER BY full_name ASC, u.id ASC`,
@@ -221,6 +234,7 @@ export async function fetchAlphaaHolderActuals(
       instagram: Number(row.instagram),
       tiktok: Number(row.tiktok),
       extraPlatforms: parseAlphaaExtraPlatformRow(row),
+      accounts: Number(row.accounts),
     });
     holdersByCountry.set(country, list);
   }

@@ -30,7 +30,7 @@ export function AdminCountryCoverageSection({
           {region === "Overview"
             ? " Sudan appears twice: Africa (temp) and ALPHAA (legacy)."
             : region === "Alphaa"
-              ? " Extended platforms (Reddit, Threads, YouTube, etc.) apply to ALPHAA only. Spare accounts are excluded."
+              ? " Extended platforms (Reddit, Threads, YouTube, etc.) apply to ALPHAA only. TOTAL is every live non-spare account. Spare accounts are excluded."
               : ""}
         </p>
       </div>

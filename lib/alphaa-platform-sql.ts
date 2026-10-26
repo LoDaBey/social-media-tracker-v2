@@ -6,6 +6,20 @@ import type { AlphaaExtraPlatformKey } from "@/types/admin";
 /** Same rule as ALPHAA sheet export — non-spare accounts only. */
 export const ALPHAA_LEGACY_ACCOUNT_WHERE = `sma.spare_acc IS FALSE`;
 
+/** Live accounts only — matches extract “Active only”. */
+export const ALPHAA_LEGACY_ACTIVE_WHERE = `
+  (
+    sma.acc_state IS NULL
+    OR LOWER(TRIM(sma.acc_state)) IN ('', 'active', 'open', 'live')
+  )
+`;
+
+/** Non-spare + active — coverage and extract default. */
+export const ALPHAA_COVERAGE_ACCOUNT_WHERE = `
+  ${ALPHAA_LEGACY_ACCOUNT_WHERE}
+  AND ${ALPHAA_LEGACY_ACTIVE_WHERE}
+`;
+
 export const ALPHAA_PLATFORM_IS_X = `
   (
     LOWER(TRIM(sma.platform)) IN ('twitter', 'x')
@@ -21,6 +35,15 @@ export const ALPHAA_PLATFORM_IS_FACEBOOK = `
     LOWER(TRIM(sma.platform)) LIKE '%facebook%'
     AND LOWER(TRIM(sma.platform)) NOT LIKE '%groups%'
   )
+`;
+
+/** Umbrella wins when both flags are set — same as extract mapping. */
+export const ALPHAA_PLATFORM_IS_FACEBOOK_UMBRELLA = `
+  (${ALPHAA_PLATFORM_IS_FACEBOOK}) AND sma.umberlla IS TRUE
+`;
+
+export const ALPHAA_PLATFORM_IS_FACEBOOK_PERSONAL = `
+  (${ALPHAA_PLATFORM_IS_FACEBOOK}) AND COALESCE(sma.umberlla, FALSE) IS FALSE
 `;
 
 export const ALPHAA_PLATFORM_IS_INSTAGRAM = `
