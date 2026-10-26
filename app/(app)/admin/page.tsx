@@ -12,6 +12,7 @@ import { AdminCoverageKpis } from "@/components/admin/AdminCoverageKpis";
 import { AdminCountryCoverageSection } from "@/components/admin/AdminCountryCoverageSection";
 import { AdminOverviewActions } from "@/components/admin/AdminOverviewActions";
 import { AdminOverviewRegionTabs } from "@/components/admin/AdminOverviewRegionTabs";
+import { BalanceCoverageButton } from "@/app/(app)/admin/components/BalanceCoverageButton";
 import { SpareAccountsButton } from "@/components/admin/SpareAccountsButton";
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import { adminViewOverview } from "@/lib/admin-view";
@@ -43,6 +44,7 @@ export default async function AdminOverviewPage({
           <div className="min-w-0 flex-1">
             <AdminOverviewActions />
           </div>
+          <BalanceCoverageButton region={region} />
           <SpareAccountsButton
             accounts={spareAccountsForRegion(spareAccounts, region)}
             holders={spareMarkHoldersForRegion(spareHolders, region)}
