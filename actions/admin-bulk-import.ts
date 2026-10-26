@@ -12,7 +12,6 @@ import {
 } from "@/lib/bulk-import-parse";
 import { uniqueAccountUrlError } from "@/lib/social-account-validation";
 import { isAlphaaCountry } from "@/lib/region-config";
-import { SHEET_REGION_ALPHAA } from "@/lib/sheets-validation-values";
 import {
   isSetupCountry,
   isSetupLanguage,
@@ -204,13 +203,30 @@ async function importAlphaaHolderAccounts(input: {
   );
   if (!employee) return { error: "Account holder not found." };
 
+  const existing = await queryOne<{
+    country: string | null;
+    region: string | null;
+    language1: string | null;
+    language2: string | null;
+  }>(
+    `SELECT country, region, language1, language2
+       FROM social_media_accounts
+      WHERE user_id = $1
+      ORDER BY id ASC
+      LIMIT 1`,
+    [input.holderId]
+  );
+
+  const country = existing?.country?.trim() || input.country;
+  const region = existing?.region?.trim() || "africa";
+  const language1 =
+    existing?.language1?.trim() || input.language || "English";
+  const language2 =
+    existing?.language2?.trim() || language1;
+
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    await client.query(`UPDATE users SET country = $2 WHERE id = $1`, [
-      input.holderId,
-      input.country,
-    ]);
     await client.query(`DELETE FROM social_media_accounts WHERE user_id = $1`, [
       input.holderId,
     ]);
@@ -218,9 +234,9 @@ async function importAlphaaHolderAccounts(input: {
     const values: unknown[] = [];
     const sqlRows: string[] = [];
     input.rows.forEach((row, idx) => {
-      const base = idx * 16;
+      const base = idx * 18;
       sqlRows.push(
-        `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9}, $${base + 10}, $${base + 11}, $${base + 12}, $${base + 13}, $${base + 14}, $${base + 15}, $${base + 16})`
+        `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9}, $${base + 10}, $${base + 11}, $${base + 12}, $${base + 13}, $${base + 14}, $${base + 15}, $${base + 16}, $${base + 17}, $${base + 18})`
       );
       const platform = row.platform as Platform;
       const mapped = alphaaLegacyPlatformFields(platform);
@@ -232,32 +248,45 @@ async function importAlphaaHolderAccounts(input: {
         mapped.personal,
         mapped.umberlla,
         accountName,
-        row.username || null,
-        row.url || null,
-        row.email || null,
-        row.accountPassword || null,
-        row.mobileNumber || null,
-        row.category || null,
+        "",
+        row.username.trim() || accountName,
+        row.url.trim() || "",
+        row.email.trim() || "",
+        row.accountPassword || "",
+        row.mobileNumber.trim() || null,
+        row.category.trim() || "GH-G",
         row.status,
         false,
-        input.country,
-        input.language,
-        SHEET_REGION_ALPHAA
+        country,
+        language1,
+        language2,
+        region
       );
     });
 
     await client.query(
       `INSERT INTO social_media_accounts
-        (user_id, platform, personal, umberlla, acc_name, acc_username, acc_url,
-         acc_email, acc_password_hash, acc_mobile, direction, acc_state,
-         spare_acc, country, language1, region)
+        (user_id, platform, personal, umberlla, acc_name, acc_bio, acc_username,
+         acc_url, acc_email, acc_password_hash, acc_mobile, direction, acc_state,
+         spare_acc, country, language1, language2, region)
        VALUES ${sqlRows.join(", ")}`,
       values
     );
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK").catch(() => {});
-    return { error: uniqueAccountUrlError(error) };
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code?: string }).code === "23505"
+    ) {
+      return { error: "This account URL already exists for this person." };
+    }
+    if (error instanceof Error && error.message.trim()) {
+      return { error: error.message.trim().slice(0, 180) };
+    }
+    return { error: "Could not save these ALPHAA accounts. Please try again." };
   } finally {
     client.release();
   }

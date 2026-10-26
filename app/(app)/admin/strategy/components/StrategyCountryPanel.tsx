@@ -7,7 +7,6 @@ import {
   targetsGrandTotal,
 } from "@/lib/strategy-platforms";
 import { StrategyHandlerEditor } from "./StrategyHandlerEditor";
-import { StrategyHandlerGaps } from "./StrategyHandlerGaps";
 import { StrategyProjectGaps } from "./StrategyProjectGaps";
 import { StrategySheetEditor } from "./StrategySheetEditor";
 import type { StrategyCountryPanelProps, StrategyScopeCounts } from "@/types/strategy";
@@ -92,12 +91,7 @@ export function StrategyCountryPanel({
         onChange={setHandlerTargets}
       />
 
-      {gaps ? (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <StrategyProjectGaps gaps={gaps.project} />
-          <StrategyHandlerGaps handlers={gaps.handlers} />
-        </div>
-      ) : null}
+      {gaps ? <StrategyProjectGaps gaps={gaps.project} /> : null}
 
       <motion.button
         type="button"

@@ -1,5 +1,6 @@
 import { extractPlatformLabel } from "@/lib/admin-extract-platform";
 import { accountScopeLabel } from "@/lib/account-scope";
+import { AccountUrlCell } from "@/components/admin/AccountUrlCell";
 import type { ExtractPreviewTableProps } from "@/types/admin";
 
 function displayRegion(region: string | null) {
@@ -52,8 +53,8 @@ export function ExtractPreviewTable({ rows }: ExtractPreviewTableProps) {
               <th className="px-3 py-2">Handler</th>
               <th className="px-3 py-2">Platform</th>
               <th className="px-3 py-2">Type</th>
-              <th className="px-3 py-2">Account</th>
               <th className="px-3 py-2">Username</th>
+              <th className="px-3 py-2">Link</th>
               <th className="px-3 py-2">Status</th>
             </tr>
           </thead>
@@ -78,11 +79,14 @@ export function ExtractPreviewTable({ rows }: ExtractPreviewTableProps) {
                 <td className="px-3 py-2 whitespace-nowrap">
                   {accountScopeLabel(row.account_scope)}
                 </td>
-                <td className="max-w-[180px] truncate px-3 py-2">
-                  {row.account_name}
-                </td>
                 <td className="px-3 py-2 whitespace-nowrap">
                   {row.username ?? "—"}
+                </td>
+                <td className="max-w-[240px] px-3 py-2">
+                  <AccountUrlCell
+                    url={row.account_url}
+                    label={row.username || row.account_name || row.handler_name}
+                  />
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap capitalize">
                   {row.status}

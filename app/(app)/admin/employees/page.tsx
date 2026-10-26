@@ -72,6 +72,8 @@ export default async function AdminEmployeesPage({
       full_name: row.full_name,
       country: row.country,
       language: row.language,
+      team_lead_name: row.team_lead_name,
+      manager_name: row.manager_name,
     }));
 
   return (

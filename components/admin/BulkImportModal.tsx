@@ -20,17 +20,36 @@ import {
   type SetupRegion,
 } from "@/lib/setup-options";
 import { BulkImportHolderStep } from "@/components/admin/BulkImportHolderStep";
+import { BulkImportSelectedEmployee } from "@/components/admin/BulkImportSelectedEmployee";
 import { BulkImportUploadStep } from "@/components/admin/BulkImportUploadStep";
 import { BulkImportReviewTable } from "@/components/admin/BulkImportReviewTable";
 import type {
   BulkImportAccountDraft,
+  BulkImportHolderOption,
   BulkImportModalProps,
 } from "@/types/admin";
+
+function fieldsFromHolder(holder: BulkImportHolderOption | null | undefined) {
+  if (!holder) {
+    return { country: "", region: "" as const, language: "" };
+  }
+  const country = bulkImportHolderCountry(holder.country);
+  const region =
+    holder.source === "alphaa"
+      ? ("Alphaa" as const)
+      : country
+        ? setupRegionForCountry(country)
+        : ("" as const);
+  const language =
+    sheetLanguage1(country, holder.language || "") || holder.language || "";
+  return { country, region, language };
+}
 
 export function BulkImportModal({
   open,
   holders,
   initialHolderId,
+  initialHolderSource,
   onClose,
 }: BulkImportModalProps) {
   return (
@@ -39,6 +58,7 @@ export function BulkImportModal({
         <BulkImportModalDialog
           holders={holders}
           initialHolderId={initialHolderId}
+          initialHolderSource={initialHolderSource}
           onClose={onClose}
         />
       ) : null}
@@ -53,15 +73,20 @@ function BulkImportModalDialog({
   onClose,
 }: Omit<BulkImportModalProps, "open">) {
   const router = useRouter();
+  const initialHolderKey = initialHolderId
+    ? bulkImportHolderKey(initialHolderSource, initialHolderId)
+    : "";
+  const initialHolder =
+    holders.find(
+      (holder) => bulkImportHolderKey(holder.source, holder.id) === initialHolderKey
+    ) ?? null;
+  const initialFields = fieldsFromHolder(initialHolder);
+
   const [step, setStep] = useState<"holder" | "upload" | "review">("holder");
-  const [holderId, setHolderId] = useState(
-    initialHolderId
-      ? bulkImportHolderKey(initialHolderSource, initialHolderId)
-      : ""
-  );
-  const [region, setRegion] = useState<"" | SetupRegion>("");
-  const [country, setCountry] = useState("");
-  const [language, setLanguage] = useState("");
+  const [holderId, setHolderId] = useState(initialHolderKey);
+  const [region, setRegion] = useState<"" | SetupRegion>(initialFields.region);
+  const [country, setCountry] = useState(initialFields.country);
+  const [language, setLanguage] = useState(initialFields.language);
   const [fileName, setFileName] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
@@ -76,24 +101,6 @@ function BulkImportModalDialog({
       ) ?? null,
     [holders, holderId]
   );
-
-  useEffect(() => {
-    if (!selectedHolder) return;
-    const nextCountry = bulkImportHolderCountry(selectedHolder.country);
-    setCountry((prev) => prev || nextCountry);
-    if (selectedHolder.source === "alphaa") {
-      setRegion("Alphaa");
-    } else if (nextCountry) {
-      setRegion(setupRegionForCountry(nextCountry));
-    }
-    setLanguage(
-      (prev) =>
-        prev ||
-        sheetLanguage1(nextCountry, selectedHolder.language || "") ||
-        selectedHolder.language ||
-        ""
-    );
-  }, [selectedHolder]);
 
   const assignedRegion =
     selectedHolder?.source === "alphaa"
@@ -269,7 +276,10 @@ function BulkImportModalDialog({
           </ul>
         ) : null}
 
-        <div className="mt-5">
+        <div className="mt-5 flex flex-col gap-4">
+          {selectedHolder ? (
+            <BulkImportSelectedEmployee holder={selectedHolder} />
+          ) : null}
           {step === "holder" ? (
             <BulkImportHolderStep
               holders={holders}
@@ -281,20 +291,10 @@ function BulkImportModalDialog({
                 const holder = holders.find(
                   (item) => bulkImportHolderKey(item.source, item.id) === next
                 );
-                const nextCountry = bulkImportHolderCountry(holder?.country);
-                setCountry(nextCountry);
-                setRegion(
-                  holder?.source === "alphaa"
-                    ? "Alphaa"
-                    : nextCountry
-                      ? setupRegionForCountry(nextCountry)
-                      : ""
-                );
-                setLanguage(
-                  sheetLanguage1(nextCountry, holder?.language || "") ||
-                    holder?.language ||
-                    ""
-                );
+                const fields = fieldsFromHolder(holder);
+                setCountry(fields.country);
+                setRegion(fields.region);
+                setLanguage(fields.language);
               }}
               onRegionChange={setRegion}
               onCountryChange={(next) => {
