@@ -746,6 +746,12 @@ export type BulkImportHolderOption = {
   full_name: string;
   country: string | null;
   language: string | null;
+  team_lead_name: string | null;
+  manager_name: string | null;
+};
+
+export type BulkImportSelectedEmployeeProps = {
+  holder: BulkImportHolderOption;
 };
 
 export type BulkImportAccountDraft = {

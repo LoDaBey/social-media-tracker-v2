@@ -137,10 +137,6 @@ export type StrategyProjectGapsProps = {
   gaps: StrategyProjectGaps;
 };
 
-export type StrategyHandlerGapsProps = {
-  handlers: StrategyHandlerGap[];
-};
-
 export type StrategyPageSearchParams = {
   book?: string;
   region?: string;
