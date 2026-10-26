@@ -56,6 +56,11 @@ export type StrategyImportResult = {
   africaEuropeCount?: number;
 };
 
+/** Alpha Assets "Region" is geography (Levant, Gulf), not Africa/Europe/ALPHAA books. */
+export type StrategyExcelParseOptions = {
+  ignoreExcelRegion?: boolean;
+};
+
 export type StrategyGapLine = {
   platform: StrategyPlatformKey;
   scope: StrategyAccountScope | "all";

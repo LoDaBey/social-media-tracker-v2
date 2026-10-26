@@ -274,7 +274,7 @@ export function PlatformSubmissionDrawer({
                 type="button"
                 aria-label="Close submission drawer"
                 onClick={onClose}
-                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-[var(--color-muted)] outline-none hover:bg-white focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-[var(--color-muted)] outline-none hover:bg-[var(--color-surface)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
                 {...setupButtonMotion(false)}
               >
                 <X className="h-5 w-5" aria-hidden="true" />
@@ -293,23 +293,23 @@ export function PlatformSubmissionDrawer({
                 <motion.button
                   type="button"
                   aria-label="Show target information"
-                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-[var(--color-muted)] outline-none hover:bg-white focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-[var(--color-muted)] outline-none hover:bg-[var(--color-surface)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
                   {...setupButtonMotion(false)}
                 >
                   <Info className="h-4 w-4" aria-hidden="true" />
                 </motion.button>
-                <div className="pointer-events-none absolute right-0 top-9 z-20 w-64 rounded-[12px] border border-[var(--color-hairline)] bg-white p-3 text-[12px] font-medium leading-5 text-[var(--color-muted)] opacity-0 shadow-[0_12px_32px_rgba(20,20,20,.08)] transition group-hover:opacity-100 group-focus-within:opacity-100">
+                <div className="pointer-events-none absolute right-0 top-9 z-20 w-64 rounded-[12px] border border-[var(--color-hairline)] bg-[var(--color-surface)] p-3 text-[12px] font-medium leading-5 text-[var(--color-muted)] opacity-0 shadow-[0_12px_32px_rgba(20,20,20,.08)] transition group-hover:opacity-100 group-focus-within:opacity-100">
                   Each column shows the goal at the top. After you submit, that row locks until tomorrow.
                 </div>
               </div>
             </div>
 
-            <div className="mt-4 overflow-hidden rounded-[16px] border border-[var(--color-hairline)] bg-white">
+            <div className="mt-4 overflow-hidden rounded-[16px] border border-[var(--color-hairline)] bg-[var(--color-surface)]">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-max border-separate border-spacing-0">
                   <thead>
                     <tr>
-                      <th className="sticky left-0 z-10 w-[140px] bg-white px-4 py-4 text-left align-bottom md:w-[200px]">
+                      <th className="sticky left-0 z-10 w-[140px] bg-[var(--color-surface)] px-4 py-4 text-left align-bottom md:w-[200px]">
                         <span className="text-[12px] font-bold uppercase tracking-[0.04em] text-[var(--color-ink)]">
                           Account
                         </span>
@@ -363,7 +363,7 @@ export function PlatformSubmissionDrawer({
                           <td
                             className={[
                               "sticky left-0 z-10 border-t border-[var(--color-hairline)] px-4 py-4",
-                              rowIndex % 2 === 0 ? "bg-white" : "bg-[var(--color-cream-tint)]",
+                              rowIndex % 2 === 0 ? "bg-[var(--color-surface)]" : "bg-[var(--color-cream-tint)]",
                               isAutoReset ? "border-l-[3px] border-l-[var(--color-coral)]" : "",
                               isLocked && !isAutoReset
                                 ? "border-l-[3px] border-l-[var(--color-emerald)]"
@@ -435,7 +435,7 @@ export function PlatformSubmissionDrawer({
                                         type="button"
                                         aria-label={`Decrease ${METRIC_LABELS[metric]} for ${account.handle}`}
                                         onClick={() => stepValue(account.id, metric, -1)}
-                                        className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-[var(--color-hairline)] bg-white text-[var(--color-muted)] outline-none hover:bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+                                        className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface)] text-[var(--color-muted)] outline-none hover:bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
                                         {...setupButtonMotion(false)}
                                       >
                                         <Minus className="h-3.5 w-3.5" aria-hidden="true" />
@@ -460,7 +460,7 @@ export function PlatformSubmissionDrawer({
                                         type="button"
                                         aria-label={`Increase ${METRIC_LABELS[metric]} for ${account.handle}`}
                                         onClick={() => stepValue(account.id, metric, 1)}
-                                        className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-[var(--color-hairline)] bg-white text-[var(--color-muted)] outline-none hover:bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+                                        className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface)] text-[var(--color-muted)] outline-none hover:bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
                                         {...setupButtonMotion(false)}
                                       >
                                         <Plus className="h-3.5 w-3.5" aria-hidden="true" />
@@ -496,7 +496,7 @@ export function PlatformSubmissionDrawer({
             </div>
 
             {editableAccounts.length > 0 ? (
-              <section className="mt-6 rounded-[14px] border border-[var(--color-hairline)] bg-white px-[18px] py-4 shadow-[0_1px_2px_rgba(20,20,20,.04)]">
+              <section className="mt-6 rounded-[14px] border border-[var(--color-hairline)] bg-[var(--color-surface)] px-[18px] py-4 shadow-[0_1px_2px_rgba(20,20,20,.04)]">
                 <label
                   htmlFor="performance-summary"
                   className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--color-muted)]"
@@ -516,7 +516,7 @@ export function PlatformSubmissionDrawer({
                 </p>
               </section>
             ) : submittedNotesForView ? (
-              <section className="mt-6 rounded-[14px] border border-[var(--color-hairline)] bg-white px-[18px] py-4 shadow-[0_1px_2px_rgba(20,20,20,.04)]">
+              <section className="mt-6 rounded-[14px] border border-[var(--color-hairline)] bg-[var(--color-surface)] px-[18px] py-4 shadow-[0_1px_2px_rgba(20,20,20,.04)]">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--color-muted)]">
                   Your note
                 </p>
@@ -533,7 +533,7 @@ export function PlatformSubmissionDrawer({
         <motion.footer
           layout
           transition={{ layout: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } }}
-          className="relative z-10 shrink-0 border-t border-[var(--color-hairline)] bg-white pb-[max(1rem,env(safe-area-inset-bottom))]"
+          className="relative z-10 shrink-0 border-t border-[var(--color-hairline)] bg-[var(--color-surface)] pb-[max(1rem,env(safe-area-inset-bottom))]"
         >
           <div className="flex flex-col gap-2 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div className="min-w-0">

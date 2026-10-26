@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
+  color-scheme: light;
+
   /* Surfaces */
   --color-cream: #F8F5EE;
   --color-surface: #FFFFFF;
@@ -20,6 +24,7 @@
 
   /* Accents */
   --color-gold: #C9982E;
+  --color-amber: #E08A2C;
   --color-coral: #D85B47;
   --color-coral-tint: #FBEDE8;
 
@@ -27,6 +32,28 @@
   --radius-card: 20px;
   --radius-button: 14px;
   --radius-input: 12px;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --color-cream: #121410;
+  --color-surface: #1C1D19;
+  --color-cream-tint: #26271F;
+
+  --color-ink: #F3F0E8;
+  --color-muted: #A8A398;
+
+  --color-hairline: #33342C;
+
+  --color-emerald: #3FA37A;
+  --color-emerald-hover: #58B890;
+  --color-emerald-tint: #1A2F26;
+
+  --color-gold: #D4A84A;
+  --color-amber: #E2A14A;
+  --color-coral: #E07A6A;
+  --color-coral-tint: #3A2420;
 }
 
 html,

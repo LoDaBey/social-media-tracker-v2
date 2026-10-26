@@ -6,11 +6,19 @@ import { motion } from "framer-motion";
 import { X } from "lucide-react";
 import toast from "react-hot-toast";
 import { setAdminSocialAccountSpare } from "@/actions/admin-accounts";
-import { spareAccountKey } from "@/lib/admin-spare";
+import {
+  emptySpareAccountFilters,
+  filterSpareAccounts,
+  filterSpareMarkHolders,
+  spareAccountFiltersActive,
+  spareAccountKey,
+} from "@/lib/admin-spare";
+import { SpareAccountsFilters } from "@/components/admin/SpareAccountsFilters";
 import { SpareAccountsList } from "@/components/admin/SpareAccountsList";
 import { SpareAccountsMarkPanel } from "@/components/admin/SpareAccountsMarkPanel";
 import type {
   AdminSpareAccountListItem,
+  SpareAccountFilters,
   SpareAccountsDialogProps,
   SpareModalTab,
 } from "@/types/admin";
@@ -24,8 +32,14 @@ export function SpareAccountsDialog({
   const [tab, setTab] = useState<SpareModalTab>("spare");
   const [accounts, setAccounts] =
     useState<AdminSpareAccountListItem[]>(initialAccounts);
+  const [filters, setFilters] = useState<SpareAccountFilters>(
+    emptySpareAccountFilters
+  );
   const [pendingKey, setPendingKey] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const filteredAccounts = filterSpareAccounts(accounts, filters);
+  const filteredHolders = filterSpareMarkHolders(holders, filters);
+  const filtersActive = spareAccountFiltersActive(filters);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -140,7 +154,11 @@ export function SpareAccountsDialog({
                 : "bg-[var(--color-cream-tint)] text-[var(--color-ink)]"
             }`}
           >
-            Current spare ({accounts.length})
+            Current spare (
+            {filtersActive
+              ? `${filteredAccounts.length} of ${accounts.length}`
+              : accounts.length}
+            )
           </motion.button>
           <motion.button
             type="button"
@@ -160,16 +178,29 @@ export function SpareAccountsDialog({
           </motion.button>
         </div>
 
+        <SpareAccountsFilters
+          accounts={accounts}
+          holders={holders}
+          value={filters}
+          onChange={setFilters}
+        />
+
         {tab === "spare" ? (
           <SpareAccountsList
-            accounts={accounts}
+            accounts={filteredAccounts}
             pendingKey={pendingKey}
             pending={pending}
             onUnmark={unmark}
+            emptyMessage={
+              accounts.length > 0 && filtersActive
+                ? "No spare accounts match these filters."
+                : undefined
+            }
           />
         ) : (
           <SpareAccountsMarkPanel
-            holders={holders}
+            holders={filteredHolders}
+            filters={filters}
             onSpareChange={handleSpareChange}
           />
         )}

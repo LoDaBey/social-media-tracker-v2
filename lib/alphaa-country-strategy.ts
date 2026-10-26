@@ -1,6 +1,7 @@
 /**
  * ALPHAA strategic countries — seed/fallback architecture only.
  * Runtime plans live in `alphaa_country_plans` and are edited on /admin/strategy.
+ * Fallback project totals match `102626 Alpha Strategy- Updated .xlsx` (Alpha Main Asset).
  * Platform keys use spreadsheet naming; the app maps `twitter` → X targets.
  */
 
@@ -226,7 +227,11 @@ export const requiredProjectStrategy: Record<
   },
 };
 
-/** Project totals split by personal vs umbrella — drives admin coverage plans. */
+/**
+ * Project totals split by personal vs umbrella — drives admin coverage plans.
+ * Source: `102626 Alpha Strategy- Updated .xlsx` Alpha Main Asset sheet.
+ * Native/verified platforms sit on `umberlla` here so fallback extras still count.
+ */
 export const requiredProjectStrategyPerCategory: Record<
   AlphaaCountryKey,
   Record<AlphaaAccountScope, AlphaaPlatformCounts>

@@ -8,6 +8,7 @@ import { DateBadge } from "@/components/dashboard/DateBadge";
 import { BrandLogo } from "@/components/layout/BrandLogo";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { SignOutButton } from "@/components/layout/SignOutButton";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 function roleBadgeLabel(role: Role) {
   if (role === "team_lead") return `QC · ${ROLE_LABELS.team_lead}`;
@@ -96,6 +97,8 @@ export default async function AppLayout({
                 {roleLabel}
               </span>
             ) : null}
+
+            <ThemeToggle />
 
             <NotificationBell />
 

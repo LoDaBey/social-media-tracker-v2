@@ -32,7 +32,7 @@ type AccountQueryRow = {
   is_spare: boolean;
 };
 
-type TempSpareQueryRow = Omit<AdminSpareAccountListItem, "source">;
+type TempSpareQueryRow = Omit<AdminSpareAccountListItem, "source" | "projects">;
 
 type AlphaaSpareQueryRow = {
   id: number;
@@ -47,6 +47,7 @@ type AlphaaSpareQueryRow = {
   handler_id: number;
   handler_name: string;
   country: string | null;
+  projects: string[] | null;
 };
 
 type TempSpareHolderRow = {
@@ -60,7 +61,23 @@ type AlphaaSpareHolderRow = {
   id: number;
   full_name: string;
   country: string | null;
+  projects: string[] | null;
 };
+
+function mapProjectList(raw: string[] | null | undefined): string[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const projects: string[] = [];
+  for (const value of raw) {
+    const trimmed = value?.trim();
+    if (!trimmed) continue;
+    const key = trimmed.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    projects.push(trimmed);
+  }
+  return projects;
+}
 
 function mapAccount(row: AccountQueryRow): AdminSocialAccountListItem {
   return {
@@ -145,7 +162,11 @@ async function fetchTempSpareAccounts(): Promise<AdminSpareAccountListItem[]> {
         AND LOWER(TRIM(u.region)) IN ('africa', 'europe', 'balkan')
       ORDER BY u.region ASC, u.country ASC, u.full_name ASC, a.platform ASC, a.id ASC`
   );
-  return rows.map((row) => ({ ...row, source: "temp" as const }));
+  return rows.map((row) => ({
+    ...row,
+    source: "temp" as const,
+    projects: row.country ? [row.country] : [],
+  }));
 }
 
 async function fetchAlphaaSpareAccounts(): Promise<AdminSpareAccountListItem[]> {
@@ -165,7 +186,8 @@ async function fetchAlphaaSpareAccounts(): Promise<AdminSpareAccountListItem[]> 
           NULLIF(TRIM(u.username), ''),
           'Handler ' || u.id::text
         ) AS handler_name,
-        INITCAP(TRIM(COALESCE(sma.country, u.country, ''))) AS country
+        INITCAP(TRIM(COALESCE(sma.country, u.country, ''))) AS country,
+        COALESCE(u.projects, ARRAY[]::text[]) AS projects
        FROM social_media_accounts sma
        INNER JOIN users u ON u.id = sma.user_id
       WHERE sma.spare_acc IS TRUE
@@ -187,6 +209,7 @@ async function fetchAlphaaSpareAccounts(): Promise<AdminSpareAccountListItem[]> 
       handler_name: row.handler_name,
       country: country ? overviewDisplayCountry(country, "Alphaa") : null,
       region: "Alphaa",
+      projects: mapProjectList(row.projects),
     };
   });
 }
@@ -240,7 +263,8 @@ export async function fetchAdminSpareMarkHolders(): Promise<
             NULLIF(TRIM(u.username), ''),
             'Handler ' || u.id::text
           ) AS full_name,
-          INITCAP(TRIM(COALESCE(u.country, ''))) AS country
+          INITCAP(TRIM(COALESCE(u.country, ''))) AS country,
+          COALESCE(u.projects, ARRAY[]::text[]) AS projects
          FROM users u
         WHERE EXISTS (
           SELECT 1
@@ -257,6 +281,7 @@ export async function fetchAdminSpareMarkHolders(): Promise<
     full_name: row.full_name,
     country: row.country,
     region: row.region,
+    projects: row.country ? [row.country] : [],
   }));
   const alphaaHolders: SpareMarkHolderOption[] = alphaaRows.map((row) => {
     const country = row.country?.trim() || null;
@@ -266,6 +291,7 @@ export async function fetchAdminSpareMarkHolders(): Promise<
       full_name: row.full_name,
       country: country ? overviewDisplayCountry(country, "Alphaa") : null,
       region: "Alphaa",
+      projects: mapProjectList(row.projects),
     };
   });
 

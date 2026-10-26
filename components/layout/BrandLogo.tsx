@@ -15,18 +15,20 @@ export function BrandLogo({ size = "header", priority = false }: BrandLogoProps)
   const width = Math.round((height * INTRINSIC_WIDTH) / INTRINSIC_HEIGHT);
 
   return (
-    <Image
-      src={LOGO_SRC}
-      alt="Orbit"
-      width={width}
-      height={height}
-      priority={priority}
-      sizes={`${width}px`}
-      className={
-        size === "login"
-          ? "h-auto w-auto object-contain"
-          : "h-auto w-auto object-contain object-left"
-      }
-    />
+    <span className="inline-flex items-center rounded-lg bg-white px-1.5 py-1">
+      <Image
+        src={LOGO_SRC}
+        alt="Orbit"
+        width={width}
+        height={height}
+        priority={priority}
+        sizes={`${width}px`}
+        className={
+          size === "login"
+            ? "h-auto w-auto object-contain"
+            : "h-auto w-auto object-contain object-left"
+        }
+      />
+    </span>
   );
 }

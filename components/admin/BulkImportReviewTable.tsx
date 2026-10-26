@@ -55,7 +55,7 @@ export function BulkImportReviewTable({
                   ? "border-[var(--color-hairline)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
                   : strict
                     ? "border-[var(--color-coral)] focus-visible:ring-2 focus-visible:ring-[var(--color-coral)]"
-                    : "border-[#E08A2C] focus-visible:ring-2 focus-visible:ring-[#E08A2C]"
+                    : "border-[var(--color-amber)] focus-visible:ring-2 focus-visible:ring-[var(--color-amber)]"
             }`}
           >
             <option value="">Select a language</option>

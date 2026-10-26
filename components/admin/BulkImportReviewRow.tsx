@@ -8,10 +8,10 @@ import { bulkImportRowWarnings, bulkImportRowFieldErrors } from "@/lib/bulk-impo
 import type { BulkImportReviewRowProps } from "@/types/admin";
 
 const fieldClass =
-  "w-full min-w-[140px] rounded outline-none border bg-white px-2.5 py-2 text-[13px] font-medium text-[var(--color-ink)]";
+  "w-full min-w-[140px] rounded outline-none border bg-[var(--color-surface)] px-2.5 py-2 text-[13px] font-medium text-[var(--color-ink)]";
 const okClass =
   "border-[var(--color-hairline)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]";
-const warnClass = "border-[#E08A2C] focus-visible:ring-2 focus-visible:ring-[#E08A2C]";
+const warnClass = "border-[var(--color-amber)] focus-visible:ring-2 focus-visible:ring-[var(--color-amber)]";
 const errorClass =
   "border-[var(--color-coral)] focus-visible:ring-2 focus-visible:ring-[var(--color-coral)]";
 
@@ -168,7 +168,7 @@ export function BulkImportReviewRow({
         <tr>
           <td
             colSpan={10}
-            className="px-3 pb-2 text-[12px] font-semibold text-[#E08A2C]"
+            className="px-3 pb-2 text-[12px] font-semibold text-[var(--color-amber)]"
           >
             {warnings.join(" ")}
           </td>

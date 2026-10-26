@@ -64,7 +64,7 @@ export function SetupAccountRowFields({
               "cursor-pointer rounded-lg",
               "h-9 w-9 shrink-0",
               "flex items-center justify-center",
-              "border border-[var(--color-hairline)] bg-white",
+              "border border-[var(--color-hairline)] bg-[var(--color-surface)]",
               "text-[var(--color-coral)]",
               "hover:bg-[var(--color-coral-tint)]",
               "disabled:opacity-50 disabled:cursor-not-allowed",

@@ -14,7 +14,7 @@ import type { EmploymentStatus } from "@/types/db";
 const toneClass: Record<EmploymentStatus, string> = {
   active:
     "bg-[var(--color-emerald-tint)] text-[var(--color-emerald)] border-[var(--color-emerald)]/30",
-  on_hold: "bg-[#E08A2C]/15 text-[#E08A2C] border-[#E08A2C]/30",
+  on_hold: "bg-[var(--color-amber)]/15 text-[var(--color-amber)] border-[var(--color-amber)]/30",
   deactivated:
     "bg-[var(--color-coral-tint)] text-[var(--color-coral)] border-[var(--color-coral)]/30",
 };

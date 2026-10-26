@@ -41,7 +41,7 @@ export function AccountHolderSelect({
         }}
         className={`cursor-pointer rounded outline-none border px-3 py-2.5 text-[15px] font-medium text-[var(--color-ink)] ${
           error
-            ? "border-[var(--color-coral)] bg-white focus-visible:ring-2 focus-visible:ring-[var(--color-coral)]"
+            ? "border-[var(--color-coral)] bg-[var(--color-surface)] focus-visible:ring-2 focus-visible:ring-[var(--color-coral)]"
             : "border-[var(--color-hairline)] bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
         }`}
       >

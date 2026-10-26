@@ -10,7 +10,7 @@ export function AdminCoverageCountCell({
   const tone = met
     ? "text-[var(--color-emerald)]"
     : extra
-      ? "text-[#E08A2C]"
+      ? "text-[var(--color-amber)]"
       : short
         ? "text-[var(--color-coral)]"
         : "text-[var(--color-ink)]";

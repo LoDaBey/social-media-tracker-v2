@@ -13,6 +13,7 @@ import { AccountUrlCell } from "@/components/admin/AccountUrlCell";
 import type {
   AdminSocialAccountListItem,
   AdminSpareAccountListItem,
+  SpareAccountFilters,
   SpareAccountsMarkPanelProps,
   SpareMarkHolderOption,
 } from "@/types/admin";
@@ -34,11 +35,30 @@ function toSpareListItem(
     handler_name: holder.full_name,
     country: holder.country,
     region: holder.region,
+    projects: holder.projects,
   };
+}
+
+function filterHolderAccounts(
+  accounts: AdminSocialAccountListItem[],
+  filters: SpareAccountFilters
+) {
+  const categoryKey = filters.category.trim().toLowerCase();
+  return accounts.filter((account) => {
+    if (filters.platform && account.platform !== filters.platform) return false;
+    if (
+      categoryKey &&
+      (account.category ?? "").trim().toLowerCase() !== categoryKey
+    ) {
+      return false;
+    }
+    return true;
+  });
 }
 
 export function SpareAccountsMarkPanel({
   holders,
+  filters,
   onSpareChange,
 }: SpareAccountsMarkPanelProps) {
   const router = useRouter();
@@ -54,6 +74,7 @@ export function SpareAccountsMarkPanel({
     selected?.source ?? null,
     selected?.id ?? null
   );
+  const visibleAccounts = filterHolderAccounts(accounts, filters);
 
   function toggleSpare(
     account: AdminSocialAccountListItem,
@@ -126,6 +147,10 @@ export function SpareAccountsMarkPanel({
         <p className="rounded-lg bg-[var(--color-cream-tint)] px-4 py-8 text-center text-[14px] text-[var(--color-muted)]">
           This person has no social accounts.
         </p>
+      ) : visibleAccounts.length === 0 ? (
+        <p className="rounded-lg bg-[var(--color-cream-tint)] px-4 py-8 text-center text-[14px] text-[var(--color-muted)]">
+          No accounts match these filters for this handler.
+        </p>
       ) : (
         <div className="overflow-x-auto rounded-[16px] border border-[var(--color-hairline)]">
           <table className="w-full min-w-[720px] border-collapse text-left">
@@ -152,7 +177,7 @@ export function SpareAccountsMarkPanel({
               </tr>
             </thead>
             <tbody>
-              {accounts.map((account) => {
+              {visibleAccounts.map((account) => {
                 const label =
                   account.username ||
                   account.account_name ||

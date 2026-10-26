@@ -696,6 +696,8 @@ export type AdminSpareAccountListItem = {
   handler_name: string;
   country: string | null;
   region: string | null;
+  /** ALPHAA `users.projects`, plus country for Africa/Europe handlers. */
+  projects: string[];
 };
 
 export type SpareMarkHolderOption = {
@@ -704,6 +706,13 @@ export type SpareMarkHolderOption = {
   full_name: string;
   country: string | null;
   region: string | null;
+  projects: string[];
+};
+
+export type SpareAccountFilters = {
+  project: string;
+  platform: string;
+  category: string;
 };
 
 export type AccountHolderOption = {
@@ -792,10 +801,19 @@ export type SpareAccountsListProps = {
   pendingKey: string | null;
   pending: boolean;
   onUnmark: (account: AdminSpareAccountListItem) => void;
+  emptyMessage?: string;
+};
+
+export type SpareAccountsFiltersProps = {
+  accounts: AdminSpareAccountListItem[];
+  holders: SpareMarkHolderOption[];
+  value: SpareAccountFilters;
+  onChange: (value: SpareAccountFilters) => void;
 };
 
 export type SpareAccountsMarkPanelProps = {
   holders: SpareMarkHolderOption[];
+  filters: SpareAccountFilters;
   onSpareChange: (item: AdminSpareAccountListItem, isSpare: boolean) => void;
 };
 

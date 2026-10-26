@@ -269,7 +269,7 @@ function BulkImportModalDialog({
         ) : null}
 
         {warnings.length > 0 && step === "review" ? (
-          <ul className="mt-4 list-disc space-y-1 rounded-lg bg-[#E08A2C]/15 px-5 py-3 text-[13px] text-[#E08A2C]">
+          <ul className="mt-4 list-disc space-y-1 rounded-lg bg-[var(--color-amber)]/15 px-5 py-3 text-[13px] text-[var(--color-amber)]">
             {warnings.map((warning) => (
               <li key={warning}>{warning}</li>
             ))}

@@ -325,8 +325,14 @@ export async function importProjectRows(
            country, language, resources, total_accounts, project_targets, handler_targets, updated_at
          ) VALUES ($1, $2, $3, $4, $5::jsonb, '{}'::jsonb, CURRENT_TIMESTAMP)
          ON CONFLICT (country) DO UPDATE SET
-           language = EXCLUDED.language,
-           resources = EXCLUDED.resources,
+           language = CASE
+             WHEN EXCLUDED.language <> '' THEN EXCLUDED.language
+             ELSE alphaa_country_plans.language
+           END,
+           resources = CASE
+             WHEN EXCLUDED.resources > 0 THEN EXCLUDED.resources
+             ELSE alphaa_country_plans.resources
+           END,
            total_accounts = EXCLUDED.total_accounts,
            project_targets = EXCLUDED.project_targets,
            updated_at = CURRENT_TIMESTAMP`,
@@ -348,9 +354,15 @@ export async function importProjectRows(
        ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, '{}'::jsonb, CURRENT_TIMESTAMP)
        ON CONFLICT (country) DO UPDATE SET
          region = EXCLUDED.region,
-         language = EXCLUDED.language,
-         language2 = EXCLUDED.language2,
-         resources = EXCLUDED.resources,
+         language = CASE
+           WHEN EXCLUDED.language <> '' THEN EXCLUDED.language
+           ELSE africa_europe_country_plans.language
+         END,
+         language2 = COALESCE(EXCLUDED.language2, africa_europe_country_plans.language2),
+         resources = CASE
+           WHEN EXCLUDED.resources > 0 THEN EXCLUDED.resources
+           ELSE africa_europe_country_plans.resources
+         END,
          total_accounts = EXCLUDED.total_accounts,
          project_targets = EXCLUDED.project_targets,
          updated_at = CURRENT_TIMESTAMP`,

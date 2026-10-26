@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cairo } from "next/font/google";
 import { AppToaster } from "@/components/AppToaster";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import "./globals.css";
 
 const cairo = Cairo({
@@ -23,10 +24,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" dir="ltr" className={`${cairo.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      dir="ltr"
+      className={`${cairo.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
       <body className="min-h-full flex flex-col font-sans">
-        <AppToaster />
-        {children}
+        <ThemeProvider>
+          <AppToaster />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
