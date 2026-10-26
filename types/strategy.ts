@@ -114,15 +114,23 @@ export type StrategyCountryPanelProps = {
   onSave: (input: StrategySaveCountryInput) => void;
 };
 
+export type StrategySheetGroup = {
+  label: string;
+  scope: StrategyAccountScope;
+  platforms: StrategyPlatformKey[];
+};
+
 export type StrategyHandlerEditorProps = {
+  book: StrategyBook;
   value: StrategyScopeCounts;
   onChange: (next: StrategyScopeCounts) => void;
 };
 
-export type StrategyTargetsGridProps = {
+export type StrategySheetEditorProps = {
   value: StrategyScopeCounts;
   onChange: (next: StrategyScopeCounts) => void;
   label: string;
+  groups: StrategySheetGroup[];
 };
 
 export type StrategyProjectGapsProps = {

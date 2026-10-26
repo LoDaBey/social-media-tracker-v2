@@ -11,17 +11,18 @@ import { EmployeeCodeButton } from "@/components/admin/EmployeeCodeButton";
 import { EmployeeAccountsPanel } from "@/components/admin/EmployeeAccountsPanel";
 import { AccountTotalsCell } from "@/components/admin/AccountTotalsCell";
 import { EmployeeStatusSelect } from "@/components/admin/EmployeeStatusSelect";
+import { EmployeeStatusBadge } from "@/components/admin/EmployeeStatusBadge";
 import { isTempPlanCountry } from "@/lib/region-config";
 import type { EmployeeTableRowProps } from "@/types/admin";
 
 export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
   const [expanded, setExpanded] = useState(false);
   const initial = (row.full_name.trim()[0] ?? "?").toUpperCase();
-  const canExpand = row.role === "employee";
-  const panelId = `employee-accounts-${row.id}`;
-  const canMarkSpare = Boolean(
-    row.country && isTempPlanCountry(row.country)
-  );
+  const isAlphaa = row.source === "alphaa";
+  const canExpand = row.role === "employee" || row.accounts.length > 0;
+  const panelId = `employee-accounts-${row.source}-${row.id}`;
+  const canMarkSpare =
+    !isAlphaa && Boolean(row.country && isTempPlanCountry(row.country));
   const planAccounts = row.accounts.filter((account) => !account.is_spare).length;
 
   function toggle() {
@@ -72,8 +73,13 @@ export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
               {initial}
             </div>
             <div className="min-w-0">
-              <p className="text-[14px] font-semibold text-[var(--color-ink)]">
-                {row.full_name}
+              <p className="flex flex-wrap items-center gap-2 text-[14px] font-semibold text-[var(--color-ink)]">
+                <span>{row.full_name}</span>
+                {isAlphaa ? (
+                  <span className="inline-flex rounded-full bg-[var(--color-cream-tint)] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
+                    ALPHAA
+                  </span>
+                ) : null}
               </p>
               <p className="truncate text-[13px] text-[var(--color-muted)]">
                 {row.email}
@@ -103,35 +109,43 @@ export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
           />
         </td>
         <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-          <EmployeeStatusSelect
-            userId={row.id}
-            fullName={row.full_name}
-            status={row.employment_status}
-          />
-        </td>
-        <td className="px-4 py-3">
-          <div
-            className="flex items-center gap-1.5"
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.stopPropagation()}
-          >
-            <EmployeeCodeButton
-              employeeId={row.id}
-              fullName={row.full_name}
-              employeeCode={row.employee_code}
-            />
-            <EmployeeViewButton
-              employeeId={row.id}
-              fullName={row.full_name}
-              role={row.role}
-            />
-            <EmployeeDeleteButton userId={row.id} fullName={row.full_name} />
-            <EmployeeActiveToggle
+          {isAlphaa ? (
+            <EmployeeStatusBadge status={row.employment_status} />
+          ) : (
+            <EmployeeStatusSelect
               userId={row.id}
               fullName={row.full_name}
-              isActive={row.is_active}
+              status={row.employment_status}
             />
-          </div>
+          )}
+        </td>
+        <td className="px-4 py-3">
+          {isAlphaa ? (
+            <span className="text-[13px] text-[var(--color-muted)]">View only</span>
+          ) : (
+            <div
+              className="flex items-center gap-1.5"
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+            >
+              <EmployeeCodeButton
+                employeeId={row.id}
+                fullName={row.full_name}
+                employeeCode={row.employee_code}
+              />
+              <EmployeeViewButton
+                employeeId={row.id}
+                fullName={row.full_name}
+                role={row.role}
+              />
+              <EmployeeDeleteButton userId={row.id} fullName={row.full_name} />
+              <EmployeeActiveToggle
+                userId={row.id}
+                fullName={row.full_name}
+                isActive={row.is_active}
+              />
+            </div>
+          )}
         </td>
       </tr>
       {canExpand && expanded ? (
@@ -149,8 +163,9 @@ export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
               language={row.language}
               accounts={row.accounts}
               assignedCount={row.target_accounts_sum}
-              canAdd
+              canAdd={!isAlphaa}
               canMarkSpare={canMarkSpare}
+              readOnly={isAlphaa}
               holders={holders}
             />
           </td>

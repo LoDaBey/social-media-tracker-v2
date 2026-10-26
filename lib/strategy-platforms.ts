@@ -1,8 +1,10 @@
 import { ALPHAA_EXTRA_PLATFORM_KEYS } from "@/lib/alphaa-coverage-platforms";
 import type {
   StrategyAccountScope,
+  StrategyBook,
   StrategyPlatformKey,
   StrategyScopeCounts,
+  StrategySheetGroup,
 } from "@/types/strategy";
 import type {
   AdminCountryPlan,
@@ -55,6 +57,115 @@ export const STRATEGY_SCOPE_LABELS: Record<StrategyAccountScope, string> = {
   umbrella: "Umbrella",
   native: "Native",
 };
+
+export const STRATEGY_PLATFORM_SHORT_LABELS: Record<StrategyPlatformKey, string> =
+  {
+    twitter: "X",
+    facebook: "Facebook",
+    instagram: "Instagram",
+    tiktok: "TikTok",
+    threads: "Threads",
+    reddit: "Reddit",
+    youtube: "YouTube",
+    blogspot: "BlogSpot",
+    telegram: "Telegram",
+    website: "Website",
+    pinterest: "Pinterest",
+    turkkitap: "1000Kitap",
+    kizlarsoruyor: "KızlarSoruyor",
+    balatarin: "Balatarin",
+  };
+
+const CORE_SUMMARY_PLATFORMS: StrategyPlatformKey[] = [
+  "twitter",
+  "facebook",
+  "instagram",
+  "tiktok",
+];
+
+export const ALPHAA_SUMMARY_PLATFORMS: StrategyPlatformKey[] = [
+  "twitter",
+  "facebook",
+  "instagram",
+  "threads",
+  "reddit",
+  "youtube",
+  "blogspot",
+  "tiktok",
+  "telegram",
+  "website",
+  "pinterest",
+  "turkkitap",
+  "kizlarsoruyor",
+  "balatarin",
+];
+
+export const AFRICA_EUROPE_SHEET_GROUPS: StrategySheetGroup[] = [
+  {
+    label: "Personal",
+    scope: "personal",
+    platforms: ["twitter", "facebook", "instagram", "tiktok"],
+  },
+  {
+    label: "Umbrella",
+    scope: "umbrella",
+    platforms: ["twitter", "facebook", "instagram", "tiktok"],
+  },
+];
+
+export const ALPHAA_SHEET_GROUPS: StrategySheetGroup[] = [
+  {
+    label: "Personal",
+    scope: "personal",
+    platforms: [
+      "twitter",
+      "facebook",
+      "instagram",
+      "threads",
+      "reddit",
+      "blogspot",
+      "youtube",
+    ],
+  },
+  {
+    label: "Umbrella",
+    scope: "umbrella",
+    platforms: [
+      "website",
+      "twitter",
+      "facebook",
+      "instagram",
+      "threads",
+      "youtube",
+      "reddit",
+      "blogspot",
+      "tiktok",
+      "pinterest",
+    ],
+  },
+  {
+    label: "Native",
+    scope: "native",
+    platforms: ["turkkitap", "balatarin", "kizlarsoruyor"],
+  },
+  {
+    label: "Verified",
+    scope: "native",
+    platforms: ["telegram"],
+  },
+];
+
+export function strategySummaryPlatformsForBook(
+  book: StrategyBook
+): StrategyPlatformKey[] {
+  return book === "alphaa" ? ALPHAA_SUMMARY_PLATFORMS : CORE_SUMMARY_PLATFORMS;
+}
+
+export function strategySheetGroupsForBook(
+  book: StrategyBook
+): StrategySheetGroup[] {
+  return book === "alphaa" ? ALPHAA_SHEET_GROUPS : AFRICA_EUROPE_SHEET_GROUPS;
+}
 
 const PLATFORM_ALIASES: Record<string, StrategyPlatformKey> = {
   twitter: "twitter",

@@ -60,7 +60,10 @@ export default async function AdminEmployeesPage({
     fetchAdminSpareAccounts(),
   ]);
   const holders = rows
-    .filter((row) => row.role === "employee" && row.is_active)
+    .filter(
+      (row) =>
+        row.source === "temp" && row.role === "employee" && row.is_active
+    )
     .map((row) => ({
       id: row.id,
       full_name: row.full_name,

@@ -2,7 +2,11 @@
 
 import { ChevronDown } from "lucide-react";
 import { CountryFlag } from "@/lib/country-icons";
-import { platformTotal } from "@/lib/strategy-platforms";
+import {
+  platformTotal,
+  STRATEGY_PLATFORM_SHORT_LABELS,
+  strategySummaryPlatformsForBook,
+} from "@/lib/strategy-platforms";
 import { Fragment } from "react";
 import { StrategyCountryPanel } from "./StrategyCountryPanel";
 import type { StrategyProjectTableProps } from "@/types/strategy";
@@ -25,12 +29,24 @@ export function StrategyProjectTable({
     );
   }
 
-  const grandTotal = rows.reduce((sum, row) => sum + row.totalAccounts, 0);
+  const platforms = strategySummaryPlatformsForBook(book);
+  const colCount = 5 + platforms.length;
   const resources = rows.reduce((sum, row) => sum + row.resources, 0);
+  const grandTotal = rows.reduce((sum, row) => sum + row.totalAccounts, 0);
+  const platformTotals = Object.fromEntries(
+    platforms.map((platform) => [
+      platform,
+      rows.reduce((sum, row) => sum + platformTotal(row.projectTargets, platform), 0),
+    ])
+  );
+  const missingTotal = rows.reduce((sum, row) => {
+    const gaps = gapsByCountry[row.country];
+    return sum + (gaps?.project.lines.reduce((lineSum, line) => lineSum + line.missing, 0) ?? 0);
+  }, 0);
 
   return (
     <div className="overflow-x-auto rounded-[16px] border border-[var(--color-hairline)] bg-[var(--color-surface)]">
-      <table className="w-full min-w-[720px] border-collapse text-left">
+      <table className="w-full min-w-[960px] border-collapse text-left">
         <thead>
           <tr className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
             <th scope="col" className="px-3 py-2.5">
@@ -42,18 +58,11 @@ export function StrategyProjectTable({
             <th scope="col" className="px-3 py-2.5">
               Resources
             </th>
-            <th scope="col" className="px-3 py-2.5">
-              X
-            </th>
-            <th scope="col" className="px-3 py-2.5">
-              Facebook
-            </th>
-            <th scope="col" className="px-3 py-2.5">
-              Instagram
-            </th>
-            <th scope="col" className="px-3 py-2.5">
-              TikTok
-            </th>
+            {platforms.map((platform) => (
+              <th key={platform} scope="col" className="px-3 py-2.5">
+                {STRATEGY_PLATFORM_SHORT_LABELS[platform]}
+              </th>
+            ))}
             <th scope="col" className="px-3 py-2.5">
               Total
             </th>
@@ -66,7 +75,8 @@ export function StrategyProjectTable({
           {rows.map((row) => {
             const expanded = expandedCountry === row.country;
             const gaps = gapsByCountry[row.country];
-            const missing = gaps?.project.lines.reduce((sum, line) => sum + line.missing, 0) ?? 0;
+            const missing =
+              gaps?.project.lines.reduce((sum, line) => sum + line.missing, 0) ?? 0;
             return (
               <Fragment key={row.country}>
                 <tr className="border-t border-[var(--color-hairline)]">
@@ -96,18 +106,14 @@ export function StrategyProjectTable({
                   <td className="px-3 py-2.5 text-[13px] tabular-nums text-[var(--color-ink)]">
                     {row.resources}
                   </td>
-                  <td className="px-3 py-2.5 text-[13px] tabular-nums text-[var(--color-ink)]">
-                    {platformTotal(row.projectTargets, "twitter")}
-                  </td>
-                  <td className="px-3 py-2.5 text-[13px] tabular-nums text-[var(--color-ink)]">
-                    {platformTotal(row.projectTargets, "facebook")}
-                  </td>
-                  <td className="px-3 py-2.5 text-[13px] tabular-nums text-[var(--color-ink)]">
-                    {platformTotal(row.projectTargets, "instagram")}
-                  </td>
-                  <td className="px-3 py-2.5 text-[13px] tabular-nums text-[var(--color-ink)]">
-                    {platformTotal(row.projectTargets, "tiktok")}
-                  </td>
+                  {platforms.map((platform) => (
+                    <td
+                      key={platform}
+                      className="px-3 py-2.5 text-[13px] tabular-nums text-[var(--color-ink)]"
+                    >
+                      {platformTotal(row.projectTargets, platform)}
+                    </td>
+                  ))}
                   <td className="px-3 py-2.5 text-[13px] font-semibold tabular-nums text-[var(--color-ink)]">
                     {row.totalAccounts}
                   </td>
@@ -117,7 +123,7 @@ export function StrategyProjectTable({
                 </tr>
                 {expanded ? (
                   <tr className="border-t border-[var(--color-hairline)] bg-[var(--color-cream-tint)]/50">
-                    <td colSpan={9} className="px-4 py-4">
+                    <td colSpan={colCount} className="px-4 py-4">
                       <StrategyCountryPanel
                         key={`${row.country}-${row.updatedAt}`}
                         row={row}
@@ -144,11 +150,20 @@ export function StrategyProjectTable({
             <td className="px-3 py-2.5 text-[13px] font-semibold tabular-nums">
               {resources}
             </td>
-            <td colSpan={4} />
+            {platforms.map((platform) => (
+              <td
+                key={platform}
+                className="px-3 py-2.5 text-[13px] font-semibold tabular-nums"
+              >
+                {platformTotals[platform]}
+              </td>
+            ))}
             <td className="px-3 py-2.5 text-[13px] font-extrabold tabular-nums">
               {grandTotal}
             </td>
-            <td />
+            <td className="px-3 py-2.5 text-[13px] font-semibold tabular-nums text-[var(--color-coral)]">
+              {missingTotal > 0 ? missingTotal : "—"}
+            </td>
           </tr>
         </tfoot>
       </table>

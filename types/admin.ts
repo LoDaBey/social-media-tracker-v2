@@ -3,8 +3,19 @@ import type { Platform, Role, EmploymentStatus, AccountScope } from "@/types/db"
 import type { ReactNode } from "react";
 export type AdminEmployeeCycleStatus = "pending" | "mid-cycle" | "payable";
 
+export type AdminEmployeeListFilters = {
+  q?: string;
+  status?: "all" | "active" | "inactive";
+  role?: "all" | "employee" | "manager" | "team_lead" | "op";
+  region?: "Africa" | "Europe" | "Alphaa";
+  country?: string;
+  teamLeadId?: number | null;
+};
+
 export type AdminEmployeeListRow = {
   id: number;
+  /** temp = Africa/Europe roster; alphaa = legacy users + social_media_accounts. */
+  source: "temp" | "alphaa";
   full_name: string;
   email: string;
   role: Role;
@@ -538,7 +549,8 @@ export type AdminEmployeeActivityListProps = {
 
 export type AdminSocialAccountListItem = {
   id: number;
-  platform: Platform;
+  /** Temp Platform key, or a normalized ALPHAA extra/raw platform key. */
+  platform: string;
   account_name: string;
   account_handle: string | null;
   account_url: string | null;
@@ -599,6 +611,7 @@ export type EmployeeAccountsPanelProps = {
   assignedCount: number;
   canAdd: boolean;
   canMarkSpare?: boolean;
+  readOnly?: boolean;
   holders: BulkImportHolderOption[];
   onChanged?: () => void;
 };

@@ -32,7 +32,7 @@ type AlphaaExtractQueryRow = {
   is_spare: boolean;
 };
 
-function mapAlphaaStatus(
+export function mapAlphaaStatus(
   accState: string | null
 ): AdminExtractRow["status"] {
   const value = (accState ?? "").trim().toLowerCase();
@@ -43,14 +43,14 @@ function mapAlphaaStatus(
   return "active";
 }
 
-function mapAlphaaScope(
+export function mapAlphaaScope(
   personal: boolean | null,
   umberlla: boolean | null
 ): AccountScope {
   return umberlla ? "umbrella" : personal ? "personal" : "personal";
 }
 
-function normalizeAlphaaPlatformKey(
+export function normalizeAlphaaPlatformKey(
   platform: string | null,
   umberlla: boolean | null
 ): string {
