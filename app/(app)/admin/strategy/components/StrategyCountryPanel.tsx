@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { targetsGrandTotal } from "@/lib/strategy-platforms";
+import {
+  strategySheetGroupsForBook,
+  targetsGrandTotal,
+} from "@/lib/strategy-platforms";
 import { StrategyHandlerEditor } from "./StrategyHandlerEditor";
 import { StrategyHandlerGaps } from "./StrategyHandlerGaps";
 import { StrategyProjectGaps } from "./StrategyProjectGaps";
-import { StrategyTargetsGrid } from "./StrategyTargetsGrid";
+import { StrategySheetEditor } from "./StrategySheetEditor";
 import type { StrategyCountryPanelProps, StrategyScopeCounts } from "@/types/strategy";
 
 const fieldClass =
@@ -71,18 +74,23 @@ export function StrategyCountryPanel({
       <div className="flex flex-col gap-2">
         <p className="text-[13px] font-semibold text-[var(--color-ink)]">
           Project totals
-          <span className="ml-2 text-[12px] font-medium text-[var(--color-muted)]">
-            {computedTotal} accounts
-          </span>
         </p>
-        <StrategyTargetsGrid
+        <p className="text-[12px] text-[var(--color-muted)]">
+          Country totals — same columns as the Excel.
+        </p>
+        <StrategySheetEditor
           label={`${row.country} project totals`}
           value={projectTargets}
           onChange={setProjectTargets}
+          groups={strategySheetGroupsForBook(row.book)}
         />
       </div>
 
-      <StrategyHandlerEditor value={handlerTargets} onChange={setHandlerTargets} />
+      <StrategyHandlerEditor
+        book={row.book}
+        value={handlerTargets}
+        onChange={setHandlerTargets}
+      />
 
       {gaps ? (
         <div className="grid gap-4 lg:grid-cols-2">

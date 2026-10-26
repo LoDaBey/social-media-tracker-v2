@@ -9,6 +9,7 @@ export function EmployeeAccountsTable({
   accounts,
   canMarkSpare = false,
   onChanged,
+  readOnly = false,
 }: EmployeeAccountsTableProps) {
   return (
     <div className="overflow-x-auto rounded-[16px] border border-[var(--color-hairline)] bg-[var(--color-surface)]">
@@ -44,6 +45,7 @@ export function EmployeeAccountsTable({
               account={account}
               canMarkSpare={canMarkSpare}
               onChanged={onChanged}
+              readOnly={readOnly}
             />
           ))}
         </tbody>

@@ -16,6 +16,7 @@ export function EmployeeAccountsPanel({
   assignedCount,
   canAdd,
   canMarkSpare = false,
+  readOnly = false,
   holders,
   onChanged,
 }: EmployeeAccountsPanelProps) {
@@ -66,6 +67,7 @@ export function EmployeeAccountsPanel({
           accounts={accounts}
           canMarkSpare={canMarkSpare}
           onChanged={onChanged}
+          readOnly={readOnly}
         />
       )}
 

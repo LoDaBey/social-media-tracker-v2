@@ -4,6 +4,13 @@ import type {
 } from "@/types/admin";
 import type { ManagerAccountListItem } from "@/types/manager";
 import { accountScopeForPlatform } from "@/lib/account-scope";
+import { PLATFORMS, type Platform } from "@/lib/platform-config";
+
+function asPlatform(value: string): Platform {
+  return (PLATFORMS as readonly string[]).includes(value)
+    ? (value as Platform)
+    : "x";
+}
 
 export function emptyAdminSocialAccountInput(
   holderName: string
@@ -27,7 +34,7 @@ export function adminSocialAccountToInput(
   account: AdminSocialAccountListItem
 ): AdminSocialAccountInput {
   return {
-    platform: account.platform,
+    platform: asPlatform(account.platform),
     accountHolder: account.account_handle ?? "",
     url: account.account_url ?? "",
     category: account.category ?? "",
@@ -37,7 +44,10 @@ export function adminSocialAccountToInput(
     emailPassword: account.email_password ?? "",
     mobileNumber: account.mobile_number ?? "",
     status: account.status,
-    accountScope: accountScopeForPlatform(account.platform, account.account_scope),
+    accountScope: accountScopeForPlatform(
+      asPlatform(account.platform),
+      account.account_scope
+    ),
   };
 }
 

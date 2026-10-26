@@ -48,7 +48,11 @@ export function EmployeesTable({ rows, holders }: EmployeesTableProps) {
             </tr>
           ) : (
               rows.map((row) => (
-                <EmployeeTableRow key={row.id} row={row} holders={holders} />
+                <EmployeeTableRow
+                  key={`${row.source}-${row.id}`}
+                  row={row}
+                  holders={holders}
+                />
               ))
           )}
         </tbody>

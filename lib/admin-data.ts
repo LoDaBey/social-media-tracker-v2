@@ -9,10 +9,12 @@ import {
 import type {
   AdminEmployeeCycleStatus,
   AdminEmployeeEditorBundle,
+  AdminEmployeeListFilters,
   AdminEmployeeListRow,
   EmployeeActivityItem,
   EmployeeFormInitial,
 } from "@/types/admin";
+import { fetchAlphaaEmployeesList } from "@/lib/admin-alphaa-employees-data";
 import { fetchAdminAccountsByUserIds } from "@/lib/admin-accounts-data";
 import { fetchManagerOptions } from "@/lib/manager-data";
 import { setupCountriesForRegion } from "@/lib/setup-options";
@@ -74,15 +76,6 @@ function mapCycleStatus(
   return "payable";
 }
 
-export type AdminEmployeeListFilters = {
-  q?: string;
-  status?: "all" | "active" | "inactive";
-  role?: "all" | "employee" | "manager" | "team_lead" | "op";
-  region?: "Africa" | "Europe" | "Alphaa";
-  country?: string;
-  teamLeadId?: number | null;
-};
-
 export async function fetchAdminEmployeesList(
   filters: AdminEmployeeListFilters
 ): Promise<AdminEmployeeListRow[]> {
@@ -106,7 +99,7 @@ export async function fetchAdminEmployeesList(
     params.push(role);
     where.push(`u.role = $${params.length}`);
   }
-  if (region === "Africa" || region === "Europe" || region === "Alphaa") {
+  if (region === "Africa" || region === "Europe") {
     const regionAliases =
       region === "Europe" ? ["Europe", "Balkan"] : [region];
     params.push(regionAliases);
@@ -122,6 +115,9 @@ export async function fetchAdminEmployeesList(
                AND mc.country = ANY($${countriesParam}::text[])
           ))`
     );
+  } else if (region === "Alphaa") {
+    params.push(["Alphaa"]);
+    where.push(`u.region = ANY($${params.length}::text[])`);
   }
   if (country) {
     params.push(country);
@@ -205,34 +201,37 @@ export async function fetchAdminEmployeesList(
     ORDER BY u.full_name ASC
   `;
 
-  const rows = await query<{
-    id: number;
-    full_name: string;
-    email: string;
-    role: AdminEmployeeListRow["role"];
-    is_active: boolean;
-    employee_code: string | null;
-    employment_status: AdminEmployeeListRow["employment_status"];
-    team_lead_id: number | null;
-    team_lead_name: string | null;
-    manager_id: number | null;
-    manager_name: string | null;
-    op_id: number | null;
-    op_name: string | null;
-    country: string | null;
-    language: string | null;
-    manager_countries: string[] | null;
-    current_level: number;
-    target_accounts_sum: number;
-    pay_cycle_start_date: string | null;
-  }>(sql, params);
+  const [rows, alphaaRows] = await Promise.all([
+    query<{
+      id: number;
+      full_name: string;
+      email: string;
+      role: AdminEmployeeListRow["role"];
+      is_active: boolean;
+      employee_code: string | null;
+      employment_status: AdminEmployeeListRow["employment_status"];
+      team_lead_id: number | null;
+      team_lead_name: string | null;
+      manager_id: number | null;
+      manager_name: string | null;
+      op_id: number | null;
+      op_name: string | null;
+      country: string | null;
+      language: string | null;
+      manager_countries: string[] | null;
+      current_level: number;
+      target_accounts_sum: number;
+      pay_cycle_start_date: string | null;
+    }>(sql, params),
+    fetchAlphaaEmployeesList(filters),
+  ]);
 
   const employeeIds = rows
     .filter((r) => r.role === "employee")
     .map((r) => r.id);
   const accountsByUser = await fetchAdminAccountsByUserIds(employeeIds);
 
-  return rows.map((r) => {
+  const tempRows = rows.map((r) => {
     const country = r.country?.trim() || null;
     const managerCountries = r.manager_countries ?? [];
     const countries =
@@ -243,6 +242,7 @@ export async function fetchAdminEmployeesList(
           : [];
     return {
       id: r.id,
+      source: "temp" as const,
       full_name: r.full_name,
       email: r.email,
       role: r.role,
@@ -264,6 +264,10 @@ export async function fetchAdminEmployeesList(
       accounts: r.role === "employee" ? (accountsByUser.get(r.id) ?? []) : [],
     };
   });
+
+  return [...tempRows, ...alphaaRows].sort(
+    (a, b) => a.full_name.localeCompare(b.full_name) || a.id - b.id
+  );
 }
 
 export async function fetchTeamLeadOptions(): Promise<

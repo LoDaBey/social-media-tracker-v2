@@ -8,7 +8,6 @@ import { DateBadge } from "@/components/dashboard/DateBadge";
 import { BrandLogo } from "@/components/layout/BrandLogo";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { SignOutButton } from "@/components/layout/SignOutButton";
-import { fetchPendingCountForReviewer } from "@/lib/qc-data";
 
 function roleBadgeLabel(role: Role) {
   if (role === "team_lead") return `QC · ${ROLE_LABELS.team_lead}`;
@@ -38,13 +37,6 @@ export default async function AppLayout({
   const role = (session.user?.role ?? "employee") as Role;
   const roleLabel = roleBadgeLabel(role);
   const initial = (name.trim()[0] ?? "U").toUpperCase();
-
-  const reviewerId = Number(session.user?.id);
-  const isReviewer = role === "team_lead" || role === "admin";
-  const pendingQcCount =
-    (role === "team_lead" || role === "admin") && Number.isFinite(reviewerId)
-      ? await fetchPendingCountForReviewer(reviewerId, role)
-      : 0;
 
   return (
     <div className="min-h-dvh bg-[var(--color-cream)]">
@@ -96,30 +88,6 @@ export default async function AppLayout({
                 <span className="bg-gradient-to-r from-[var(--color-emerald)] to-[var(--color-emerald)] bg-[length:0%_2px] bg-left-bottom bg-no-repeat transition-[background-size] duration-200 group-hover:bg-[length:100%_2px]">
                   Team
                 </span>
-              </Link>
-            ) : null}
-
-            {isReviewer ? (
-              <Link
-                href="/qc"
-                aria-label={
-                  pendingQcCount > 0
-                    ? `Open quality review queue, ${pendingQcCount} pending`
-                    : "Open quality review queue"
-                }
-                className="group relative inline-flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-[13px] font-semibold text-[var(--color-ink)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
-              >
-                <span className="bg-gradient-to-r from-[var(--color-emerald)] to-[var(--color-emerald)] bg-[length:0%_2px] bg-left-bottom bg-no-repeat transition-[background-size] duration-200 group-hover:bg-[length:100%_2px]">
-                  QC
-                </span>
-                {pendingQcCount > 0 ? (
-                  <span
-                    className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--color-emerald)] px-1.5 text-[11px] font-semibold text-white tabular-nums"
-                    aria-hidden="true"
-                  >
-                    {pendingQcCount}
-                  </span>
-                ) : null}
               </Link>
             ) : null}
 
