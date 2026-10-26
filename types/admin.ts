@@ -410,6 +410,50 @@ export type AdminCountryCoverageSectionProps = {
   region: AdminRegion;
 };
 
+export type BalanceCoverageSpareChange = {
+  country: string;
+  platform: string;
+  platformLabel: string;
+  handlerName: string;
+  accountId: number;
+  username: string | null;
+  source: AdminEmployeeSource;
+};
+
+export type BalanceCoverageSpareGap = {
+  country: string;
+  platform: string;
+  platformLabel: string;
+  actual: number;
+  target: number;
+  missing: number;
+  spareAvailable: number;
+};
+
+export type BalanceCoverageSpareResult = {
+  applied: boolean;
+  marked: BalanceCoverageSpareChange[];
+  unmarked: BalanceCoverageSpareChange[];
+  missing: BalanceCoverageSpareGap[];
+  error?: string;
+};
+
+export type BalanceCoverageButtonProps = {
+  region: AdminRegion;
+};
+
+export type BalanceCoverageModalProps = {
+  open: boolean;
+  region: AdminRegion;
+  onClose: () => void;
+};
+
+export type BalanceCoverageDialogProps = Omit<BalanceCoverageModalProps, "open">;
+
+export type BalanceCoverageResultProps = {
+  result: BalanceCoverageSpareResult;
+};
+
 export type AdminOverviewRegionTabsProps = {
   region: AdminRegion;
   children: ReactNode;
