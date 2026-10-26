@@ -37,6 +37,15 @@ export function adminViewEmployeeNew(): AdminView {
   return { kind: "employee_new", title: "New employee" };
 }
 
+export function adminEmployeeHref(
+  id: number,
+  source: "temp" | "alphaa" = "temp"
+) {
+  return source === "alphaa"
+    ? `/admin/employees/alphaa/${id}`
+    : `/admin/employees/${id}`;
+}
+
 export function adminViewEmployee(input: {
   employeeId: number;
   employeeName: string;
@@ -61,6 +70,17 @@ export function adminViewStrategy(): AdminView {
   return { kind: "strategy", title: "Strategy" };
 }
 
+export function adminViewAlphaaEmployee(input: {
+  employeeName: string;
+  role: string;
+}): AdminView {
+  return {
+    kind: "alphaa_employee",
+    title: input.employeeName,
+    roleBadge: adminRoleBadge(input.role),
+  };
+}
+
 export function adminWorkspaceBackHref(view: AdminView): string | null {
   switch (view.kind) {
     case "overview":
@@ -71,6 +91,7 @@ export function adminWorkspaceBackHref(view: AdminView): string | null {
       return "/admin";
     case "employee_new":
     case "employee":
+    case "alphaa_employee":
       return "/admin/employees";
   }
 }

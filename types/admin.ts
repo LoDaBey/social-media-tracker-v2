@@ -125,6 +125,7 @@ export type AdminViewKind =
   | "employees"
   | "employee_new"
   | "employee"
+  | "alphaa_employee"
   | "extract"
   | "strategy";
 
@@ -143,7 +144,33 @@ export type AdminView =
       employeeName: string;
       roleBadge: string;
       panel: AdminEmployeePanel;
+    }
+  | {
+      kind: "alphaa_employee";
+      title: string;
+      roleBadge: string;
     };
+
+export type AlphaaEmployeeProfile = {
+  id: number;
+  fullName: string;
+  email: string;
+  roleLabel: string;
+  mappedRole: Role;
+  phone: string | null;
+  country: string | null;
+  countries: string[];
+  language: string | null;
+  isActive: boolean;
+  department: string | null;
+  location: string | null;
+  projects: string[];
+  accounts: AdminSocialAccountListItem[];
+};
+
+export type AlphaaEmployeeProfileProps = {
+  profile: AlphaaEmployeeProfile;
+};
 
 export type AdminWorkspaceProps = {
   view: AdminView;
@@ -293,6 +320,7 @@ export type AdminCoverageCount = {
 
 export type AdminCountryCoverageHolder = {
   id: number | null;
+  source: "temp" | "alphaa";
   fullName: string;
   email: string | null;
   vacant: boolean;
@@ -507,6 +535,11 @@ export type EmployeeViewButtonProps = {
   role: Role;
 };
 
+export type AlphaaEmployeeViewLinkProps = {
+  employeeId: number;
+  fullName: string;
+};
+
 export type EmployeeCodeButtonProps = {
   employeeId: number;
   fullName: string;
@@ -610,9 +643,11 @@ export type EmployeeAccountsPanelProps = {
   accounts: AdminSocialAccountListItem[];
   assignedCount: number;
   canAdd: boolean;
+  canImport?: boolean;
   canMarkSpare?: boolean;
   readOnly?: boolean;
   holders: BulkImportHolderOption[];
+  holderSource?: "temp" | "alphaa";
   onChanged?: () => void;
 };
 
@@ -707,6 +742,7 @@ export type AccountUrlCellProps = {
 
 export type BulkImportHolderOption = {
   id: number;
+  source: "temp" | "alphaa";
   full_name: string;
   country: string | null;
   language: string | null;
@@ -741,6 +777,7 @@ export type BulkImportMutationResult =
 export type EmployeesBulkImportButtonProps = {
   holders: BulkImportHolderOption[];
   initialHolderId?: number;
+  initialHolderSource?: "temp" | "alphaa";
   variant?: "icon" | "button";
 };
 
@@ -748,6 +785,7 @@ export type BulkImportModalProps = {
   open: boolean;
   holders: BulkImportHolderOption[];
   initialHolderId?: number;
+  initialHolderSource?: "temp" | "alphaa";
   onClose: () => void;
 };
 

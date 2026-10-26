@@ -7,6 +7,7 @@ import { EmployeeCountryCell } from "@/components/admin/EmployeeCountryCell";
 import { EmployeeActiveToggle } from "@/components/admin/EmployeeActiveToggle";
 import { EmployeeDeleteButton } from "@/components/admin/EmployeeDeleteButton";
 import { EmployeeViewButton } from "@/components/admin/EmployeeViewButton";
+import { AlphaaEmployeeViewLink } from "@/components/admin/AlphaaEmployeeViewLink";
 import { EmployeeCodeButton } from "@/components/admin/EmployeeCodeButton";
 import { EmployeeAccountsPanel } from "@/components/admin/EmployeeAccountsPanel";
 import { AccountTotalsCell } from "@/components/admin/AccountTotalsCell";
@@ -121,7 +122,16 @@ export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
         </td>
         <td className="px-4 py-3">
           {isAlphaa ? (
-            <span className="text-[13px] text-[var(--color-muted)]">View only</span>
+            <div
+              className="flex items-center gap-1.5"
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+            >
+              <AlphaaEmployeeViewLink
+                employeeId={row.id}
+                fullName={row.full_name}
+              />
+            </div>
           ) : (
             <div
               className="flex items-center gap-1.5"
@@ -164,9 +174,13 @@ export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
               accounts={row.accounts}
               assignedCount={row.target_accounts_sum}
               canAdd={!isAlphaa}
+              canImport={holders.some(
+                (holder) => holder.id === row.id && holder.source === row.source
+              )}
               canMarkSpare={canMarkSpare}
               readOnly={isAlphaa}
               holders={holders}
+              holderSource={row.source}
             />
           </td>
         </tr>

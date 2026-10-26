@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { fetchAdminSpareAccounts } from "@/lib/admin-accounts-data";
 import { fetchAdminCountryCoverage } from "@/lib/admin-country-coverage";
 import { AdminCoverageKpis } from "@/components/admin/AdminCoverageKpis";
@@ -8,6 +9,10 @@ import { SpareAccountsButton } from "@/components/admin/SpareAccountsButton";
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import { adminViewOverview } from "@/lib/admin-view";
 import { adminRegionFromSlug } from "@/lib/region-config";
+
+export const metadata: Metadata = {
+  title: "Admin",
+};
 
 type AdminOverviewPageProps = {
   searchParams: Promise<{ region?: string }>;

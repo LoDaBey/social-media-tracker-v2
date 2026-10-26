@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getDashboardData } from "@/lib/dashboard-data";
@@ -12,6 +13,10 @@ import {
   isEmployeeSetupComplete,
   targetsFromCounts,
 } from "@/lib/setup-complete";
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+};
 
 function getTimeOfDayWord(hour: number) {
   if (hour < 12) return "morning";

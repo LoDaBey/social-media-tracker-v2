@@ -2,6 +2,7 @@ import { ALPHAA_EXTRA_PLATFORM_KEYS } from "@/lib/alphaa-coverage-platforms";
 import type {
   StrategyAccountScope,
   StrategyBook,
+  StrategyGapLine,
   StrategyPlatformKey,
   StrategyScopeCounts,
   StrategySheetGroup,
@@ -75,6 +76,18 @@ export const STRATEGY_PLATFORM_SHORT_LABELS: Record<StrategyPlatformKey, string>
     kizlarsoruyor: "KızlarSoruyor",
     balatarin: "Balatarin",
   };
+
+export function strategyNeedsSentence(lines: StrategyGapLine[]): string {
+  const parts = lines
+    .filter((line) => line.missing > 0)
+    .map((line) => {
+      const scope =
+        line.scope === "all" ? "" : ` ${STRATEGY_SCOPE_LABELS[line.scope]}`;
+      return `${line.missing} ${STRATEGY_PLATFORM_SHORT_LABELS[line.platform]}${scope}`;
+    });
+  if (parts.length === 0) return "";
+  return `Need ${parts.join(", ")}`;
+}
 
 const CORE_SUMMARY_PLATFORMS: StrategyPlatformKey[] = [
   "twitter",

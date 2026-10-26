@@ -10,7 +10,10 @@ const cairo = Cairo({
 });
 
 export const metadata: Metadata = {
-  title: "Orbit",
+  title: {
+    default: "Orbit",
+    template: "%s · Orbit",
+  },
   description: "Internal employee portal",
 };
 

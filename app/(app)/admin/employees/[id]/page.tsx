@@ -1,4 +1,5 @@
-import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { queryOne } from "@/lib/db";
 import {
@@ -23,6 +24,21 @@ import {
 
 type SearchParams = { panel?: string; tab?: string };
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id: idRaw } = await params;
+  const id = Number(idRaw);
+  if (!Number.isFinite(id)) return { title: "Employee" };
+  const user = await queryOne<Pick<TempUser, "full_name">>(
+    `SELECT full_name FROM temp_users WHERE id = $1`,
+    [id]
+  );
+  return { title: user?.full_name ?? "Employee" };
+}
+
 export default async function AdminEmployeeDetailPage({
   params,
   searchParams,
@@ -41,7 +57,14 @@ export default async function AdminEmployeeDetailPage({
   });
 
   const user = await queryOne<TempUser>(`SELECT * FROM temp_users WHERE id = $1`, [id]);
-  if (!user) notFound();
+  if (!user) {
+    const alphaa = await queryOne<{ id: number }>(
+      `SELECT id FROM users WHERE id = $1`,
+      [id]
+    );
+    if (alphaa) redirect(`/admin/employees/alphaa/${id}`);
+    notFound();
+  }
 
   const [teamLeads, managers, ops, admins, managerCountries] = await Promise.all([
     fetchTeamLeadOptions(),

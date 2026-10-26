@@ -29,7 +29,7 @@ export function AdminWorkspace({ view, children }: AdminWorkspaceProps) {
             <h1 className="text-[24px] font-extrabold text-[var(--color-ink)] sm:text-[32px]">
               {view.title}
             </h1>
-            {view.kind === "employee" ? (
+            {view.kind === "employee" || view.kind === "alphaa_employee" ? (
               <span className="rounded-full bg-[var(--color-emerald-tint)] px-3 py-1 text-[12px] font-semibold uppercase tracking-wide text-[var(--color-emerald)]">
                 {view.roleBadge}
               </span>

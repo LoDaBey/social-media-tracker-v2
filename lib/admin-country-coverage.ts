@@ -164,7 +164,8 @@ function seatQuotaFromTempUserTargets(
 function holderFromSeat(
   person: HolderActuals | null,
   seat: AdminCountrySeatQuota,
-  vacantIndex: number
+  vacantIndex: number,
+  source: "temp" | "alphaa"
 ): AdminCountryCoverageHolder {
   const actuals = person ?? {
     x: 0,
@@ -189,6 +190,7 @@ function holderFromSeat(
 
   return {
     id: person?.id ?? null,
+    source,
     fullName: person?.fullName ?? `Unfilled resource ${vacantIndex}`,
     email: person?.email ?? null,
     vacant: !person,
@@ -223,7 +225,14 @@ function holdersForCountry(
       seat = seatQuotaFromTempUserTargets(person.targets);
     }
     if (!person) vacantIndex += 1;
-    holders.push(holderFromSeat(person, seat, vacantIndex));
+    holders.push(
+      holderFromSeat(
+        person,
+        seat,
+        vacantIndex,
+        isAlphaaPlan(plan) ? "alphaa" : "temp"
+      )
+    );
   }
 
   return holders;

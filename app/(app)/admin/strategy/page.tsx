@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import { adminViewStrategy } from "@/lib/admin-view";
 import { fetchStrategyGapsByCountry } from "@/lib/strategy-actuals";
@@ -11,6 +12,16 @@ type StrategyPageProps = {
 
 function bookFromParam(value: string | undefined): StrategyBook {
   return value === "africa_europe" ? "africa_europe" : "alphaa";
+}
+
+export async function generateMetadata({
+  searchParams,
+}: StrategyPageProps): Promise<Metadata> {
+  const params = await searchParams;
+  const book = bookFromParam(params.book);
+  return {
+    title: book === "africa_europe" ? "Strategy · Africa & Balkans" : "Strategy · ALPHAA",
+  };
 }
 
 export default async function AdminStrategyPage({ searchParams }: StrategyPageProps) {

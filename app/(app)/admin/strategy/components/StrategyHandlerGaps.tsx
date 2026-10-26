@@ -1,11 +1,14 @@
-import { STRATEGY_PLATFORM_LABELS, STRATEGY_SCOPE_LABELS } from "@/lib/strategy-platforms";
+import { strategyNeedsSentence } from "@/lib/strategy-platforms";
 import type { StrategyHandlerGapsProps } from "@/types/strategy";
 
 export function StrategyHandlerGaps({ handlers }: StrategyHandlerGapsProps) {
-  if (handlers.length === 0) {
+  const people = handlers.filter((handler) => !handler.vacant);
+  const vacantCount = handlers.filter((handler) => handler.vacant).length;
+
+  if (people.length === 0 && vacantCount === 0) {
     return (
       <p className="text-[13px] text-[var(--color-muted)]">
-        Every current handler meets the per-handler template.
+        Every person already has their mix.
       </p>
     );
   }
@@ -13,33 +16,32 @@ export function StrategyHandlerGaps({ handlers }: StrategyHandlerGapsProps) {
   return (
     <div className="flex flex-col gap-2">
       <p className="text-[13px] font-semibold text-[var(--color-ink)]">
-        Missing vs handler template
+        Each person still needs
       </p>
       <ul className="flex flex-col gap-2">
-        {handlers.map((handler) => (
+        {people.map((handler) => (
           <li
             key={handler.id ?? handler.fullName}
             className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 py-2"
           >
             <p className="text-[13px] font-semibold text-[var(--color-ink)]">
               {handler.fullName}
-              {handler.vacant ? (
-                <span className="ml-2 text-[12px] font-medium text-[var(--color-muted)]">
-                  vacant seat
-                </span>
-              ) : null}
             </p>
-            <p className="mt-1 text-[12px] text-[var(--color-muted)]">
-              {handler.lines
-                .map((line) => {
-                  const scope =
-                    line.scope === "all" ? "" : ` ${STRATEGY_SCOPE_LABELS[line.scope]}`;
-                  return `${STRATEGY_PLATFORM_LABELS[line.platform]}${scope} ${line.actual}/${line.planned}`;
-                })
-                .join(" · ")}
+            <p className="mt-1 text-[12px] text-[var(--color-coral)]">
+              {strategyNeedsSentence(handler.lines)}
             </p>
           </li>
         ))}
+        {vacantCount > 0 ? (
+          <li className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 py-2">
+            <p className="text-[13px] font-semibold text-[var(--color-ink)]">
+              Empty seat{vacantCount === 1 ? "" : "s"}
+            </p>
+            <p className="mt-1 text-[12px] text-[var(--color-coral)]">
+              Need {vacantCount} more {vacantCount === 1 ? "person" : "people"}
+            </p>
+          </li>
+        ) : null}
       </ul>
     </div>
   );

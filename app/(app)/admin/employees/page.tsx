@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { fetchAdminSpareAccounts } from "@/lib/admin-accounts-data";
 import { fetchAdminEmployeesList } from "@/lib/admin-data";
 import { EmployeesTable } from "@/components/admin/EmployeesTable";
@@ -18,6 +19,10 @@ import {
   employeeListRegionSlug,
   isCountryInEmployeeListRegion,
 } from "@/lib/setup-options";
+
+export const metadata: Metadata = {
+  title: "Employees",
+};
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -60,12 +65,10 @@ export default async function AdminEmployeesPage({
     fetchAdminSpareAccounts(),
   ]);
   const holders = rows
-    .filter(
-      (row) =>
-        row.source === "temp" && row.role === "employee" && row.is_active
-    )
+    .filter((row) => row.role === "employee" && row.is_active)
     .map((row) => ({
       id: row.id,
+      source: row.source,
       full_name: row.full_name,
       country: row.country,
       language: row.language,

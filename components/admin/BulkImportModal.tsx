@@ -9,7 +9,11 @@ import {
   importBulkEmployeeAccounts,
   parseBulkImportWorkbook,
 } from "@/actions/admin-bulk-import";
-import { bulkImportRowWarnings } from "@/lib/bulk-import-parse";
+import {
+  bulkImportHolderCountry,
+  bulkImportHolderKey,
+  bulkImportRowWarnings,
+} from "@/lib/bulk-import-parse";
 import { sheetLanguage1 } from "@/lib/sheets-country-config";
 import {
   setupRegionForCountry,
@@ -45,12 +49,15 @@ export function BulkImportModal({
 function BulkImportModalDialog({
   holders,
   initialHolderId,
+  initialHolderSource = "temp",
   onClose,
 }: Omit<BulkImportModalProps, "open">) {
   const router = useRouter();
   const [step, setStep] = useState<"holder" | "upload" | "review">("holder");
   const [holderId, setHolderId] = useState(
-    initialHolderId ? String(initialHolderId) : ""
+    initialHolderId
+      ? bulkImportHolderKey(initialHolderSource, initialHolderId)
+      : ""
   );
   const [region, setRegion] = useState<"" | SetupRegion>("");
   const [country, setCountry] = useState("");
@@ -63,15 +70,20 @@ function BulkImportModalDialog({
   const [pending, startTransition] = useTransition();
 
   const selectedHolder = useMemo(
-    () => holders.find((holder) => String(holder.id) === holderId) ?? null,
+    () =>
+      holders.find(
+        (holder) => bulkImportHolderKey(holder.source, holder.id) === holderId
+      ) ?? null,
     [holders, holderId]
   );
 
   useEffect(() => {
     if (!selectedHolder) return;
-    const nextCountry = selectedHolder.country || "";
+    const nextCountry = bulkImportHolderCountry(selectedHolder.country);
     setCountry((prev) => prev || nextCountry);
-    if (nextCountry) {
+    if (selectedHolder.source === "alphaa") {
+      setRegion("Alphaa");
+    } else if (nextCountry) {
       setRegion(setupRegionForCountry(nextCountry));
     }
     setLanguage(
@@ -83,7 +95,12 @@ function BulkImportModalDialog({
     );
   }, [selectedHolder]);
 
-  const assignedRegion = country ? setupRegionForCountry(country) : region;
+  const assignedRegion =
+    selectedHolder?.source === "alphaa"
+      ? "Alphaa"
+      : country
+        ? setupRegionForCountry(country)
+        : region;
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -168,6 +185,7 @@ function BulkImportModalDialog({
     startTransition(async () => {
       const result = await importBulkEmployeeAccounts({
         holderId: selectedHolder.id,
+        source: selectedHolder.source,
         country,
         language,
         rows,
@@ -260,10 +278,18 @@ function BulkImportModalDialog({
               country={country}
               onHolderIdChange={(next) => {
                 setHolderId(next);
-                const holder = holders.find((item) => String(item.id) === next);
-                const nextCountry = holder?.country ?? "";
+                const holder = holders.find(
+                  (item) => bulkImportHolderKey(item.source, item.id) === next
+                );
+                const nextCountry = bulkImportHolderCountry(holder?.country);
                 setCountry(nextCountry);
-                setRegion(nextCountry ? setupRegionForCountry(nextCountry) : "");
+                setRegion(
+                  holder?.source === "alphaa"
+                    ? "Alphaa"
+                    : nextCountry
+                      ? setupRegionForCountry(nextCountry)
+                      : ""
+                );
                 setLanguage(
                   sheetLanguage1(nextCountry, holder?.language || "") ||
                     holder?.language ||
@@ -274,7 +300,11 @@ function BulkImportModalDialog({
               onCountryChange={(next) => {
                 setCountry(next);
                 if (next) {
-                  setRegion(setupRegionForCountry(next));
+                  setRegion(
+                    selectedHolder?.source === "alphaa"
+                      ? "Alphaa"
+                      : setupRegionForCountry(next)
+                  );
                   setLanguage((prev) => sheetLanguage1(next, prev) || prev);
                 }
               }}
