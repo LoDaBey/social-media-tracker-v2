@@ -44,10 +44,13 @@ import type {
 
 type CountryActuals = TempCountryActuals & {
   extraPlatforms?: Record<AlphaaExtraPlatformKey, number>;
+  /** Unique live accounts when known (ALPHAA). */
+  accounts?: number;
 };
 
 type HolderActuals = TempHolderActuals & {
   extraPlatforms?: Record<AlphaaExtraPlatformKey, number>;
+  accounts?: number;
 };
 
 const EMPTY_ACTUALS: CountryActuals = {
@@ -196,7 +199,10 @@ function holderFromSeat(
     email: person?.email ?? null,
     vacant: !person,
     ...platformCounts,
-    totalAccounts: count(creditedAccountsFrom(platformCounts), seat.totalAccounts),
+    totalAccounts: count(
+      person?.accounts ?? creditedAccountsFrom(platformCounts),
+      seat.totalAccounts
+    ),
   };
 }
 
@@ -270,7 +276,7 @@ function toRow(
     resources: count(actuals.employees, plan.resources),
     ...platformCounts,
     totalAccounts: count(
-      creditedAccountsFrom(platformCounts),
+      actuals.accounts ?? creditedAccountsFrom(platformCounts),
       plan.totalAccounts
     ),
     holders: holdersForCountry(plan, people),
@@ -571,7 +577,7 @@ export async function fetchAdminCountryCoverage(
       instagram: addCreditedCount(sum.instagram, row.instagram),
       tiktok: addCreditedCount(sum.tiktok, row.tiktok),
       extraPlatforms: addCreditedExtraPlatforms(sum.extraPlatforms, row.extraPlatforms),
-      totalAccounts: addCreditedCount(sum.totalAccounts, row.totalAccounts),
+      totalAccounts: addResourceTotal(sum.totalAccounts, row.totalAccounts),
     }),
     {
       resources: count(0, 0),
