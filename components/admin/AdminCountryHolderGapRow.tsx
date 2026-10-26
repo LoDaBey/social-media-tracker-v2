@@ -17,7 +17,7 @@ export function AdminCountryHolderGapRow({
     <tr className="border-t border-[var(--color-hairline)]">
       <th
         scope="row"
-        className="px-3 py-2 text-[13px] font-semibold text-[var(--color-ink)]"
+        className="min-w-[12rem] px-4 py-3 text-[13px] font-semibold text-[var(--color-ink)]"
       >
         {holder.vacant ? (
           <span className="text-[#E08A2C]">{holder.fullName}</span>
@@ -45,31 +45,31 @@ export function AdminCountryHolderGapRow({
           {summary}
         </p>
       </th>
-      <td className="px-3 py-2">
+      <td className="whitespace-nowrap px-4 py-3">
         <AdminCoverageCountCell
           count={holder.x}
           label={`${holder.fullName} X accounts`}
         />
       </td>
-      <td className="px-3 py-2">
+      <td className="whitespace-nowrap px-4 py-3">
         <AdminCoverageCountCell
           count={holder.facebookPersonal}
           label={`${holder.fullName} Facebook personal accounts`}
         />
       </td>
-      <td className="px-3 py-2">
+      <td className="whitespace-nowrap px-4 py-3">
         <AdminCoverageCountCell
           count={holder.facebookUmbrella}
           label={`${holder.fullName} Facebook umbrella accounts`}
         />
       </td>
-      <td className="px-3 py-2">
+      <td className="whitespace-nowrap px-4 py-3">
         <AdminCoverageCountCell
           count={holder.instagram}
           label={`${holder.fullName} Instagram accounts`}
         />
       </td>
-      <td className="px-3 py-2">
+      <td className="whitespace-nowrap px-4 py-3">
         <AdminCoverageCountCell
           count={holder.tiktok}
           label={`${holder.fullName} TikTok accounts`}
@@ -81,7 +81,7 @@ export function AdminCountryHolderGapRow({
           labelPrefix={holder.fullName}
         />
       ) : null}
-      <td className="px-3 py-2">
+      <td className="whitespace-nowrap px-4 py-3">
         <AdminCoverageCountCell
           count={holder.totalAccounts}
           label={`${holder.fullName} total accounts`}

@@ -1,5 +1,12 @@
 import type { Metadata } from "next";
-import { fetchAdminSpareAccounts } from "@/lib/admin-accounts-data";
+import {
+  fetchAdminSpareAccounts,
+  fetchAdminSpareMarkHolders,
+} from "@/lib/admin-accounts-data";
+import {
+  spareAccountsForRegion,
+  spareMarkHoldersForRegion,
+} from "@/lib/admin-spare";
 import { fetchAdminCountryCoverage } from "@/lib/admin-country-coverage";
 import { AdminCoverageKpis } from "@/components/admin/AdminCoverageKpis";
 import { AdminCountryCoverageSection } from "@/components/admin/AdminCountryCoverageSection";
@@ -23,12 +30,11 @@ export default async function AdminOverviewPage({
 }: AdminOverviewPageProps) {
   const params = await searchParams;
   const region = adminRegionFromSlug(params.region);
-  const [coverage, spareAccounts] = await Promise.all([
+  const [coverage, spareAccounts, spareHolders] = await Promise.all([
     fetchAdminCountryCoverage({ region }),
     fetchAdminSpareAccounts(),
+    fetchAdminSpareMarkHolders(),
   ]);
-  const showSpareActions =
-    region === "Africa" || region === "Europe" || region === "Overview";
 
   return (
     <AdminWorkspace view={adminViewOverview()}>
@@ -37,9 +43,10 @@ export default async function AdminOverviewPage({
           <div className="min-w-0 flex-1">
             <AdminOverviewActions />
           </div>
-          {showSpareActions ? (
-            <SpareAccountsButton accounts={spareAccounts} />
-          ) : null}
+          <SpareAccountsButton
+            accounts={spareAccountsForRegion(spareAccounts, region)}
+            holders={spareMarkHoldersForRegion(spareHolders, region)}
+          />
         </div>
         <AdminOverviewRegionTabs region={region}>
           <AdminCoverageKpis coverage={coverage} />

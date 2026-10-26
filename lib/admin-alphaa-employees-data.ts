@@ -93,7 +93,7 @@ function mapAlphaaAccount(row: AlphaaAccountQueryRow): AdminSocialAccountListIte
   };
 }
 
-async function fetchAlphaaAccountsByUserIds(
+export async function fetchAlphaaAccountsByUserIds(
   userIds: number[]
 ): Promise<Map<number, AdminSocialAccountListItem[]>> {
   const byUser = new Map<number, AdminSocialAccountListItem[]>();

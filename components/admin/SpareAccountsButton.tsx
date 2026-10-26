@@ -6,7 +6,10 @@ import { Bookmark } from "lucide-react";
 import { SpareAccountsModal } from "@/components/admin/SpareAccountsModal";
 import type { SpareAccountsButtonProps } from "@/types/admin";
 
-export function SpareAccountsButton({ accounts }: SpareAccountsButtonProps) {
+export function SpareAccountsButton({
+  accounts,
+  holders,
+}: SpareAccountsButtonProps) {
   const [open, setOpen] = useState(false);
   const count = accounts.length;
 
@@ -38,6 +41,7 @@ export function SpareAccountsButton({ accounts }: SpareAccountsButtonProps) {
         open={open}
         onClose={() => setOpen(false)}
         accounts={accounts}
+        holders={holders}
       />
     </>
   );

@@ -212,7 +212,7 @@ export async function deleteAdminSocialAccount(
   }
 }
 
-/** Mark/unmark an Africa or Europe account as spare (excluded from plan KPIs). */
+/** Mark/unmark a temp or ALPHAA account as spare (excluded from plan KPIs). */
 export async function setAdminSocialAccountSpare(
   accountId: number,
   isSpare: boolean,

@@ -1,5 +1,12 @@
 import type { Metadata } from "next";
-import { fetchAdminSpareAccounts } from "@/lib/admin-accounts-data";
+import {
+  fetchAdminSpareAccounts,
+  fetchAdminSpareMarkHolders,
+} from "@/lib/admin-accounts-data";
+import {
+  spareAccountsForRegion,
+  spareMarkHoldersForRegion,
+} from "@/lib/admin-spare";
 import { fetchAdminEmployeesList } from "@/lib/admin-data";
 import { EmployeesTable } from "@/components/admin/EmployeesTable";
 import {
@@ -54,7 +61,7 @@ export default async function AdminEmployeesPage({
     ? countryRaw
     : "";
 
-  const [rows, spareAccounts] = await Promise.all([
+  const [rows, spareAccounts, spareHolders] = await Promise.all([
     fetchAdminEmployeesList({
       q,
       status: status === "all" ? undefined : status,
@@ -63,6 +70,7 @@ export default async function AdminEmployeesPage({
       country: country || undefined,
     }),
     fetchAdminSpareAccounts(),
+    fetchAdminSpareMarkHolders(),
   ]);
   const holders = rows
     .filter(
@@ -91,7 +99,10 @@ export default async function AdminEmployeesPage({
             hiddenCountry={country || undefined}
           />
           <EmployeesBulkImportButton holders={holders} />
-          <SpareAccountsButton accounts={spareAccounts} />
+          <SpareAccountsButton
+            accounts={spareAccountsForRegion(spareAccounts, region)}
+            holders={spareMarkHoldersForRegion(spareHolders, region)}
+          />
           <SyncSheetsButton />
           <EmployeesCreateButton />
         </div>
