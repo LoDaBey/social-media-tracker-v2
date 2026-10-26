@@ -1,9 +1,14 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getManagerEmployeeSetupBundle } from "@/actions/manager-setup";
 import { SetupForm } from "@/components/setup/SetupForm";
 import { homePathForRole, isEmployeeSetupComplete } from "@/lib/setup-complete";
 import type { Role } from "@/types/db";
+
+export const metadata: Metadata = {
+  title: "Account setup",
+};
 
 type SearchParams = {
   employeeId?: string;

@@ -1,4 +1,5 @@
 import { PLATFORMS, type Platform } from "@/lib/platform-config";
+import { baseCountryFromDisplay } from "@/lib/overview-country-display";
 import { isSetupCategory, isSetupLanguage } from "@/lib/setup-options";
 import { accountUrlKey } from "@/lib/setup-validation";
 import {
@@ -453,6 +454,39 @@ export function sanitizeBulkImportRow(
     emailPassword: row.emailPassword,
     mobileNumber: row.mobileNumber.trim(),
   };
+}
+
+export function bulkImportHolderKey(
+  source: "temp" | "alphaa",
+  id: number
+) {
+  return `${source}:${id}`;
+}
+
+export function parseBulkImportHolderKey(value: string): {
+  source: "temp" | "alphaa";
+  id: number;
+} | null {
+  const match = value.match(/^(temp|alphaa):(\d+)$/);
+  if (!match) return null;
+  return { source: match[1] as "temp" | "alphaa", id: Number(match[2]) };
+}
+
+export function bulkImportHolderCountry(country: string | null | undefined) {
+  return baseCountryFromDisplay(country?.trim() || "");
+}
+
+export function alphaaLegacyPlatformFields(platform: Platform) {
+  if (platform === "facebook_umbrella") {
+    return { platform: "facebook", personal: false, umberlla: true };
+  }
+  if (platform === "facebook_personal") {
+    return { platform: "facebook", personal: true, umberlla: false };
+  }
+  if (platform === "x") {
+    return { platform: "twitter", personal: true, umberlla: false };
+  }
+  return { platform, personal: true, umberlla: false };
 }
 
 export function countBulkImportTargets(rows: BulkImportAccountDraft[]) {

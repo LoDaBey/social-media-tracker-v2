@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import {
   fetchAdminSupervisorOptions,
   fetchOpOptions,
@@ -7,6 +8,10 @@ import { fetchManagerOptions } from "@/lib/manager-data";
 import { CreateEmployeeForm } from "@/components/admin/CreateEmployeeForm";
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import { adminViewEmployeeNew } from "@/lib/admin-view";
+
+export const metadata: Metadata = {
+  title: "New employee",
+};
 
 export default async function AdminNewEmployeePage() {
   const [teamLeads, managers, ops, admins] = await Promise.all([

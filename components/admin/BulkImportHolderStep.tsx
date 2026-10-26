@@ -3,10 +3,12 @@
 import { useMemo } from "react";
 import { AdminCountrySelect } from "@/components/admin/AdminCountrySelect";
 import { CountryFlag } from "@/lib/country-icons";
+import { bulkImportHolderKey } from "@/lib/bulk-import-parse";
 import {
   isCountryInEmployeeListRegion,
   setupCountriesForRegion,
   setupRegionForCountry,
+  type SetupRegion,
 } from "@/lib/setup-options";
 import type { BulkImportHolderStepProps } from "@/types/admin";
 
@@ -30,7 +32,7 @@ export function BulkImportHolderStep({
     [region]
   );
 
-  const assignedRegion = country ? setupRegionForCountry(country) : "";
+  const assignedRegion = region || (country ? setupRegionForCountry(country) : "");
 
   return (
     <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
@@ -44,9 +46,13 @@ export function BulkImportHolderStep({
         >
           <option value="">Select an account holder</option>
           {holders.map((holder) => (
-            <option key={holder.id} value={holder.id}>
+            <option
+              key={bulkImportHolderKey(holder.source, holder.id)}
+              value={bulkImportHolderKey(holder.source, holder.id)}
+            >
               {holder.full_name}
               {holder.country ? ` — ${holder.country}` : ""}
+              {holder.source === "alphaa" ? " · ALPHAA" : ""}
             </option>
           ))}
         </select>
@@ -57,7 +63,7 @@ export function BulkImportHolderStep({
           value={region}
           aria-label="Select region"
           onChange={(event) => {
-            const nextRegion = event.target.value as "" | "Africa" | "Europe";
+            const nextRegion = event.target.value as "" | SetupRegion;
             onRegionChange(nextRegion);
             if (
               country &&

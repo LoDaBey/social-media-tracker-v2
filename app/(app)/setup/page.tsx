@@ -1,7 +1,12 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { homePathForRole } from "@/lib/setup-complete";
 import type { Role } from "@/types/db";
+
+export const metadata: Metadata = {
+  title: "Setup",
+};
 
 /** Employee self-setup is retired — Managers own SMD account setup. */
 export default async function SetupPage() {

@@ -1,4 +1,4 @@
-import { query } from "@/lib/db";
+import { query, queryOne } from "@/lib/db";
 import { ALPHAA_SETUP_COUNTRIES } from "@/lib/setup-options";
 import { overviewDisplayCountry } from "@/lib/overview-country-display";
 import {
@@ -10,6 +10,7 @@ import type {
   AdminEmployeeListFilters,
   AdminEmployeeListRow,
   AdminSocialAccountListItem,
+  AlphaaEmployeeProfile,
 } from "@/types/admin";
 import type { Role } from "@/types/db";
 
@@ -274,4 +275,81 @@ export async function fetchAlphaaEmployeesList(
       accounts,
     };
   });
+}
+
+type AlphaaProfileQueryRow = {
+  id: number;
+  username: string | null;
+  email: string | null;
+  role: string | null;
+  phone_number: string | null;
+  is_active: boolean | null;
+  country: string | null;
+  department: string | null;
+  location: string | null;
+  projects: string[] | null;
+};
+
+export async function fetchAlphaaEmployeeById(
+  id: number
+): Promise<AlphaaEmployeeProfile | null> {
+  const user = await queryOne<AlphaaProfileQueryRow>(
+    `SELECT id, username, email, role, phone_number, is_active,
+            NULLIF(INITCAP(TRIM(COALESCE(country, ''))), '') AS country,
+            department, location, projects
+       FROM users
+      WHERE id = $1`,
+    [id]
+  );
+  if (!user) return null;
+
+  const accountsByUser = await fetchAlphaaAccountsByUserIds([id]);
+  const accounts = accountsByUser.get(id) ?? [];
+  const accountCountryRows = await query<{ country: string }>(
+    `SELECT INITCAP(TRIM(COALESCE(country, ''))) AS country
+       FROM social_media_accounts
+      WHERE user_id = $1
+        AND NULLIF(TRIM(country), '') IS NOT NULL`,
+    [id]
+  );
+  const languageRow = await queryOne<{ language: string }>(
+    `SELECT INITCAP(TRIM(language1)) AS language
+       FROM social_media_accounts
+      WHERE user_id = $1
+        AND NULLIF(TRIM(language1), '') IS NOT NULL
+      ORDER BY id ASC
+      LIMIT 1`,
+    [id]
+  );
+  const accountCountries = uniqueCountries(
+    accountCountryRows.map((row) => row.country)
+  );
+  const countries = (
+    accountCountries.length > 0
+      ? accountCountries
+      : uniqueCountries([user.country])
+  ).map((value) => overviewDisplayCountry(value, "Alphaa"));
+  const hasLiveAccount = accounts.some(
+    (account) => !account.is_spare && account.status === "active"
+  );
+
+  return {
+    id: user.id,
+    fullName:
+      user.username?.trim() || `Handler ${user.id}`,
+    email: user.email?.trim() || "",
+    roleLabel: user.role?.trim() || "Handler",
+    mappedRole: mapAlphaaRole(user.role ?? "Handler"),
+    phone: user.phone_number,
+    country: countries[0] ?? null,
+    countries,
+    language: languageRow?.language ?? null,
+    isActive: Boolean(user.is_active) || hasLiveAccount,
+    department: user.department,
+    location: user.location,
+    projects: Array.isArray(user.projects)
+      ? user.projects.filter(Boolean)
+      : [],
+    accounts,
+  };
 }

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import {
@@ -11,6 +12,10 @@ import { QcKpiStrip } from "@/components/qc/QcKpiStrip";
 import { QcQueueFilters } from "@/components/qc/QcQueueFilters";
 import { QcQueueItem } from "@/components/qc/QcQueueItem";
 import { QcDetailPanel } from "@/components/qc/QcDetailPanel";
+
+export const metadata: Metadata = {
+  title: "QC",
+};
 
 type SearchParamsShape = Promise<{
   selected?: string | string[];

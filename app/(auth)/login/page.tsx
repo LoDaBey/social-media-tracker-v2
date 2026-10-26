@@ -1,5 +1,10 @@
+import type { Metadata } from "next";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { BrandLogo } from "@/components/layout/BrandLogo";
+
+export const metadata: Metadata = {
+  title: "Sign in",
+};
 
 type Props = {
   searchParams?: Promise<{

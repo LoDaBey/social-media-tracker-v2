@@ -15,9 +15,11 @@ export function EmployeeAccountsPanel({
   accounts,
   assignedCount,
   canAdd,
+  canImport = canAdd,
   canMarkSpare = false,
   readOnly = false,
   holders,
+  holderSource = "temp",
   onChanged,
 }: EmployeeAccountsPanelProps) {
   const [addOpen, setAddOpen] = useState(false);
@@ -34,24 +36,29 @@ export function EmployeeAccountsPanel({
             : `${total} ${total === 1 ? "account" : "accounts"}`}
           {spareCount > 0 ? ` · ${spareCount} spare` : ""}
         </p>
-        {canAdd ? (
+        {canImport || canAdd ? (
           <div className="flex flex-wrap items-center gap-2">
-            <EmployeesBulkImportButton
-              holders={holders}
-              initialHolderId={userId}
-              variant="button"
-            />
-            <motion.div layout whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <button
-                type="button"
-                aria-label={`Add account for ${fullName}`}
-                onClick={() => setAddOpen(true)}
-                className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[var(--color-emerald)] px-3 py-2 text-[13px] font-semibold text-white outline-none hover:bg-[var(--color-emerald-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
-              >
-                <Plus className="h-4 w-4" aria-hidden="true" strokeWidth={2} />
-                Add account
-              </button>
-            </motion.div>
+            {canImport ? (
+              <EmployeesBulkImportButton
+                holders={holders}
+                initialHolderId={userId}
+                initialHolderSource={holderSource}
+                variant="button"
+              />
+            ) : null}
+            {canAdd ? (
+              <motion.div layout whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <button
+                  type="button"
+                  aria-label={`Add account for ${fullName}`}
+                  onClick={() => setAddOpen(true)}
+                  className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[var(--color-emerald)] px-3 py-2 text-[13px] font-semibold text-white outline-none hover:bg-[var(--color-emerald-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+                >
+                  <Plus className="h-4 w-4" aria-hidden="true" strokeWidth={2} />
+                  Add account
+                </button>
+              </motion.div>
+            ) : null}
           </div>
         ) : null}
       </div>

@@ -9,6 +9,7 @@ import type { EmployeesBulkImportButtonProps } from "@/types/admin";
 export function EmployeesBulkImportButton({
   holders,
   initialHolderId,
+  initialHolderSource,
   variant = "icon",
 }: EmployeesBulkImportButtonProps) {
   const [open, setOpen] = useState(false);
@@ -44,6 +45,7 @@ export function EmployeesBulkImportButton({
         open={open}
         holders={holders}
         initialHolderId={initialHolderId}
+        initialHolderSource={initialHolderSource}
         onClose={() => setOpen(false)}
       />
     </>

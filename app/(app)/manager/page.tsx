@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
@@ -7,6 +8,10 @@ import { fetchAdminCountryCoverage } from "@/lib/admin-country-coverage";
 import { fetchManagerCountries, fetchManagerHomeGroups } from "@/lib/manager-data";
 import { homePathForRole } from "@/lib/setup-complete";
 import type { Role } from "@/types/db";
+
+export const metadata: Metadata = {
+  title: "Team",
+};
 
 export default async function ManagerHomePage() {
   const session = await auth();

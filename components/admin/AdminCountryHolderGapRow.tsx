@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AdminCoverageCountCell } from "@/components/admin/AdminCoverageCountCell";
 import { AlphaaCoveragePlatformBodyCells } from "@/components/admin/AlphaaCoveragePlatformColumns";
 import { holderGapSummary, holderHasCoverageGap } from "@/lib/admin-coverage-gaps";
+import { adminEmployeeHref } from "@/lib/admin-view";
 import type { AdminCountryHolderGapRowProps } from "@/types/admin";
 
 export function AdminCountryHolderGapRow({
@@ -22,7 +23,7 @@ export function AdminCountryHolderGapRow({
           <span className="text-[#E08A2C]">{holder.fullName}</span>
         ) : holder.id ? (
           <Link
-            href={`/admin/employees/${holder.id}`}
+            href={adminEmployeeHref(holder.id, holder.source)}
             aria-label={`Open ${holder.fullName} in ${country}`}
             className="rounded-lg outline-none hover:underline focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
           >
