@@ -21,10 +21,13 @@ export function AdminCountryCoverageRow({
   return (
     <>
       <tr
-        className="cursor-pointer border-t border-[var(--color-hairline)] hover:bg-[var(--color-emerald-tint)]/30"
+        className="group cursor-pointer border-t border-[var(--color-hairline)] hover:bg-[var(--color-emerald-tint)]/30"
         onClick={() => setExpanded((prev) => !prev)}
       >
-        <th scope="row" className="px-3 py-2.5">
+        <th
+          scope="row"
+          className="sticky left-0 z-[1] bg-[var(--color-surface)] px-4 py-3 group-hover:bg-[var(--color-cream-tint)]"
+        >
           <div className="flex items-center gap-2">
             <motion.button
               type="button"
@@ -58,34 +61,34 @@ export function AdminCountryCoverageRow({
             )}
           </div>
         </th>
-        <td className="px-3 py-2.5 text-[13px] text-[var(--color-muted)]">
+        <td className="whitespace-nowrap px-4 py-3 text-[13px] text-[var(--color-muted)]">
           {row.language}
         </td>
-        <td className="px-3 py-2.5">
+        <td className="whitespace-nowrap px-4 py-3">
           <AdminCoverageCountCell count={row.resources} label={`${row.country} employees`} />
         </td>
-        <td className="px-3 py-2.5">
+        <td className="whitespace-nowrap px-4 py-3">
           <AdminCoverageCountCell count={row.x} label={`${row.country} X accounts`} />
         </td>
-        <td className="px-3 py-2.5">
+        <td className="whitespace-nowrap px-4 py-3">
           <AdminCoverageCountCell
             count={row.facebookPersonal}
             label={`${row.country} Facebook personal accounts`}
           />
         </td>
-        <td className="px-3 py-2.5">
+        <td className="whitespace-nowrap px-4 py-3">
           <AdminCoverageCountCell
             count={row.facebookUmbrella}
             label={`${row.country} Facebook umbrella accounts`}
           />
         </td>
-        <td className="px-3 py-2.5">
+        <td className="whitespace-nowrap px-4 py-3">
           <AdminCoverageCountCell
             count={row.instagram}
             label={`${row.country} Instagram accounts`}
           />
         </td>
-        <td className="px-3 py-2.5">
+        <td className="whitespace-nowrap px-4 py-3">
           <AdminCoverageCountCell
             count={row.tiktok}
             label={`${row.country} TikTok accounts`}
@@ -97,7 +100,7 @@ export function AdminCountryCoverageRow({
             labelPrefix={row.country}
           />
         ) : null}
-        <td className="px-3 py-2.5">
+        <td className="whitespace-nowrap px-4 py-3">
           <AdminCoverageCountCell
             count={row.totalAccounts}
             label={`${row.country} total accounts`}

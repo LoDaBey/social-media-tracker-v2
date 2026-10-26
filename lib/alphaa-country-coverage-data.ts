@@ -145,6 +145,21 @@ export async function fetchAlphaaCountryActuals(
   return actualByCountry;
 }
 
+/** Spare accounts (`spare_acc`) on the legacy ALPHAA table. */
+export async function fetchAlphaaSpareCount(
+  countries: string[]
+): Promise<number> {
+  if (countries.length === 0) return 0;
+  const rows = await query<{ spare: string }>(
+    `SELECT COUNT(*)::text AS spare
+       FROM social_media_accounts sma
+      WHERE sma.spare_acc IS TRUE
+        AND ${countrySqlClause(1)}`,
+    [countries]
+  );
+  return Number(rows[0]?.spare ?? 0);
+}
+
 /** One row per legacy user with accounts in the ALPHAA country (users + social_media_accounts). */
 export async function fetchAlphaaHolderActuals(
   countries: string[]

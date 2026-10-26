@@ -640,7 +640,9 @@ export type AdminSocialAccountListItem = {
 
 export type AdminSpareAccountListItem = {
   id: number;
-  platform: Platform;
+  source: AdminEmployeeSource;
+  /** Temp Platform key, or a normalized ALPHAA extra/raw platform key. */
+  platform: string;
   username: string | null;
   account_name: string;
   account_url: string | null;
@@ -648,6 +650,14 @@ export type AdminSpareAccountListItem = {
   status: AdminSocialAccountListItem["status"];
   handler_id: number;
   handler_name: string;
+  country: string | null;
+  region: string | null;
+};
+
+export type SpareMarkHolderOption = {
+  id: number;
+  source: AdminEmployeeSource;
+  full_name: string;
   country: string | null;
   region: string | null;
 };
@@ -723,11 +733,29 @@ export type SpareAccountsModalProps = {
   open: boolean;
   onClose: () => void;
   accounts: AdminSpareAccountListItem[];
+  holders: SpareMarkHolderOption[];
 };
+
+export type SpareAccountsDialogProps = Omit<SpareAccountsModalProps, "open">;
 
 export type SpareAccountsButtonProps = {
   accounts: AdminSpareAccountListItem[];
+  holders: SpareMarkHolderOption[];
 };
+
+export type SpareAccountsListProps = {
+  accounts: AdminSpareAccountListItem[];
+  pendingKey: string | null;
+  pending: boolean;
+  onUnmark: (account: AdminSpareAccountListItem) => void;
+};
+
+export type SpareAccountsMarkPanelProps = {
+  holders: SpareMarkHolderOption[];
+  onSpareChange: (item: AdminSpareAccountListItem, isSpare: boolean) => void;
+};
+
+export type SpareModalTab = "spare" | "mark";
 
 export type AccountHolderSelectProps = {
   value: AdminSocialAccountInput;
@@ -812,6 +840,23 @@ export type EmployeeReportingResponse =
 export type UseEmployeeReportingResult = {
   reporting: EmployeeReporting | null;
   loading: boolean;
+};
+
+export type EmployeeAccountsResponse =
+  | { ok: true; accounts: AdminSocialAccountListItem[] }
+  | { ok: false; error: string };
+
+export type UseEmployeeAccountsResult = {
+  accounts: AdminSocialAccountListItem[];
+  loading: boolean;
+  error: string | null;
+  reload: () => void;
+};
+
+export type EmployeeAccountsFetch = {
+  key: string;
+  accounts: AdminSocialAccountListItem[];
+  error: string | null;
 };
 
 export type BulkImportAccountDraft = {

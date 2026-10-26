@@ -1,6 +1,7 @@
 import {
   fetchAlphaaCountryActuals,
   fetchAlphaaHolderActuals,
+  fetchAlphaaSpareCount,
 } from "@/lib/alphaa-country-coverage-data";
 import { splitAlphaaCountryPlanSeats } from "@/lib/alphaa-country-targets";
 import {
@@ -430,7 +431,7 @@ export async function fetchAdminCountryCoverage(
     fetchAlphaa,
   } = await splitCoverageCountries(countryFilter, filter?.region);
 
-  const [tempCoverage, alphaaActualByCountry, alphaaHoldersByCountry] =
+  const [tempCoverage, alphaaActualByCountry, alphaaHoldersByCountry, alphaaSpareCount] =
     await Promise.all([
       fetchTemp
         ? fetchTempCountryCoverage(tempCountries, { regionScope: tempRegionScope })
@@ -446,6 +447,9 @@ export async function fetchAdminCountryCoverage(
       fetchAlphaa
         ? fetchAlphaaHolderActuals(alphaaCountries)
         : Promise.resolve(new Map()),
+      fetchAlphaa
+        ? fetchAlphaaSpareCount(alphaaCountries)
+        : Promise.resolve(0),
     ]);
 
   const actualByCountry = new Map<string, CountryActuals>();
@@ -585,6 +589,6 @@ export async function fetchAdminCountryCoverage(
     rows: coverageRows,
     totals,
     onHoldCount: tempCoverage.onHoldCount,
-    spareCount: tempCoverage.spareCount,
+    spareCount: tempCoverage.spareCount + alphaaSpareCount,
   };
 }

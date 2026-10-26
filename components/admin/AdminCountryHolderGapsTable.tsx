@@ -32,31 +32,35 @@ export function AdminCountryHolderGapsTable({
       </p>
 
       <div className="mt-3 overflow-x-auto rounded-[10px] border border-[var(--color-hairline)] bg-[var(--color-surface)]">
-        <table className="w-full min-w-[860px] border-collapse text-left">
+        <table
+          className={`w-full border-collapse text-left ${
+            showAlphaaPlatforms ? "min-w-[1600px]" : "min-w-[860px]"
+          }`}
+        >
           <thead>
             <tr className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-              <th scope="col" className="px-3 py-2">
+              <th scope="col" className="min-w-[12rem] px-4 py-3">
                 Account holder
               </th>
-              <th scope="col" className="px-3 py-2">
+              <th scope="col" className="min-w-[5.75rem] px-4 py-3">
                 X
               </th>
-              <th scope="col" className="px-3 py-2">
+              <th scope="col" className="min-w-[8rem] px-4 py-3">
                 Facebook personal
               </th>
-              <th scope="col" className="px-3 py-2">
+              <th scope="col" className="min-w-[8rem] px-4 py-3">
                 Facebook umbrella
               </th>
-              <th scope="col" className="px-3 py-2">
+              <th scope="col" className="min-w-[5.75rem] px-4 py-3">
                 Instagram
               </th>
-              <th scope="col" className="px-3 py-2">
+              <th scope="col" className="min-w-[5.75rem] px-4 py-3">
                 TikTok
               </th>
               {showAlphaaPlatforms ? (
                 <AlphaaCoveragePlatformHeaderCells />
               ) : null}
-              <th scope="col" className="px-3 py-2">
+              <th scope="col" className="min-w-[5.75rem] px-4 py-3">
                 Total
               </th>
             </tr>

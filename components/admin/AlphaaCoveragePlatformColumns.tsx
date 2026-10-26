@@ -14,7 +14,11 @@ function zeroCount() {
 
 export function AlphaaCoveragePlatformHeaderCells() {
   return ALPHAA_EXTRA_PLATFORM_KEYS.map((platform) => (
-    <th key={platform} scope="col" className="px-3 py-2.5">
+    <th
+      key={platform}
+      scope="col"
+      className="min-w-[6.5rem] whitespace-nowrap px-4 py-3 align-bottom"
+    >
       {ALPHAA_EXTRA_PLATFORM_LABELS[platform]}
     </th>
   ));
@@ -28,7 +32,7 @@ export function AlphaaCoveragePlatformBodyCells({
   labelPrefix: string;
 }) {
   return ALPHAA_EXTRA_PLATFORM_KEYS.map((platform) => (
-    <td key={platform} className="px-3 py-2.5">
+    <td key={platform} className="min-w-[6.5rem] whitespace-nowrap px-4 py-3">
       <AdminCoverageCountCell
         count={platforms?.[platform] ?? zeroCount()}
         label={`${labelPrefix} ${ALPHAA_EXTRA_PLATFORM_LABELS[platform]} accounts`}
@@ -41,7 +45,7 @@ export function AlphaaCoveragePlatformFooterCells({
   totals,
 }: Pick<AlphaaCoveragePlatformColumnsProps, "totals">) {
   return ALPHAA_EXTRA_PLATFORM_KEYS.map((platform) => (
-    <td key={platform} className="px-3 py-2.5">
+    <td key={platform} className="min-w-[6.5rem] whitespace-nowrap px-4 py-3">
       <AdminCoverageCountCell
         count={totals?.[platform] ?? zeroCount()}
         label={`Total ${ALPHAA_EXTRA_PLATFORM_LABELS[platform]} accounts`}

@@ -17,11 +17,11 @@ export function AdminCoverageCountCell({
 
   return (
     <span
-      className={`text-[13px] font-semibold tabular-nums ${tone}`}
+      className={`inline-flex whitespace-nowrap text-[13px] font-semibold tabular-nums ${tone}`}
       aria-label={`${label}: ${count.actual} of ${count.target} planned`}
     >
       {count.actual}
-      <span className="font-medium text-[var(--color-muted)]"> / {count.target}</span>
+      <span className="font-medium text-[var(--color-muted)]">&nbsp;/ {count.target}</span>
     </span>
   );
 }
