@@ -1,5 +1,5 @@
 import {
-  europeCountryPlan,
+  europeCountryPlanFromDb,
   splitCountryPlanSeats,
 } from "@/lib/admin-country-targets";
 import { isEuropeCountry } from "@/lib/region-config";
@@ -60,9 +60,9 @@ function quotaForBucket(
  * Extra accounts above the plan stay in the app/DB but are omitted from Sheets.
  * Seat order matches coverage: handlers sorted by name, then user id.
  */
-export function capEuropeAccountsToCountryPlan<T extends CapAccountRow>(
+export async function capEuropeAccountsToCountryPlan<T extends CapAccountRow>(
   rows: T[]
-): T[] {
+): Promise<T[]> {
   const keep = new Set<T>();
   const byCountry = new Map<string, T[]>();
 
@@ -74,11 +74,22 @@ export function capEuropeAccountsToCountryPlan<T extends CapAccountRow>(
     byCountry.set(country, list);
   }
 
+  const plans = new Map(
+    await Promise.all(
+      [...byCountry.keys()].map(async (country) => {
+        const plan = await europeCountryPlanFromDb(country);
+        return [country, plan] as const;
+      })
+    )
+  );
+
   for (const [country, countryRows] of byCountry) {
-    const plan = europeCountryPlan(country);
+    const plan = plans.get(country);
     if (!plan) continue;
 
-    const seats = splitCountryPlanSeats(plan);
+    const seats = plan.handlerSeat
+      ? Array.from({ length: Math.max(plan.resources, 1) }, () => plan.handlerSeat!)
+      : splitCountryPlanSeats(plan);
     const handlers = new Map<number, { name: string; rows: T[] }>();
 
     for (const row of countryRows) {
@@ -96,7 +107,7 @@ export function capEuropeAccountsToCountryPlan<T extends CapAccountRow>(
     });
 
     orderedHandlers.forEach(([, handler], seatIndex) => {
-      const seat = seats[seatIndex];
+      const seat = plan.handlerSeat ?? seats[seatIndex];
       if (!seat) return;
 
       const used: Record<PlatformBucket, number> = {

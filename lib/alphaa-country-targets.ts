@@ -2,10 +2,8 @@ import {
   ALPHAA_COUNTRY_LABELS,
   ALPHAA_COUNTRY_LANGUAGES,
   ALPHAA_COUNTRY_RESOURCES,
-  requiredProjectStrategy,
   requiredProjectStrategyPerCategory,
   type AlphaaCountryKey,
-  type AlphaaPlatformCounts,
 } from "@/lib/alphaa-country-strategy";
 import { ALPHAA_EXTRA_PLATFORM_KEYS } from "@/lib/alphaa-coverage-platforms";
 import type {
@@ -17,10 +15,6 @@ import type {
 
 function sumCount(value: number | undefined) {
   return value ?? 0;
-}
-
-function sumPlatformCounts(values: AlphaaPlatformCounts) {
-  return Object.values(values).reduce((sum, value) => sum + sumCount(value), 0);
 }
 
 function extraPlatformTargets(
@@ -52,6 +46,10 @@ function buildAlphaaPlan(key: AlphaaCountryKey): AdminCountryPlan {
   const instagram = sumCount(personal.instagram) + sumCount(umbrella.instagram);
   const tiktok = sumCount(personal.tiktok) + sumCount(umbrella.tiktok);
   const extraPlatforms = extraPlatformTargets(key);
+  const extraTotal = Object.values(extraPlatforms).reduce(
+    (sum, value) => sum + sumCount(value),
+    0
+  );
 
   return {
     country: ALPHAA_COUNTRY_LABELS[key],
@@ -64,11 +62,18 @@ function buildAlphaaPlan(key: AlphaaCountryKey): AdminCountryPlan {
     instagram,
     tiktok,
     extraPlatforms,
-    totalAccounts: sumPlatformCounts(requiredProjectStrategy[key]),
+    totalAccounts:
+      xPersonal +
+      xUmbrella +
+      facebookPersonal +
+      facebookUmbrella +
+      instagram +
+      tiktok +
+      extraTotal,
   };
 }
 
-/** ALPHAA strategic country plans (Sudan, Somalia, Palestine, Turkey, Iran). */
+/** Fallback ALPHAA plans if `alphaa_country_plans` is empty. Runtime source is the DB. */
 export const ALPHAA_COUNTRY_PLANS: AdminCountryPlan[] = (
   [
     "sudan",

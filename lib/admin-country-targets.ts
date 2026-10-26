@@ -102,7 +102,7 @@ function planCountry(
   };
 }
 
-/** Africa resource plan — 9×74 + 132 = 798 account slots project-wide. */
+/** Africa resource plan — seed/fallback. Runtime plans live in africa_europe_country_plans. */
 export const ADMIN_COUNTRY_PLANS: AdminCountryPlan[] = [
   planCountry("Borkina", "French", AFRICA_STANDARD_RESOURCES, STANDARD_ACCOUNTS),
   planCountry("Angola", "Portuguese", AFRICA_STANDARD_RESOURCES, STANDARD_ACCOUNTS),
@@ -133,16 +133,25 @@ export function europeCountryPlan(country: string): AdminCountryPlan | null {
   return EUROPE_COUNTRY_PLANS.find((plan) => plan.country === country) ?? null;
 }
 
+export async function europeCountryPlanFromDb(
+  country: string
+): Promise<AdminCountryPlan | null> {
+  const { fetchAfricaEuropeAdminPlan } = await import("@/lib/strategy-plans-data");
+  const fromDb = await fetchAfricaEuropeAdminPlan(country);
+  return fromDb ?? europeCountryPlan(country);
+}
+
 /** @deprecated Use europeCountryPlan */
 export const balkanCountryPlan = europeCountryPlan;
 
 /** Default account targets for a new employee seat in a planned Europe country. */
-export function europeSeatTargetsForIndex(
+export async function europeSeatTargetsForIndex(
   country: string,
   seatIndex: number
-): AdminCountrySeatQuota | null {
-  const plan = europeCountryPlan(country);
+): Promise<AdminCountrySeatQuota | null> {
+  const plan = await europeCountryPlanFromDb(country);
   if (!plan) return null;
+  if (plan.handlerSeat) return plan.handlerSeat;
   const seats = splitCountryPlanSeats(plan);
   if (seats.length === 0) return null;
   return seats[Math.min(Math.max(seatIndex, 0), seats.length - 1)] ?? null;

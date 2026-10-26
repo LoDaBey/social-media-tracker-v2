@@ -195,7 +195,7 @@ export async function createEmployee(
           [primaryCountry]
         );
         const seatIndex = Number(existing.rows[0]?.count ?? 0);
-        const europeSeat = europeSeatTargetsForIndex(primaryCountry, seatIndex);
+        const europeSeat = await europeSeatTargetsForIndex(primaryCountry, seatIndex);
         if (europeSeat) {
           defaultTargets = {
             x: europeSeat.x,

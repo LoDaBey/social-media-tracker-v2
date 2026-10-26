@@ -10,7 +10,7 @@ const cairo = Cairo({
 });
 
 export const metadata: Metadata = {
-  title: "ALPHAA",
+  title: "Orbit",
   description: "Internal employee portal",
 };
 

@@ -195,14 +195,21 @@ function holderFromSeat(
   };
 }
 
+function seatsForPlan(plan: AdminCountryPlan, peopleCount: number) {
+  if (isAlphaaPlan(plan) && plan.handlerSeat) {
+    const count = Math.max(plan.resources, peopleCount, 1);
+    return Array.from({ length: count }, () => plan.handlerSeat!);
+  }
+  if (isAlphaaPlan(plan)) return splitAlphaaCountryPlanSeats(plan);
+  return splitCountryPlanSeats(plan);
+}
+
 function holdersForCountry(
   plan: AdminCountryPlan,
   people: HolderActuals[]
 ): AdminCountryCoverageHolder[] {
   const useEmployeeTargets = !isAlphaaPlan(plan);
-  const seats = isAlphaaPlan(plan)
-    ? splitAlphaaCountryPlanSeats(plan)
-    : splitCountryPlanSeats(plan);
+  const seats = seatsForPlan(plan, people.length);
   const holders: AdminCountryCoverageHolder[] = [];
   const seatCount = Math.max(seats.length, people.length);
   let vacantIndex = 0;
@@ -302,13 +309,16 @@ function uniqueBaseCountries(displayCountries: string[]): string[] {
   return [...new Set(displayCountries.map(baseCountryFromDisplay))];
 }
 
-function splitCoverageCountries(
+async function splitCoverageCountries(
   countryFilter: string[] | null,
   region: AdminRegion | undefined
 ) {
-  const africaPlanCountries = adminPlanCountriesForRegion("Africa");
-  const europePlanCountries = adminPlanCountriesForRegion("Europe");
-  const alphaaPlanCountries = adminPlanCountriesForRegion("Alphaa");
+  const [africaPlanCountries, europePlanCountries, alphaaPlanCountries] =
+    await Promise.all([
+      adminPlanCountriesForRegion("Africa"),
+      adminPlanCountriesForRegion("Europe"),
+      adminPlanCountriesForRegion("Alphaa"),
+    ]);
   const allTempPlanCountries = [...africaPlanCountries, ...europePlanCountries];
 
   /** ALPHAA — legacy users + social_media_accounts only. */
@@ -396,7 +406,7 @@ export async function fetchAdminCountryCoverage(
   const regionPlans =
     filter?.region === undefined
       ? null
-      : adminCountryPlansForRegion(filter.region);
+      : await adminCountryPlansForRegion(filter.region);
   const countryFilter =
     filter?.countries ??
     (regionPlans === null ? null : regionPlans.map((plan) => plan.country));
@@ -407,7 +417,7 @@ export async function fetchAdminCountryCoverage(
     tempRegionScope,
     fetchTemp,
     fetchAlphaa,
-  } = splitCoverageCountries(countryFilter, filter?.region);
+  } = await splitCoverageCountries(countryFilter, filter?.region);
 
   const [tempCoverage, alphaaActualByCountry, alphaaHoldersByCountry] =
     await Promise.all([
@@ -497,9 +507,9 @@ export async function fetchAdminCountryCoverage(
   const allowedCountries = countryFilter === null ? null : new Set(countryFilter);
   const planSource =
     regionPlans ??
-    (filter?.region === undefined
-      ? adminCountryPlansForRegion("Overview")
-      : adminCountryPlansForRegion(filter.region));
+    (await adminCountryPlansForRegion(
+      filter?.region === undefined ? "Overview" : filter.region
+    ));
   const plans =
     allowedCountries === null
       ? planSource

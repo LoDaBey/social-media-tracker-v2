@@ -57,12 +57,17 @@ export function adminViewExtract(): AdminView {
   return { kind: "extract", title: "Data extract" };
 }
 
+export function adminViewStrategy(): AdminView {
+  return { kind: "strategy", title: "Strategy" };
+}
+
 export function adminWorkspaceBackHref(view: AdminView): string | null {
   switch (view.kind) {
     case "overview":
       return null;
     case "employees":
     case "extract":
+    case "strategy":
       return "/admin";
     case "employee_new":
     case "employee":

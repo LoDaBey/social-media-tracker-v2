@@ -1,15 +1,9 @@
-import {
-  ADMIN_COUNTRY_PLANS,
-  EUROPE_COUNTRY_PLANS,
-} from "@/lib/admin-country-targets";
-import { ALPHAA_COUNTRY_PLANS } from "@/lib/alphaa-country-targets";
-import {
-  baseCountryFromDisplay,
-  isDualRegionCountry,
-  overviewDisplayCountry,
-} from "@/lib/overview-country-display";
-import type { AdminCountryPlan } from "@/types/admin";
+import { ADMIN_COUNTRY_PLANS } from "@/lib/admin-country-targets";
+import { fetchAdminCountryPlansForRegion } from "@/lib/strategy-plans-data";
+import { baseCountryFromDisplay } from "@/lib/overview-country-display";
 import type { AdminRegion, AdminRegionSlug } from "@/types/admin";
+
+export { fetchAdminCountryPlansForRegion };
 
 export {
   baseCountryFromDisplay,
@@ -60,37 +54,13 @@ export function adminRegionSlug(region: AdminRegion): AdminRegionSlug {
   return "overview";
 }
 
-export function adminCountryPlansForRegion(region: AdminRegion): AdminCountryPlan[] {
-  if (region === "Europe") return EUROPE_COUNTRY_PLANS;
-  if (region === "Africa") return ADMIN_COUNTRY_PLANS;
-  if (region === "Alphaa") return ALPHAA_COUNTRY_PLANS;
-
-  const africaAndEuropeCountries = new Set<string>([
-    ...AFRICA_PLAN_COUNTRIES,
-    ...EUROPE_COUNTRIES,
-  ]);
-
-  return [
-    ...ADMIN_COUNTRY_PLANS.map((plan) =>
-      isDualRegionCountry(plan.country)
-        ? { ...plan, country: overviewDisplayCountry(plan.country, "Africa") }
-        : plan
-    ),
-    ...EUROPE_COUNTRY_PLANS,
-    ...ALPHAA_COUNTRY_PLANS.filter(
-      (plan) =>
-        !africaAndEuropeCountries.has(plan.country) ||
-        isDualRegionCountry(plan.country)
-    ).map((plan) =>
-      isDualRegionCountry(plan.country)
-        ? { ...plan, country: overviewDisplayCountry(plan.country, "Alphaa") }
-        : plan
-    ),
-  ];
+export async function adminCountryPlansForRegion(region: AdminRegion) {
+  return fetchAdminCountryPlansForRegion(region);
 }
 
-export function adminPlanCountriesForRegion(region: AdminRegion): string[] {
-  return adminCountryPlansForRegion(region).map((plan) => plan.country);
+export async function adminPlanCountriesForRegion(region: AdminRegion): Promise<string[]> {
+  const plans = await fetchAdminCountryPlansForRegion(region);
+  return plans.map((plan) => plan.country);
 }
 
 /** Countries tracked via temp_users + temp_social_media_accounts (Africa/Europe tabs). */

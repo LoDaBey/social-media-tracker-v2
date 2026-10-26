@@ -104,6 +104,8 @@ function matchesExtraPlatform(
       return lower.includes("telegram");
     case "website":
       return lower.includes("website");
+    case "pinterest":
+      return lower.includes("pinterest");
     case "turkkitap":
       return lower.includes("turkkitap") || lower.includes("1000kitap");
     case "kizlarsoruyor":
