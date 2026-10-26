@@ -1,10 +1,12 @@
 import * as XLSX from "xlsx";
 import {
+  addStrategyScopeCounts,
   parseStrategyPlatformKey,
   targetsGrandTotal,
 } from "@/lib/strategy-platforms";
 import type {
   StrategyAccountScope,
+  StrategyExcelParseOptions,
   StrategyPlatformKey,
   StrategyScopeCounts,
 } from "@/types/strategy";
@@ -38,6 +40,9 @@ type HeaderMap = {
   }>;
 };
 
+const SKIP_COUNTRY_RE =
+  /^(total|required|missing)(\s+accounts?)?$/i;
+
 function cellNumber(value: unknown) {
   if (value == null || value === "") return 0;
   if (typeof value === "number" && Number.isFinite(value)) return Math.round(value);
@@ -52,7 +57,7 @@ function cellText(value: unknown) {
   return String(value).trim();
 }
 
-function parseHeader(raw: string): {
+function parseDashedHeader(raw: string): {
   platform: StrategyPlatformKey;
   scope: StrategyAccountScope;
 } | null {
@@ -64,19 +69,72 @@ function parseHeader(raw: string): {
     return { platform: "website", scope: "umbrella" };
   }
 
-  const match = text.match(/^(.*?)(?:\s*[-–]\s*)(personal|umbrella|umberlla|native)$/i);
+  const match = text.match(
+    /^(.*?)(?:\s*[-–]\s*)(personal|umbrella|umberlla|native|verified)$/i
+  );
   if (!match) return null;
   const platform = parseStrategyPlatformKey(match[1]);
   if (!platform) return null;
   const scopeRaw = match[2].toLowerCase();
   const scope: StrategyAccountScope =
-    scopeRaw === "native" ? "native" : scopeRaw.startsWith("umb") ? "umbrella" : "personal";
+    scopeRaw === "native" || scopeRaw === "verified"
+      ? "native"
+      : scopeRaw.startsWith("umb")
+        ? "umbrella"
+        : "personal";
   return { platform, scope };
 }
 
-function mapHeaders(headerRow: unknown[]): HeaderMap {
+function scopeFromGroupLabel(label: string): StrategyAccountScope | null {
+  const lower = label.trim().toLowerCase();
+  if (!lower) return null;
+  if (lower.includes("personal")) return "personal";
+  if (lower.includes("umbrella") || lower.includes("umberlla")) return "umbrella";
+  if (lower.includes("native") || lower.includes("verified")) return "native";
+  return null;
+}
+
+/** Fill each column with the grouped header to its left (Personal / Umbrella / Native). */
+function groupScopesFromRow(
+  groupRow: unknown[],
+  columnCount: number
+): Array<StrategyAccountScope | null> {
+  const scopes: Array<StrategyAccountScope | null> = Array.from(
+    { length: columnCount },
+    () => null
+  );
+  let current: StrategyAccountScope | null = null;
+  for (let index = 0; index < columnCount; index += 1) {
+    const parsed = scopeFromGroupLabel(cellText(groupRow[index]));
+    if (parsed) current = parsed;
+    scopes[index] = current;
+  }
+  return scopes;
+}
+
+function findNameRowIndex(rows: unknown[][]): number {
+  const limit = Math.min(rows.length, 10);
+  for (let index = 0; index < limit; index += 1) {
+    const labels = (rows[index] ?? []).map((cell) => cellText(cell).toLowerCase());
+    if (!labels.includes("country")) continue;
+    const hasPlatform = labels.some(
+      (label) =>
+        label === "twitter" ||
+        label === "facebook" ||
+        label.includes("personal") ||
+        label.includes("twitter -")
+    );
+    if (hasPlatform || index === 0) return index;
+  }
+  return 0;
+}
+
+function mapHeaders(
+  nameRow: unknown[],
+  groupScopes?: Array<StrategyAccountScope | null>
+): HeaderMap {
   const map: HeaderMap = { platforms: [] };
-  headerRow.forEach((cell, index) => {
+  nameRow.forEach((cell, index) => {
     const label = cellText(cell).toLowerCase();
     if (!label) return;
     if (label === "region") map.region = index;
@@ -96,8 +154,17 @@ function mapHeaders(headerRow: unknown[]): HeaderMap {
     } else if (label.includes("resource")) map.resources = index;
     else if (label === "total") map.total = index;
     else {
-      const parsed = parseHeader(cellText(cell));
-      if (parsed) map.platforms.push({ index, ...parsed });
+      const dashed = parseDashedHeader(cellText(cell));
+      if (dashed) {
+        map.platforms.push({ index, ...dashed });
+        return;
+      }
+      const platform = parseStrategyPlatformKey(cellText(cell));
+      if (!platform) return;
+      const scope =
+        groupScopes?.[index] ?? (platform === "website" ? "umbrella" : null);
+      if (!scope) return;
+      map.platforms.push({ index, platform, scope });
     }
   });
   return map;
@@ -105,18 +172,28 @@ function mapHeaders(headerRow: unknown[]): HeaderMap {
 
 function parseSheetRows(
   rows: unknown[][],
-  fallbackRegion: "Africa" | "Europe" | "Alphaa"
+  fallbackRegion: "Africa" | "Europe" | "Alphaa",
+  options: StrategyExcelParseOptions = {}
 ): ParsedStrategyProjectRow[] {
   if (rows.length < 2) return [];
-  const headers = mapHeaders(rows[0] ?? []);
+  const nameIndex = findNameRowIndex(rows);
+  const nameRow = rows[nameIndex] ?? [];
+  const groupRow = nameIndex > 0 ? (rows[nameIndex - 1] ?? []) : [];
+  const columnCount = Math.max(nameRow.length, groupRow.length);
+  const groupScopes =
+    groupRow.length > 0 ? groupScopesFromRow(groupRow, columnCount) : undefined;
+  const headers = mapHeaders(nameRow, groupScopes);
   if (headers.country == null) return [];
 
   const parsed: ParsedStrategyProjectRow[] = [];
-  for (const row of rows.slice(1)) {
+  for (const row of rows.slice(nameIndex + 1)) {
     const country = cellText(row[headers.country]);
-    if (!country || country.toLowerCase() === "total") continue;
+    if (!country || SKIP_COUNTRY_RE.test(country)) continue;
 
-    const regionRaw = headers.region != null ? cellText(row[headers.region]) : "";
+    const regionRaw =
+      !options.ignoreExcelRegion && headers.region != null
+        ? cellText(row[headers.region])
+        : "";
     const region: "Africa" | "Europe" | "Alphaa" =
       regionRaw.toLowerCase() === "europe" || regionRaw.toLowerCase() === "balkan"
         ? "Europe"
@@ -133,7 +210,8 @@ function parseSheetRows(
       projectTargets[column.platform] = current;
     }
 
-    const resources = headers.resources != null ? cellNumber(row[headers.resources]) : 0;
+    const resources =
+      headers.resources != null ? cellNumber(row[headers.resources]) : 0;
     const computedTotal = targetsGrandTotal(projectTargets);
     const totalAccounts =
       headers.total != null ? cellNumber(row[headers.total]) : computedTotal;
@@ -152,7 +230,37 @@ function parseSheetRows(
     });
   }
 
-  return parsed;
+  return mergeLanguageRows(parsed);
+}
+
+/** One Assets row per language; strategy stores one row per country. */
+function mergeLanguageRows(
+  rows: ParsedStrategyProjectRow[]
+): ParsedStrategyProjectRow[] {
+  const byCountry = new Map<string, ParsedStrategyProjectRow>();
+  for (const row of rows) {
+    const existing = byCountry.get(row.country);
+    if (!existing) {
+      byCountry.set(row.country, {
+        ...row,
+        projectTargets: addStrategyScopeCounts({}, row.projectTargets),
+      });
+      continue;
+    }
+    const projectTargets = addStrategyScopeCounts(
+      existing.projectTargets,
+      row.projectTargets
+    );
+    byCountry.set(row.country, {
+      ...existing,
+      language: existing.language || row.language,
+      language2: existing.language2 || row.language2,
+      resources: Math.max(existing.resources, row.resources),
+      totalAccounts: targetsGrandTotal(projectTargets),
+      projectTargets,
+    });
+  }
+  return [...byCountry.values()];
 }
 
 function sheetByName(workbook: XLSX.WorkBook, matcher: (name: string) => boolean) {
@@ -182,7 +290,9 @@ export function parseStrategyWorkbook(buffer: Buffer): ParsedStrategyWorkbook {
       : [];
 
   return {
-    alphaa: parseSheetRows(toAoa(alphaaSheet), "Alphaa"),
+    alphaa: parseSheetRows(toAoa(alphaaSheet), "Alphaa", {
+      ignoreExcelRegion: true,
+    }),
     africaEurope: parseSheetRows(toAoa(africaSheet), "Africa").filter(
       (row) => row.region === "Africa" || row.region === "Europe"
     ),

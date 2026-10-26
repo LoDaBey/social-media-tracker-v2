@@ -13,11 +13,13 @@ export function SpareAccountsList({
   pendingKey,
   pending,
   onUnmark,
+  emptyMessage,
 }: SpareAccountsListProps) {
   if (accounts.length === 0) {
     return (
       <p className="mt-6 rounded-lg bg-[var(--color-cream-tint)] px-4 py-8 text-center text-[14px] text-[var(--color-muted)]">
-        No spare accounts right now. Use Mark spare to add one.
+        {emptyMessage ??
+          "No spare accounts right now. Use Mark spare to add one."}
       </p>
     );
   }
@@ -31,7 +33,7 @@ export function SpareAccountsList({
               Handler
             </th>
             <th scope="col" className="px-4 py-2">
-              Country
+              Project
             </th>
             <th scope="col" className="px-4 py-2">
               Platform
@@ -74,8 +76,14 @@ export function SpareAccountsList({
                   </span>
                 </td>
                 <td className="px-4 py-2.5 text-[13px] text-[var(--color-ink)]">
-                  {account.country || "—"}
-                  {account.region ? (
+                  {account.country ||
+                    account.projects[0] ||
+                    "—"}
+                  {account.projects.length > 1 ? (
+                    <span className="block text-[11px] text-[var(--color-muted)]">
+                      {account.projects.join(", ")}
+                    </span>
+                  ) : account.region ? (
                     <span className="block text-[11px] text-[var(--color-muted)]">
                       {account.region}
                     </span>

@@ -846,7 +846,7 @@ export function SetupForm({
                   className={[
                     "cursor-pointer rounded-lg",
                     "h-9 px-3 sm:h-10 sm:px-4",
-                    "border border-[var(--color-hairline)] bg-white",
+                    "border border-[var(--color-hairline)] bg-[var(--color-surface)]",
                     "font-[var(--font-cairo)] font-bold text-[13px] text-[var(--color-ink)] sm:text-[14px]",
                     "hover:bg-[var(--color-cream-tint)]",
                     "disabled:opacity-60 disabled:cursor-not-allowed",

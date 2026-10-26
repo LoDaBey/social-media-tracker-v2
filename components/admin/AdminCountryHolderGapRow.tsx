@@ -20,7 +20,7 @@ export function AdminCountryHolderGapRow({
         className="min-w-[12rem] px-4 py-3 text-[13px] font-semibold text-[var(--color-ink)]"
       >
         {holder.vacant ? (
-          <span className="text-[#E08A2C]">{holder.fullName}</span>
+          <span className="text-[var(--color-amber)]">{holder.fullName}</span>
         ) : holder.id ? (
           <Link
             href={adminEmployeeHref(holder.id, holder.source)}

@@ -228,6 +228,27 @@ export function targetsGrandTotal(targets: StrategyScopeCounts) {
   );
 }
 
+/** Sum two project-target maps (used when an Assets sheet has one row per language). */
+export function addStrategyScopeCounts(
+  left: StrategyScopeCounts,
+  right: StrategyScopeCounts
+): StrategyScopeCounts {
+  let next = left;
+  for (const platform of STRATEGY_PLATFORM_KEYS) {
+    for (const scope of STRATEGY_SCOPES) {
+      const extra = scopeCount(right, platform, scope);
+      if (extra <= 0) continue;
+      next = setScopeCount(
+        next,
+        platform,
+        scope,
+        scopeCount(next, platform, scope) + extra
+      );
+    }
+  }
+  return next;
+}
+
 export function setScopeCount(
   targets: StrategyScopeCounts,
   platform: StrategyPlatformKey,

@@ -51,8 +51,8 @@ export function SetupTextField({
           disabled
             ? "cursor-not-allowed border-[var(--color-hairline)] bg-[var(--color-cream-tint)] text-[var(--color-muted)]"
             : invalid
-              ? "border-[var(--color-coral)] bg-white focus-visible:ring-2 focus-visible:ring-[var(--color-coral)]"
-              : "border-[var(--color-hairline)] bg-white focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]",
+              ? "border-[var(--color-coral)] bg-[var(--color-surface)] focus-visible:ring-2 focus-visible:ring-[var(--color-coral)]"
+              : "border-[var(--color-hairline)] bg-[var(--color-surface)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]",
         ].join(" ")}
         style={{ fontFamily: "var(--font-cairo)", fontWeight: 500 }}
       />

@@ -57,7 +57,7 @@ export function AdminCountryCoverageRow({
               {row.country}
             </span>
             {row.onPlan ? null : (
-              <span className="text-[11px] font-medium text-[#E08A2C]">Off plan</span>
+              <span className="text-[11px] font-medium text-[var(--color-amber)]">Off plan</span>
             )}
           </div>
         </th>

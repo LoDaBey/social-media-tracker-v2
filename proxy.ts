@@ -3,7 +3,13 @@ import { auth } from "@/auth";
 import type { Role } from "@/types/db";
 
 const PUBLIC_PATH_PREFIXES = ["/api/auth", "/_next"];
-const PUBLIC_PATHS = ["/", "/login", "/favicon.ico"];
+const PUBLIC_PATHS = [
+  "/",
+  "/login",
+  "/favicon.ico",
+  "/icon.png",
+  "/apple-icon.png",
+];
 
 const PROTECTED_APP_PATHS = [
   "/dashboard",
@@ -75,5 +81,7 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/auth|login).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|icon.png|apple-icon.png|icon|apple-icon|api/auth|login).*)",
+  ],
 };

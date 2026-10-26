@@ -3,7 +3,7 @@ import { employmentStatusLabel } from "@/lib/employment-status";
 
 const toneClass: Record<EmployeeStatusBadgeProps["status"], string> = {
   active: "bg-[var(--color-emerald-tint)] text-[var(--color-emerald)]",
-  on_hold: "bg-[#E08A2C]/15 text-[#E08A2C]",
+  on_hold: "bg-[var(--color-amber)]/15 text-[var(--color-amber)]",
   deactivated: "bg-[var(--color-coral-tint)] text-[var(--color-coral)]",
 };
 

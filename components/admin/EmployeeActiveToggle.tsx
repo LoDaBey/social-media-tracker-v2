@@ -63,7 +63,7 @@ export function EmployeeActiveToggle({
       }`}
     >
       <span
-        className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-[left] ${
+        className={`absolute top-0.5 h-4 w-4 rounded-full bg-[var(--color-surface)] shadow transition-[left] ${
           isActive ? "left-[18px]" : "left-0.5"
         }`}
       />

@@ -10,7 +10,7 @@ export function AccountStatusBadge({ status }: AccountStatusBadgeProps) {
   }
   if (status === "archived") {
     return (
-      <span className="inline-flex rounded-lg bg-[#E08A2C] px-2 py-0.5 text-[12px] font-semibold text-white">
+      <span className="inline-flex rounded-lg bg-[var(--color-amber)] px-2 py-0.5 text-[12px] font-semibold text-white">
         Temp locked
       </span>
     );

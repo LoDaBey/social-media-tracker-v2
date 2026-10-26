@@ -13,7 +13,7 @@ export function ManagerSetupStatusBadge({
   }
   if (setupNeedsReview) {
     return (
-      <span className="inline-flex rounded-full bg-[#E08A2C]/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.04em] text-[#E08A2C]">
+      <span className="inline-flex rounded-full bg-[var(--color-amber)]/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--color-amber)]">
         Needs review
       </span>
     );
