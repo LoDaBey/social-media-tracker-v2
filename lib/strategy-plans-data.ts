@@ -2,6 +2,8 @@ import { query, queryOne } from "@/lib/db";
 import {
   ADMIN_COUNTRY_PLANS,
   EUROPE_COUNTRY_PLANS,
+  europeCountryPlan,
+  seatQuotaForIndex,
 } from "@/lib/admin-country-targets";
 import { ALPHAA_COUNTRY_PLANS } from "@/lib/alphaa-country-targets";
 import {
@@ -12,7 +14,11 @@ import {
   isDualRegionCountry,
   overviewDisplayCountry,
 } from "@/lib/overview-country-display";
-import type { AdminCountryPlan, AdminRegion } from "@/types/admin";
+import type {
+  AdminCountryPlan,
+  AdminCountrySeatQuota,
+  AdminRegion,
+} from "@/types/admin";
 import type {
   StrategyBook,
   StrategyCountryRow,
@@ -148,6 +154,38 @@ export async function fetchAdminCountryPlansForRegion(
     console.error("Strategy tables unavailable, using static plans.", error);
   }
   return staticPlansForRegion(region);
+}
+
+export async function adminCountryPlansForRegion(region: AdminRegion) {
+  return fetchAdminCountryPlansForRegion(region);
+}
+
+export async function adminPlanCountriesForRegion(
+  region: AdminRegion
+): Promise<string[]> {
+  const plans = await fetchAdminCountryPlansForRegion(region);
+  return plans.map((plan) => plan.country);
+}
+
+export async function europeCountryPlanResolved(
+  country: string
+): Promise<AdminCountryPlan | null> {
+  try {
+    const fromDb = await fetchAfricaEuropeAdminPlan(country);
+    if (fromDb) return fromDb;
+  } catch (error) {
+    console.error("Strategy tables unavailable, using static Europe plan.", error);
+  }
+  return europeCountryPlan(country);
+}
+
+export async function europeSeatTargetsForIndexFromDb(
+  country: string,
+  seatIndex: number
+): Promise<AdminCountrySeatQuota | null> {
+  const plan = await europeCountryPlanResolved(country);
+  if (!plan) return null;
+  return seatQuotaForIndex(plan, seatIndex);
 }
 
 async function fetchAdminCountryPlansFromDb(

@@ -133,28 +133,27 @@ export function europeCountryPlan(country: string): AdminCountryPlan | null {
   return EUROPE_COUNTRY_PLANS.find((plan) => plan.country === country) ?? null;
 }
 
-export async function europeCountryPlanFromDb(
-  country: string
-): Promise<AdminCountryPlan | null> {
-  const { fetchAfricaEuropeAdminPlan } = await import("@/lib/strategy-plans-data");
-  const fromDb = await fetchAfricaEuropeAdminPlan(country);
-  return fromDb ?? europeCountryPlan(country);
-}
-
 /** @deprecated Use europeCountryPlan */
 export const balkanCountryPlan = europeCountryPlan;
 
-/** Default account targets for a new employee seat in a planned Europe country. */
-export async function europeSeatTargetsForIndex(
-  country: string,
+export function seatQuotaForIndex(
+  plan: AdminCountryPlan,
   seatIndex: number
-): Promise<AdminCountrySeatQuota | null> {
-  const plan = await europeCountryPlanFromDb(country);
-  if (!plan) return null;
+): AdminCountrySeatQuota | null {
   if (plan.handlerSeat) return plan.handlerSeat;
   const seats = splitCountryPlanSeats(plan);
   if (seats.length === 0) return null;
   return seats[Math.min(Math.max(seatIndex, 0), seats.length - 1)] ?? null;
+}
+
+/** Default account targets for a new employee seat in a planned Europe country. */
+export function europeSeatTargetsForIndex(
+  country: string,
+  seatIndex: number
+): AdminCountrySeatQuota | null {
+  const plan = europeCountryPlan(country);
+  if (!plan) return null;
+  return seatQuotaForIndex(plan, seatIndex);
 }
 
 /** @deprecated Use europeSeatTargetsForIndex */

@@ -1,9 +1,6 @@
 import { ADMIN_COUNTRY_PLANS } from "@/lib/admin-country-targets";
-import { fetchAdminCountryPlansForRegion } from "@/lib/strategy-plans-data";
 import { baseCountryFromDisplay } from "@/lib/overview-country-display";
 import type { AdminRegion, AdminRegionSlug } from "@/types/admin";
-
-export { fetchAdminCountryPlansForRegion };
 
 export {
   baseCountryFromDisplay,
@@ -52,15 +49,6 @@ export function adminRegionSlug(region: AdminRegion): AdminRegionSlug {
   if (region === "Africa") return "africa";
   if (region === "Alphaa") return "alphaa";
   return "overview";
-}
-
-export async function adminCountryPlansForRegion(region: AdminRegion) {
-  return fetchAdminCountryPlansForRegion(region);
-}
-
-export async function adminPlanCountriesForRegion(region: AdminRegion): Promise<string[]> {
-  const plans = await fetchAdminCountryPlansForRegion(region);
-  return plans.map((plan) => plan.country);
 }
 
 /** Countries tracked via temp_users + temp_social_media_accounts (Africa/Europe tabs). */

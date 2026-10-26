@@ -12,8 +12,8 @@ import { createNotification } from "@/lib/notifications";
 import {
   AFRICA_SEAT_ACCOUNTS,
   AFRICA_X_PER_SEAT,
-  europeSeatTargetsForIndex,
 } from "@/lib/admin-country-targets";
+import { europeSeatTargetsForIndexFromDb } from "@/lib/strategy-plans-data";
 import { fetchAdminEmployeeEditorBundle } from "@/lib/admin-data";
 import { isEuropeCountry } from "@/lib/region-config";
 import { isSetupCountry, setupRegionForCountry } from "@/lib/setup-options";
@@ -195,7 +195,7 @@ export async function createEmployee(
           [primaryCountry]
         );
         const seatIndex = Number(existing.rows[0]?.count ?? 0);
-        const europeSeat = await europeSeatTargetsForIndex(primaryCountry, seatIndex);
+        const europeSeat = await europeSeatTargetsForIndexFromDb(primaryCountry, seatIndex);
         if (europeSeat) {
           defaultTargets = {
             x: europeSeat.x,

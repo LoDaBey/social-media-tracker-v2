@@ -13,12 +13,14 @@ import {
 } from "@/lib/admin-country-targets";
 import { baseCountryFromDisplay } from "@/lib/overview-country-display";
 import {
-  adminCountryPlansForRegion,
-  adminPlanCountriesForRegion,
   baseCountriesFromDisplayFilter,
   isDualRegionCountry,
   overviewDisplayCountry,
 } from "@/lib/region-config";
+import {
+  adminCountryPlansForRegion,
+  adminPlanCountriesForRegion,
+} from "@/lib/strategy-plans-data";
 import { isAlphaaCountry, isTempPlanCountry } from "@/lib/setup-options";
 import {
   fetchTempCountryCoverage,

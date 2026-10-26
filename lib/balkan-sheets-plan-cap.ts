@@ -1,8 +1,6 @@
-import {
-  europeCountryPlanFromDb,
-  splitCountryPlanSeats,
-} from "@/lib/admin-country-targets";
+import { splitCountryPlanSeats } from "@/lib/admin-country-targets";
 import { isEuropeCountry } from "@/lib/region-config";
+import { europeCountryPlanResolved } from "@/lib/strategy-plans-data";
 import type { Platform } from "@/lib/platform-config";
 import type { AdminCountrySeatQuota } from "@/types/admin";
 
@@ -77,7 +75,7 @@ export async function capEuropeAccountsToCountryPlan<T extends CapAccountRow>(
   const plans = new Map(
     await Promise.all(
       [...byCountry.keys()].map(async (country) => {
-        const plan = await europeCountryPlanFromDb(country);
+        const plan = await europeCountryPlanResolved(country);
         return [country, plan] as const;
       })
     )
