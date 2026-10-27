@@ -60,6 +60,7 @@ export function SpareAccountsMarkPanel({
   holders,
   filters,
   onSpareChange,
+  setSpare = setAdminSocialAccountSpare,
 }: SpareAccountsMarkPanelProps) {
   const router = useRouter();
   const [selectedKey, setSelectedKey] = useState("");
@@ -86,11 +87,7 @@ export function SpareAccountsMarkPanel({
     const rowKey = spareAccountKey(holder.source, account.id);
     setPendingKey(rowKey);
     startTransition(async () => {
-      const result = await setAdminSocialAccountSpare(
-        account.id,
-        nextSpare,
-        holder.source
-      );
+      const result = await setSpare(account.id, nextSpare, holder.source);
       setPendingKey(null);
       if (result.error) {
         toast.error(result.error);

@@ -191,7 +191,7 @@ export function CreateEmployeeForm({
       </h2>
       <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-[var(--color-muted)]">
         Create an account and assign their country. Reporting line: Employee →
-        Team Leader Regional (optional) → Manager Regional → OP → Admin.
+        Team Leader Regional (optional) → Regional Manager → OP → Admin.
       </p>
       {error ? (
         <p className="mt-4 rounded-lg bg-[var(--color-coral-tint)] px-4 py-3 text-[14px] text-[var(--color-coral)]">

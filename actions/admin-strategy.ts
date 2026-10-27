@@ -9,6 +9,7 @@ import {
   normalizeStrategyTargets,
   targetsGrandTotal,
 } from "@/lib/strategy-platforms";
+import { logOrbitAction } from "@/lib/orbit-log";
 import type { StrategySaveCountryInput } from "@/types/strategy";
 
 const saveSchema = z.object({
@@ -64,6 +65,17 @@ export async function saveStrategyCountryAction(
       handlerTargets,
     });
     revalidateStrategy();
+    await logOrbitAction({
+      action: "strategy",
+      resource: "strategy",
+      summary: `Saved ${data.book} strategy for ${data.country}`,
+      details: {
+        book: data.book,
+        country: data.country,
+        resources: data.resources,
+        totalAccounts,
+      },
+    });
     return { ok: true };
   } catch (error) {
     return { error: publicAdminMutationError(error) };

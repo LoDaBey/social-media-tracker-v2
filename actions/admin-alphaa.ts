@@ -9,6 +9,7 @@ import {
   setAlphaaEmployeeActiveRow,
   updateAlphaaEmployeeRow,
 } from "@/lib/admin-alphaa-mutate";
+import { logOrbitAction } from "@/lib/orbit-log";
 import type { UpdateAlphaaEmployeePayload } from "@/types/admin";
 
 async function requireAdmin() {
@@ -45,8 +46,9 @@ export async function updateAlphaaEmployeeProfile(
 ): Promise<void> {
   await requireAdmin();
   if (!Number.isFinite(userId)) throw new Error("Invalid user.");
+  let parsed: z.infer<typeof profileSchema>;
   try {
-    const parsed = profileSchema.parse(payload);
+    parsed = profileSchema.parse(payload);
     await updateAlphaaEmployeeRow(userId, {
       ...parsed,
       phone: parsed.phone || null,
@@ -57,6 +59,12 @@ export async function updateAlphaaEmployeeProfile(
     throw new Error(publicAdminMutationError(error));
   }
   revalidateAlphaaEmployee(userId);
+  await logOrbitAction({
+    action: "update",
+    resource: "employee",
+    summary: `Updated ALPHAA profile for ${parsed.fullName}`,
+    details: { userId, email: parsed.email, source: "alphaa" },
+  });
 }
 
 export async function setAlphaaEmployeeActive(
@@ -71,6 +79,14 @@ export async function setAlphaaEmployeeActive(
     throw new Error(publicAdminMutationError(error));
   }
   revalidateAlphaaEmployee(userId);
+  await logOrbitAction({
+    action: "update",
+    resource: "employee",
+    summary: isActive
+      ? `Activated ALPHAA employee #${userId}`
+      : `Deactivated ALPHAA employee #${userId}`,
+    details: { userId, isActive, source: "alphaa" },
+  });
 }
 
 export async function setAlphaaEmployeeEmploymentStatus(
@@ -96,4 +112,10 @@ export async function deleteAlphaaEmployee(userId: number): Promise<void> {
     throw new Error(publicAdminMutationError(error));
   }
   revalidateAlphaaEmployee();
+  await logOrbitAction({
+    action: "delete",
+    resource: "employee",
+    summary: `Deleted ALPHAA employee #${userId}`,
+    details: { userId, source: "alphaa" },
+  });
 }

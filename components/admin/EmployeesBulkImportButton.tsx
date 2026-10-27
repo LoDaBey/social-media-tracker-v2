@@ -10,6 +10,7 @@ export function EmployeesBulkImportButton({
   holders,
   initialHolderId,
   initialHolderSource,
+  allowedCountries,
   variant = "icon",
 }: EmployeesBulkImportButtonProps) {
   const [open, setOpen] = useState(false);
@@ -46,6 +47,7 @@ export function EmployeesBulkImportButton({
         holders={holders}
         initialHolderId={initialHolderId}
         initialHolderSource={initialHolderSource}
+        allowedCountries={allowedCountries}
         onClose={() => setOpen(false)}
       />
     </>

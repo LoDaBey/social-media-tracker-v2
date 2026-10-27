@@ -15,7 +15,7 @@ export function BrandLogo({ size = "header", priority = false }: BrandLogoProps)
   const width = Math.round((height * INTRINSIC_WIDTH) / INTRINSIC_HEIGHT);
 
   return (
-    <span className="inline-flex items-center rounded-lg bg-white px-1.5 py-1">
+    <span className="inline-flex items-center">
       <Image
         src={LOGO_SRC}
         alt="Orbit"
@@ -25,8 +25,8 @@ export function BrandLogo({ size = "header", priority = false }: BrandLogoProps)
         sizes={`${width}px`}
         className={
           size === "login"
-            ? "h-auto w-auto object-contain"
-            : "h-auto w-auto object-contain object-left"
+            ? "h-auto w-auto object-contain dark:invert dark:hue-rotate-180 dark:mix-blend-lighten"
+            : "h-auto w-auto object-contain object-left dark:invert dark:hue-rotate-180 dark:mix-blend-lighten"
         }
       />
     </span>

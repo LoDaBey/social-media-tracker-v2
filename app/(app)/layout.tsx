@@ -8,6 +8,7 @@ import { DateBadge } from "@/components/dashboard/DateBadge";
 import { BrandLogo } from "@/components/layout/BrandLogo";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { SignOutButton } from "@/components/layout/SignOutButton";
+import { UserMenuSettingsLink } from "@/components/layout/UserMenuSettingsLink";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 function roleBadgeLabel(role: Role) {
@@ -41,7 +42,7 @@ export default async function AppLayout({
 
   return (
     <div className="min-h-dvh bg-[var(--color-cream)]">
-      <header className="h-16 bg-[var(--color-surface)] border-b border-[var(--color-hairline)]">
+      <header className="isolate h-16 border-b border-[var(--color-hairline)] bg-[var(--color-surface)]">
         <div
           className={[
             "mx-auto flex h-full w-full items-center justify-between px-4 sm:px-8",
@@ -68,30 +69,6 @@ export default async function AppLayout({
           </div>
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            {role === "admin" ? (
-              <Link
-                href="/admin"
-                aria-label="Open administration panel"
-                className="group inline-flex cursor-pointer items-center rounded-lg px-2 py-1 text-[13px] font-semibold text-[var(--color-muted)] outline-none hover:text-[var(--color-ink)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
-              >
-                <span className="bg-gradient-to-r from-[var(--color-emerald)] to-[var(--color-emerald)] bg-[length:0%_2px] bg-left-bottom bg-no-repeat transition-[background-size] duration-200 group-hover:bg-[length:100%_2px]">
-                  Admin
-                </span>
-              </Link>
-            ) : null}
-
-            {role === "manager" ? (
-              <Link
-                href="/manager"
-                aria-label="Open manager team home"
-                className="group inline-flex cursor-pointer items-center rounded-lg px-2 py-1 text-[13px] font-semibold text-[var(--color-muted)] outline-none hover:text-[var(--color-ink)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
-              >
-                <span className="bg-gradient-to-r from-[var(--color-emerald)] to-[var(--color-emerald)] bg-[length:0%_2px] bg-left-bottom bg-no-repeat transition-[background-size] duration-200 group-hover:bg-[length:100%_2px]">
-                  Team
-                </span>
-              </Link>
-            ) : null}
-
             {roleLabel ? (
               <span className="rounded-full bg-[var(--color-emerald)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-white">
                 {roleLabel}
@@ -130,6 +107,7 @@ export default async function AppLayout({
                   {email}
                 </div>
                 <div className="my-1 h-px bg-[var(--color-hairline)]" />
+                <UserMenuSettingsLink />
                 <SignOutButton />
               </div>
             </details>

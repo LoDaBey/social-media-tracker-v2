@@ -15,6 +15,7 @@ import {
   setAlphaaSocialAccountSpareRow,
   updateAlphaaSocialAccountRow,
 } from "@/lib/admin-alphaa-mutate";
+import { logOrbitAction } from "@/lib/orbit-log";
 import type {
   AdminAccountMutationResult,
   AdminEmployeeSource,
@@ -72,7 +73,15 @@ export async function createAdminSocialAccount(
     const data = normalizeSocialAccountInput(checked.data);
     if (source === "alphaa") {
       const result = await createAlphaaSocialAccountRow(userId, data);
-      if (!result.error) revalidateAccounts(userId, source);
+      if (!result.error) {
+        revalidateAccounts(userId, source);
+        await logOrbitAction({
+          action: "create",
+          resource: "account",
+          summary: `Created ALPHAA ${data.platform} account for employee #${userId}`,
+          details: { userId, platform: data.platform, username: data.username, source },
+        });
+      }
       return result;
     }
 
@@ -107,6 +116,12 @@ export async function createAdminSocialAccount(
       ]
     );
     revalidateAccounts(userId);
+    await logOrbitAction({
+      action: "create",
+      resource: "account",
+      summary: `Created ${data.platform} account for employee #${userId}`,
+      details: { userId, platform: data.platform, username: data.username, source },
+    });
     return {};
   } catch (error) {
     return { error: uniqueAccountUrlError(error) };
@@ -132,7 +147,21 @@ export async function updateAdminSocialAccount(
         [accountId]
       );
       const result = await updateAlphaaSocialAccountRow(accountId, data);
-      if (!result.error) revalidateAccounts(existing?.user_id, source);
+      if (!result.error) {
+        revalidateAccounts(existing?.user_id, source);
+        await logOrbitAction({
+          action: "update",
+          resource: "account",
+          summary: `Updated ALPHAA ${data.platform} account #${accountId}`,
+          details: {
+            accountId,
+            userId: existing?.user_id,
+            platform: data.platform,
+            username: data.username,
+            source,
+          },
+        });
+      }
       return result;
     }
 
@@ -175,6 +204,18 @@ export async function updateAdminSocialAccount(
       ]
     );
     revalidateAccounts(existing.user_id);
+    await logOrbitAction({
+      action: "update",
+      resource: "account",
+      summary: `Updated ${data.platform} account #${accountId}`,
+      details: {
+        accountId,
+        userId: existing.user_id,
+        platform: data.platform,
+        username: data.username,
+        source,
+      },
+    });
     return {};
   } catch (error) {
     return { error: uniqueAccountUrlError(error) };
@@ -194,7 +235,15 @@ export async function deleteAdminSocialAccount(
         [accountId]
       );
       const result = await deleteAlphaaSocialAccountRow(accountId);
-      if (!result.error) revalidateAccounts(existing?.user_id, source);
+      if (!result.error) {
+        revalidateAccounts(existing?.user_id, source);
+        await logOrbitAction({
+          action: "delete",
+          resource: "account",
+          summary: `Deleted ALPHAA account #${accountId}`,
+          details: { accountId, userId: existing?.user_id, source },
+        });
+      }
       return result;
     }
     const existing = await queryOne<{ user_id: number }>(
@@ -206,6 +255,12 @@ export async function deleteAdminSocialAccount(
       accountId,
     ]);
     revalidateAccounts(existing.user_id);
+    await logOrbitAction({
+      action: "delete",
+      resource: "account",
+      summary: `Deleted account #${accountId}`,
+      details: { accountId, userId: existing.user_id, source },
+    });
     return {};
   } catch (error) {
     return { error: publicAdminMutationError(error) };
@@ -230,6 +285,14 @@ export async function setAdminSocialAccountSpare(
       if (!result.error) {
         revalidateAccounts(existing?.user_id, source);
         revalidatePath("/admin");
+        await logOrbitAction({
+          action: "spare",
+          resource: "account",
+          summary: isSpare
+            ? `Marked ALPHAA account #${accountId} as spare`
+            : `Unmarked ALPHAA account #${accountId} as spare`,
+          details: { accountId, userId: existing?.user_id, isSpare, source },
+        });
       }
       return result;
     }
@@ -259,6 +322,14 @@ export async function setAdminSocialAccountSpare(
     );
     revalidateAccounts(existing.user_id);
     revalidatePath("/admin");
+    await logOrbitAction({
+      action: "spare",
+      resource: "account",
+      summary: isSpare
+        ? `Marked account #${accountId} as spare`
+        : `Unmarked account #${accountId} as spare`,
+      details: { accountId, userId: existing.user_id, isSpare, source },
+    });
     return {};
   } catch (error) {
     return { error: publicAdminMutationError(error) };

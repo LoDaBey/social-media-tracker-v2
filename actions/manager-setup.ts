@@ -16,6 +16,7 @@ import {
   isValidAccountUrl,
   platformUrlErrorMessage,
 } from "@/lib/setup-validation";
+import { logOrbitAction } from "@/lib/orbit-log";
 import { setupSavePayloadSchema } from "@/lib/setup-schema";
 import { accountsMeetTargets } from "@/lib/setup-facebook";
 import type { SetupSaveAccountInput } from "@/types/setup";
@@ -296,6 +297,15 @@ export async function saveEmployeeAccountsAsManager(input: {
   revalidatePath("/manager");
   revalidatePath("/manager/setup");
   revalidatePath("/dashboard");
+  await logOrbitAction({
+    action: "update",
+    resource: "setup",
+    summary: `Manager saved setup accounts for employee #${input.employeeId}`,
+    details: {
+      employeeId: input.employeeId,
+      accountCount: accountsParsed.data.length,
+    },
+  });
   return {};
 }
 

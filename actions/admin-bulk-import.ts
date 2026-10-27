@@ -21,17 +21,46 @@ import type {
   BulkImportAccountDraft,
   BulkImportParseResult,
 } from "@/types/admin";
+import { logOrbitAction } from "@/lib/orbit-log";
 import type { Platform } from "@/lib/platform-config";
+import {
+  assertManagerCanEditEmployee,
+  fetchManagerCountries,
+} from "@/lib/manager-data";
 
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
-async function requireAdmin() {
+async function requireAdminOrManager() {
   const session = await auth();
-  const adminId = Number(session?.user?.id);
+  const userId = Number(session?.user?.id);
   const role = session?.user?.role;
-  if (!Number.isFinite(adminId) || role !== "admin") {
-    throw new Error("Unauthorized — admin only.");
+  if (!Number.isFinite(userId) || (role !== "admin" && role !== "manager")) {
+    throw new Error("Unauthorized.");
   }
+  return { userId, role: role as "admin" | "manager" };
+}
+
+async function assertManagerCanImportHolder(
+  managerId: number,
+  holderId: number,
+  source: "temp" | "alphaa",
+  country: string
+): Promise<string | null> {
+  if (source === "alphaa") {
+    return "You can only import accounts for your team members.";
+  }
+  const allowed = await assertManagerCanEditEmployee(managerId, holderId);
+  if (!allowed) {
+    return "You can only import accounts for your team members.";
+  }
+  const countries = await fetchManagerCountries(managerId);
+  const inScope = countries.some(
+    (item) => item.toLowerCase() === country.toLowerCase()
+  );
+  if (!inScope) {
+    return "You can only import accounts into your countries.";
+  }
+  return null;
 }
 
 function revalidateBulkImport(
@@ -54,7 +83,7 @@ export async function parseBulkImportWorkbook(
   formData: FormData
 ): Promise<{ error: string } | BulkImportParseResult> {
   try {
-    await requireAdmin();
+    await requireAdminOrManager();
     const holderName = String(formData.get("holderName") ?? "").trim();
     const file = formData.get("file");
     if (!(file instanceof File)) return { error: "Choose an Excel file to upload." };
@@ -184,6 +213,17 @@ async function importTempHolderAccounts(input: {
   }
 
   revalidateBulkImport(input.holderId, "temp");
+  await logOrbitAction({
+    action: "import",
+    resource: "account",
+    summary: `Imported ${input.rows.length} Africa/Europe accounts for employee #${input.holderId}`,
+    details: {
+      holderId: input.holderId,
+      country: input.country,
+      imported: input.rows.length,
+      source: "temp",
+    },
+  });
   return { imported: input.rows.length };
 }
 
@@ -292,6 +332,17 @@ async function importAlphaaHolderAccounts(input: {
   }
 
   revalidateBulkImport(input.holderId, "alphaa");
+  await logOrbitAction({
+    action: "import",
+    resource: "account",
+    summary: `Imported ${input.rows.length} ALPHAA accounts for employee #${input.holderId}`,
+    details: {
+      holderId: input.holderId,
+      country: input.country,
+      imported: input.rows.length,
+      source: "alphaa",
+    },
+  });
   return { imported: input.rows.length };
 }
 
@@ -303,13 +354,22 @@ export async function importBulkEmployeeAccounts(input: {
   rows: BulkImportAccountDraft[];
 }): Promise<{ error?: string; imported?: number }> {
   try {
-    await requireAdmin();
+    const { userId, role } = await requireAdminOrManager();
     const holderId = Number(input.holderId);
     if (!Number.isFinite(holderId)) return { error: "Select an account holder." };
     const source = input.source === "alphaa" ? "alphaa" : "temp";
     const country = input.country.trim();
     const language = input.language.trim();
     if (!isSetupCountry(country)) return { error: "Select a valid country." };
+    if (role === "manager") {
+      const denied = await assertManagerCanImportHolder(
+        userId,
+        holderId,
+        source,
+        country
+      );
+      if (denied) return { error: denied };
+    }
     const savedLanguage = isSetupLanguage(language) ? language : null;
     if (!input.rows.length) return { error: "Add at least one account before importing." };
 

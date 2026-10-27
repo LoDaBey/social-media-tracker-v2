@@ -7,6 +7,7 @@ import { pool } from "@/lib/db";
 import { createNotification } from "@/lib/notifications";
 import { formatShortDate } from "@/lib/cairo-date";
 import type { Role } from "@/types/db";
+import { logOrbitAction } from "@/lib/orbit-log";
 import type { QcDecisionResult } from "@/types/qc";
 
 function submissionAccountLabel(_handle: string | null, accountName: string) {
@@ -140,6 +141,12 @@ export async function approveSubmission(
   }
 
   revalidateQcPaths();
+  await logOrbitAction({
+    action: "approve",
+    resource: "qc",
+    summary: `Approved submission #${id}`,
+    details: { growthId: id },
+  });
   return { ok: true, growthId: id };
 }
 
@@ -195,6 +202,12 @@ export async function rejectWithDeduction(
   }
 
   revalidateQcPaths();
+  await logOrbitAction({
+    action: "reject",
+    resource: "qc",
+    summary: `Rejected submission #${id} with deduction`,
+    details: { growthId: id, amount: cleanAmount },
+  });
   return { ok: true, growthId: id };
 }
 
@@ -247,5 +260,11 @@ export async function rejectNoDeduction(
   }
 
   revalidateQcPaths();
+  await logOrbitAction({
+    action: "reject",
+    resource: "qc",
+    summary: `Rejected submission #${id} with no deduction`,
+    details: { growthId: id },
+  });
   return { ok: true, growthId: id };
 }

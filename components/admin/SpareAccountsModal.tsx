@@ -9,6 +9,8 @@ export function SpareAccountsModal({
   onClose,
   accounts,
   holders,
+  setSpare,
+  subtitle,
 }: SpareAccountsModalProps) {
   return (
     <AnimatePresence>
@@ -17,6 +19,8 @@ export function SpareAccountsModal({
           onClose={onClose}
           accounts={accounts}
           holders={holders}
+          setSpare={setSpare}
+          subtitle={subtitle}
         />
       ) : null}
     </AnimatePresence>

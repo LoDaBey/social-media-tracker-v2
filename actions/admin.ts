@@ -27,6 +27,7 @@ import type {
 import type { Role } from "@/types/db";
 import { publicAdminMutationError } from "@/lib/admin-action-error";
 import { assertValidReporting } from "@/lib/admin-reporting";
+import { logOrbitAction } from "@/lib/orbit-log";
 import { normalizeReportingForRole } from "@/lib/role-hierarchy";
 
 const setupCountrySchema = z
@@ -255,6 +256,12 @@ export async function createEmployee(
 
     await client.query("COMMIT");
     revalidateAdminEmployee(id);
+    await logOrbitAction({
+      action: "create",
+      resource: "employee",
+      summary: `Created ${role} ${p.full_name}`,
+      details: { userId: id, email: p.email, role, country: primaryCountry },
+    });
     return { id };
   } catch (e) {
     if (client) await client.query("ROLLBACK").catch(() => {});
@@ -423,6 +430,12 @@ export async function updateEmployeeProfile(
 
     await client.query("COMMIT");
     revalidateAdminEmployee(user_id);
+    await logOrbitAction({
+      action: "update",
+      resource: "employee",
+      summary: `Updated profile for ${p.full_name}`,
+      details: { userId: user_id, email: p.email, role: p.role },
+    });
   } catch (e) {
     await client.query("ROLLBACK").catch(() => {});
     throw e;
@@ -443,6 +456,12 @@ export async function setEmployeeActive(
     is_active,
   ]);
   revalidateAdminEmployee(user_id);
+  await logOrbitAction({
+    action: "update",
+    resource: "employee",
+    summary: is_active ? `Activated employee #${user_id}` : `Deactivated employee #${user_id}`,
+    details: { userId: user_id, is_active },
+  });
 }
 
 export async function setEmployeeEmploymentStatus(
@@ -460,6 +479,12 @@ export async function setEmployeeEmploymentStatus(
     [user_id, parsed.data]
   );
   revalidateAdminEmployee(user_id);
+  await logOrbitAction({
+    action: "update",
+    resource: "employee",
+    summary: `Set employment status to ${parsed.data} for employee #${user_id}`,
+    details: { userId: user_id, employment_status: parsed.data },
+  });
 }
 
 export async function setEmployeeCode(
@@ -485,6 +510,12 @@ export async function setEmployeeCode(
     parsed.data,
   ]);
   revalidateAdminEmployee(user_id);
+  await logOrbitAction({
+    action: "update",
+    resource: "employee",
+    summary: `Set employee code for #${user_id}`,
+    details: { userId: user_id, employee_code: parsed.data },
+  });
 }
 
 export async function getAdminEmployeeEditorBundle(
@@ -525,6 +556,12 @@ export async function deleteEmployee(user_id: number): Promise<void> {
   revalidatePath("/admin/employees");
   revalidatePath("/manager");
   revalidatePath("/dashboard");
+  await logOrbitAction({
+    action: "delete",
+    resource: "employee",
+    summary: `Deleted employee #${user_id} (${user.role})`,
+    details: { userId: user_id, role: user.role },
+  });
 }
 
 const targetsSchema = z.object({
@@ -573,5 +610,11 @@ export async function updateEmployeeTargets(
   });
 
   revalidateAdminEmployee(user_id);
+  await logOrbitAction({
+    action: "update",
+    resource: "employee",
+    summary: `Updated account targets for employee #${user_id}`,
+    details: { userId: user_id, ...t },
+  });
 }
 

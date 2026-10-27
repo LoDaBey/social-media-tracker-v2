@@ -1,6 +1,7 @@
 "use client";
 
 import { CountryFlag } from "@/lib/country-icons";
+import { ManagerBulkImportButton } from "@/components/manager/ManagerBulkImportButton";
 import { ManagerSyncSheetsButton } from "@/components/manager/ManagerSyncSheetsButton";
 import type { ManagerTeamHeaderProps } from "@/types/manager";
 
@@ -9,6 +10,8 @@ export function ManagerTeamHeader({
   pendingCount,
   overall,
   countries,
+  importHolders,
+  allowedCountries,
 }: ManagerTeamHeaderProps) {
   const showCountries = countries.length > 1;
 
@@ -19,6 +22,10 @@ export function ManagerTeamHeader({
           Your team
         </h1>
         <div className="inline-flex flex-wrap items-center justify-end gap-2">
+          <ManagerBulkImportButton
+            holders={importHolders}
+            allowedCountries={allowedCountries}
+          />
           <ManagerSyncSheetsButton />
           <div className="inline-flex items-center gap-2">
             <span className="text-[14px] font-semibold text-[var(--color-ink)]">
@@ -52,7 +59,7 @@ export function ManagerTeamHeader({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <p className="text-[15px] text-[var(--color-muted)]">
           Account holders in your countries. Expand a row to see saved accounts,
-          or use + to continue setup.
+          use Bulk import to replace or add accounts, or use + to continue setup.
         </p>
         <p className="text-[13px] font-semibold text-[var(--color-muted)]">
           {holderCount} holders · {pendingCount} setup pending

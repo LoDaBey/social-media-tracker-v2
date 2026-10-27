@@ -70,3 +70,17 @@ export function formatShortDate(isoDate: string): string {
     year: "numeric",
   }).format(new Date(`${d}T12:00:00`));
 }
+
+/** Date + time in Cairo, for activity logs. */
+export function formatCairoDateTime(isoDate: string): string {
+  const parsed = new Date(isoDate);
+  if (Number.isNaN(parsed.getTime())) return isoDate;
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: CAIRO_TZ,
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(parsed);
+}

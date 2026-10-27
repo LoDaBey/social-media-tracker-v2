@@ -129,7 +129,8 @@ export type AdminViewKind =
   | "employee"
   | "alphaa_employee"
   | "extract"
-  | "strategy";
+  | "strategy"
+  | "logs";
 
 export type AdminEmployeePanel = "profile" | "targets" | "activity";
 
@@ -139,6 +140,7 @@ export type AdminView =
   | { kind: "employee_new"; title: string }
   | { kind: "extract"; title: string }
   | { kind: "strategy"; title: string }
+  | { kind: "logs"; title: string }
   | {
       kind: "employee";
       title: string;
@@ -496,7 +498,7 @@ export type AdminCoverageCountCellProps = {
 export type AdminOverviewAction = {
   href: string;
   ariaLabel: string;
-  icon: "userPlus" | "users" | "extract" | "strategy";
+  icon: "userPlus" | "users" | "extract" | "strategy" | "logs";
   variant: "primary" | "secondary";
 };
 
@@ -774,12 +776,19 @@ export type AccountRowProps = {
   source?: AdminEmployeeSource;
 };
 
+export type SetSpareAccountFn = (
+  accountId: number,
+  isSpare: boolean,
+  source?: AdminEmployeeSource
+) => Promise<AdminAccountMutationResult>;
+
 export type AccountSpareToggleButtonProps = {
   accountId: number;
   accountName: string;
   isSpare: boolean;
   onChanged?: () => void;
   source?: AdminEmployeeSource;
+  setSpare?: SetSpareAccountFn;
 };
 
 export type SpareAccountsModalProps = {
@@ -787,6 +796,8 @@ export type SpareAccountsModalProps = {
   onClose: () => void;
   accounts: AdminSpareAccountListItem[];
   holders: SpareMarkHolderOption[];
+  setSpare?: SetSpareAccountFn;
+  subtitle?: string;
 };
 
 export type SpareAccountsDialogProps = Omit<SpareAccountsModalProps, "open">;
@@ -794,6 +805,8 @@ export type SpareAccountsDialogProps = Omit<SpareAccountsModalProps, "open">;
 export type SpareAccountsButtonProps = {
   accounts: AdminSpareAccountListItem[];
   holders: SpareMarkHolderOption[];
+  setSpare?: SetSpareAccountFn;
+  subtitle?: string;
 };
 
 export type SpareAccountsListProps = {
@@ -815,6 +828,7 @@ export type SpareAccountsMarkPanelProps = {
   holders: SpareMarkHolderOption[];
   filters: SpareAccountFilters;
   onSpareChange: (item: AdminSpareAccountListItem, isSpare: boolean) => void;
+  setSpare?: SetSpareAccountFn;
 };
 
 export type SpareModalTab = "spare" | "mark";
@@ -951,6 +965,7 @@ export type EmployeesBulkImportButtonProps = {
   holders: BulkImportHolderOption[];
   initialHolderId?: number;
   initialHolderSource?: "temp" | "alphaa";
+  allowedCountries?: string[];
   variant?: "icon" | "button";
 };
 
@@ -959,6 +974,7 @@ export type BulkImportModalProps = {
   holders: BulkImportHolderOption[];
   initialHolderId?: number;
   initialHolderSource?: "temp" | "alphaa";
+  allowedCountries?: string[];
   onClose: () => void;
 };
 
@@ -967,6 +983,7 @@ export type BulkImportHolderStepProps = {
   holderId: string;
   region: "" | SetupRegion;
   country: string;
+  allowedCountries?: string[];
   onHolderIdChange: (holderId: string) => void;
   onRegionChange: (region: "" | SetupRegion) => void;
   onCountryChange: (country: string) => void;

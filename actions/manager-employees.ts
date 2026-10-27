@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import { pool } from "@/lib/db";
 import { publicAdminMutationError } from "@/lib/admin-action-error";
 import { assertManagerCanEditEmployee } from "@/lib/manager-data";
+import { logOrbitAction } from "@/lib/orbit-log";
 import type { EmploymentStatus } from "@/types/db";
 
 const updateCodeSchema = z.object({
@@ -55,6 +56,12 @@ export async function updateManagerEmployeeCode(
     ]);
 
     revalidateManagerEmployee(employeeId);
+    await logOrbitAction({
+      action: "update",
+      resource: "employee",
+      summary: `Manager set employee code for #${employeeId}`,
+      details: { employeeId, employee_code: parsed.data.employee_code },
+    });
     return {};
   } catch (error) {
     return { error: publicAdminMutationError(error) };
@@ -83,6 +90,12 @@ export async function updateManagerEmployeeStatus(
     );
 
     revalidateManagerEmployee(employeeId);
+    await logOrbitAction({
+      action: "update",
+      resource: "employee",
+      summary: `Manager set employment status to ${parsed.data} for #${employeeId}`,
+      details: { employeeId, employment_status: parsed.data },
+    });
     return {};
   } catch (error) {
     return { error: publicAdminMutationError(error) };

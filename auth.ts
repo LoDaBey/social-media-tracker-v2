@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
 import { compare } from "bcryptjs";
 import { queryOne } from "@/lib/db";
+import { logOrbitAction } from "@/lib/orbit-log";
 import type { Role } from "@/types/db";
 
 const credentialsSchema = z.object({
@@ -44,6 +45,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const ok = await compare(password, user.password_hash);
         if (!ok) return null;
+
+        await logOrbitAction({
+          action: "sign_in",
+          resource: "auth",
+          summary: `Signed in (${user.email})`,
+          actor: {
+            id: user.id,
+            name: user.full_name,
+            email: user.email,
+            role: user.role,
+          },
+        });
 
         return {
           id: String(user.id),

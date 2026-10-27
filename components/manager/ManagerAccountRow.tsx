@@ -6,8 +6,11 @@ import { Pencil } from "lucide-react";
 import { PLATFORM_LABELS } from "@/lib/platform-config";
 import { managerAccountToInput } from "@/lib/admin-account-input";
 import { updateManagerSocialAccount } from "@/actions/manager-accounts";
+import { setManagerSocialAccountSpare } from "@/actions/manager-accounts";
 import { AccountEditModal } from "@/components/admin/AccountEditModal";
 import { AccountCategoryBadge } from "@/components/admin/AccountCategoryBadge";
+import { AccountSpareBadge } from "@/components/admin/AccountSpareBadge";
+import { AccountSpareToggleButton } from "@/components/admin/AccountSpareToggleButton";
 import { AccountStatusBadge } from "@/components/admin/AccountStatusBadge";
 import { AccountUrlCell } from "@/components/admin/AccountUrlCell";
 import { ManagerAccountDeleteButton } from "@/components/manager/ManagerAccountDeleteButton";
@@ -28,7 +31,10 @@ export function ManagerAccountRow({
   return (
     <tr className="border-t border-[var(--color-hairline)]">
       <td className="px-4 py-2.5 text-[13px] font-semibold text-[var(--color-ink)]">
-        {PLATFORM_LABELS[account.platform]}
+        <div className="flex flex-wrap items-center gap-2">
+          <span>{PLATFORM_LABELS[account.platform]}</span>
+          <AccountSpareBadge isSpare={account.is_spare} />
+        </div>
       </td>
       <td className="px-4 py-2.5 text-[13px] text-[var(--color-ink)]">
         {account.username || "—"}
@@ -53,6 +59,13 @@ export function ManagerAccountRow({
       </td>
       <td className="px-4 py-2.5">
         <div className="flex items-center gap-1.5">
+          <AccountSpareToggleButton
+            accountId={account.id}
+            accountName={displayName}
+            isSpare={account.is_spare}
+            source="temp"
+            setSpare={setManagerSocialAccountSpare}
+          />
           <motion.div layout whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <button
               type="button"

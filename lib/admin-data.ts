@@ -16,6 +16,10 @@ import type {
 } from "@/types/admin";
 import { fetchAlphaaEmployeesList } from "@/lib/admin-alphaa-employees-data";
 import { fetchAdminAccountsByUserIds } from "@/lib/admin-accounts-data";
+import {
+  TEMP_MANAGER_NAME_SQL,
+  TEMP_TEAM_LEAD_NAME_SQL,
+} from "@/lib/admin-employee-reporting";
 import { fetchManagerOptions } from "@/lib/manager-data";
 import { setupCountriesForRegion } from "@/lib/setup-options";
 import type { TempUser } from "@/types/db";
@@ -174,9 +178,9 @@ export async function fetchAdminEmployeesList(
       u.employee_code,
       u.employment_status,
       u.team_lead_id,
-      tl.full_name AS team_lead_name,
+      ${TEMP_TEAM_LEAD_NAME_SQL} AS team_lead_name,
       u.manager_id,
-      mgr.full_name AS manager_name,
+      ${TEMP_MANAGER_NAME_SQL} AS manager_name,
       u.op_id,
       op_u.full_name AS op_name,
       u.country,
@@ -196,6 +200,7 @@ export async function fetchAdminEmployeesList(
     FROM temp_users u
     LEFT JOIN temp_users tl ON tl.id = u.team_lead_id
     LEFT JOIN temp_users mgr ON mgr.id = u.manager_id
+    LEFT JOIN temp_users tlm ON tlm.id = tl.manager_id
     LEFT JOIN temp_users op_u ON op_u.id = u.op_id
     WHERE ${where.join(" AND ")}
     ORDER BY u.full_name ASC

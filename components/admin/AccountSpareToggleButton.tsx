@@ -14,6 +14,7 @@ export function AccountSpareToggleButton({
   isSpare,
   onChanged,
   source = "temp",
+  setSpare = setAdminSocialAccountSpare,
 }: AccountSpareToggleButtonProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -21,11 +22,7 @@ export function AccountSpareToggleButton({
   function toggle() {
     startTransition(async () => {
       const nextSpare = !isSpare;
-      const result = await setAdminSocialAccountSpare(
-        accountId,
-        nextSpare,
-        source
-      );
+      const result = await setSpare(accountId, nextSpare, source);
       if (result.error) {
         toast.error(result.error);
         return;

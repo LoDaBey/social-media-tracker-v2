@@ -50,6 +50,7 @@ export function BulkImportModal({
   holders,
   initialHolderId,
   initialHolderSource,
+  allowedCountries,
   onClose,
 }: BulkImportModalProps) {
   return (
@@ -59,6 +60,7 @@ export function BulkImportModal({
           holders={holders}
           initialHolderId={initialHolderId}
           initialHolderSource={initialHolderSource}
+          allowedCountries={allowedCountries}
           onClose={onClose}
         />
       ) : null}
@@ -70,14 +72,24 @@ function BulkImportModalDialog({
   holders,
   initialHolderId,
   initialHolderSource = "temp",
+  allowedCountries,
   onClose,
 }: Omit<BulkImportModalProps, "open">) {
   const router = useRouter();
+  const scopedHolders = useMemo(() => {
+    if (!allowedCountries?.length) return holders;
+    const allowed = new Set(allowedCountries);
+    return holders.filter(
+      (holder) =>
+        holder.source === "temp" &&
+        (!holder.country || allowed.has(holder.country))
+    );
+  }, [allowedCountries, holders]);
   const initialHolderKey = initialHolderId
     ? bulkImportHolderKey(initialHolderSource, initialHolderId)
     : "";
   const initialHolder =
-    holders.find(
+    scopedHolders.find(
       (holder) => bulkImportHolderKey(holder.source, holder.id) === initialHolderKey
     ) ?? null;
   const initialFields = fieldsFromHolder(initialHolder);
@@ -96,10 +108,10 @@ function BulkImportModalDialog({
 
   const selectedHolder = useMemo(
     () =>
-      holders.find(
+      scopedHolders.find(
         (holder) => bulkImportHolderKey(holder.source, holder.id) === holderId
       ) ?? null,
-    [holders, holderId]
+    [holderId, scopedHolders]
   );
 
   const assignedRegion =
@@ -136,6 +148,13 @@ function BulkImportModalDialog({
     }
     if (!country) {
       setFormError("Select the country for this account holder.");
+      return;
+    }
+    if (
+      allowedCountries?.length &&
+      (!allowedCountries.includes(country) || selectedHolder.source !== "temp")
+    ) {
+      setFormError("You can only import accounts for your team members.");
       return;
     }
     setStep("upload");
@@ -282,13 +301,14 @@ function BulkImportModalDialog({
           ) : null}
           {step === "holder" ? (
             <BulkImportHolderStep
-              holders={holders}
+              holders={scopedHolders}
               holderId={holderId}
               region={region}
               country={country}
+              allowedCountries={allowedCountries}
               onHolderIdChange={(next) => {
                 setHolderId(next);
-                const holder = holders.find(
+                const holder = scopedHolders.find(
                   (item) => bulkImportHolderKey(item.source, item.id) === next
                 );
                 const fields = fieldsFromHolder(holder);

@@ -1,5 +1,11 @@
 import type { ReactNode } from "react";
-import type { AccountHolderOption, AdminCountryCoverage } from "@/types/admin";
+import type {
+  AccountHolderOption,
+  AdminCountryCoverage,
+  AdminSpareAccountListItem,
+  BulkImportHolderOption,
+  SpareMarkHolderOption,
+} from "@/types/admin";
 import type { EmploymentStatus, Platform, AccountScope } from "@/types/db";
 
 export type ManagerOption = {
@@ -22,6 +28,7 @@ export type ManagerAccountListItem = {
   category: string | null;
   account_scope: AccountScope;
   status: "active" | "archived" | "suspended";
+  is_spare: boolean;
 };
 
 export type ManagerHolderRow = {
@@ -51,6 +58,8 @@ export type ManagerHomeTableProps = {
 export type ManagerHomeProps = {
   groups: ManagerCountryGroup[];
   coverage: AdminCountryCoverage;
+  spareAccounts: AdminSpareAccountListItem[];
+  spareHolders: SpareMarkHolderOption[];
 };
 
 export type ManagerHomeTab = "team" | "coverage";
@@ -58,6 +67,7 @@ export type ManagerHomeTab = "team" | "coverage";
 export type ManagerHomeTabsProps = {
   teamPanel: ReactNode;
   coveragePanel: ReactNode;
+  actions?: ReactNode;
 };
 
 export type ManagerCoveragePanelProps = {
@@ -67,6 +77,8 @@ export type ManagerCoveragePanelProps = {
 export type ManagerTeamRowProps = {
   row: ManagerHolderRow;
   holderOptions: AccountHolderOption[];
+  importHolders: BulkImportHolderOption[];
+  allowedCountries: string[];
 };
 
 export type ManagerAccountsPanelProps = {
@@ -77,6 +89,8 @@ export type ManagerAccountsPanelProps = {
   accounts: ManagerAccountListItem[];
   assignedCount: number;
   holderOptions: AccountHolderOption[];
+  importHolders: BulkImportHolderOption[];
+  allowedCountries: string[];
 };
 
 export type ManagerAccountsTableProps = {
@@ -120,6 +134,15 @@ export type ManagerTeamHeaderProps = {
   pendingCount: number;
   overall: ManagerTeamTotals;
   countries: ManagerCountryTotal[];
+  importHolders: BulkImportHolderOption[];
+  allowedCountries: string[];
+};
+
+export type ManagerBulkImportButtonProps = {
+  holders: BulkImportHolderOption[];
+  allowedCountries: string[];
+  initialHolderId?: number;
+  variant?: "icon" | "button";
 };
 
 export type ManagerSetupActionButtonProps = {

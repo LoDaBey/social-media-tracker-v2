@@ -5,6 +5,9 @@ import { AdminCountrySelect } from "@/components/admin/AdminCountrySelect";
 import { CountryFlag } from "@/lib/country-icons";
 import { bulkImportHolderKey } from "@/lib/bulk-import-parse";
 import {
+  ALPHAA_EXCLUSIVE_SETUP_COUNTRIES,
+  EUROPE_SETUP_COUNTRIES,
+  SETUP_COUNTRIES,
   isCountryInEmployeeListRegion,
   setupCountriesForRegion,
   setupRegionForCountry,
@@ -12,25 +15,56 @@ import {
 } from "@/lib/setup-options";
 import type { BulkImportHolderStepProps } from "@/types/admin";
 
+const ALL_REGIONS: SetupRegion[] = ["Africa", "Europe", "Alphaa"];
+
 const fieldClass =
   "cursor-pointer rounded-lg outline-none border border-[var(--color-hairline)] bg-[var(--color-cream-tint)] px-3 py-2.5 text-[15px] font-medium text-[var(--color-ink)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]";
+
+function regionsForAllowedCountries(allowedCountries?: string[]): SetupRegion[] {
+  if (!allowedCountries?.length) return ALL_REGIONS;
+  const allowed = new Set(allowedCountries);
+  const regions: SetupRegion[] = [];
+  if (SETUP_COUNTRIES.some((country) => allowed.has(country))) {
+    regions.push("Africa");
+  }
+  if (EUROPE_SETUP_COUNTRIES.some((country) => allowed.has(country))) {
+    regions.push("Europe");
+  }
+  if (ALPHAA_EXCLUSIVE_SETUP_COUNTRIES.some((country) => allowed.has(country))) {
+    regions.push("Alphaa");
+  }
+  return regions;
+}
 
 export function BulkImportHolderStep({
   holders,
   holderId,
   region,
   country,
+  allowedCountries,
   onHolderIdChange,
   onRegionChange,
   onCountryChange,
 }: BulkImportHolderStepProps) {
-  const countryOptions = useMemo(
-    () =>
-      region
-        ? [...setupCountriesForRegion(region)].sort((a, b) => a.localeCompare(b))
-        : undefined,
-    [region]
+  const regionOptions = useMemo(
+    () => regionsForAllowedCountries(allowedCountries),
+    [allowedCountries]
   );
+  const allowedSet = useMemo(
+    () => (allowedCountries?.length ? new Set(allowedCountries) : null),
+    [allowedCountries]
+  );
+  const countryOptions = useMemo(() => {
+    const base = region
+      ? [...setupCountriesForRegion(region)]
+      : allowedCountries?.length
+        ? [...allowedCountries]
+        : [];
+    const filtered = allowedSet
+      ? base.filter((item) => allowedSet.has(item))
+      : base;
+    return [...new Set(filtered)].sort((a, b) => a.localeCompare(b));
+  }, [allowedCountries, allowedSet, region]);
 
   const assignedRegion = region || (country ? setupRegionForCountry(country) : "");
 
@@ -76,16 +110,18 @@ export function BulkImportHolderStep({
           className={fieldClass}
         >
           <option value="">Select a region</option>
-          <option value="Africa">Africa</option>
-          <option value="Europe">Europe</option>
-          <option value="Alphaa">ALPHAA</option>
+          {regionOptions.map((option) => (
+            <option key={option} value={option}>
+              {option === "Alphaa" ? "ALPHAA" : option}
+            </option>
+          ))}
         </select>
       </label>
       <label className="flex min-w-0 flex-col gap-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-muted)] sm:col-span-2">
         Country
         <AdminCountrySelect
           value={country}
-          countries={countryOptions}
+          countries={allowedSet || region ? countryOptions : undefined}
           disabled={!region}
           ariaLabel="Select country for bulk import"
           onChange={onCountryChange}
