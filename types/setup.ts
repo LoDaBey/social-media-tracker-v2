@@ -1,5 +1,4 @@
 import type { Platform } from "@/lib/platform-config";
-import type { TempSocialMediaAccount } from "@/types/db";
 import type {
   SETUP_CATEGORIES,
   SETUP_COUNTRIES,
@@ -52,25 +51,6 @@ export type SetupProfileFieldErrors = Partial<
 /** @deprecated Prefer SetupRowFieldErrors for per-input borders */
 export type SetupRowErrors = Record<string, string>;
 
-export type SetupFormProps = {
-  userId: number;
-  fullName: string;
-  targets: Record<Platform, number>;
-  existingByPlatform: Record<Platform, TempSocialMediaAccount[]>;
-  initialProfile: SetupProfile;
-  /** Manager fills this for a selected teammate; employee self-setup is unused. */
-  mode?: "employee" | "manager";
-  cancelHref?: string;
-};
-
-export type SetupProfileFieldsProps = {
-  country: string;
-  language: string;
-  fieldErrors?: SetupProfileFieldErrors;
-  onChange: (patch: Partial<SetupProfile>) => void;
-  hint?: string;
-};
-
 export type SetupSelectProps = {
   id: string;
   label: string;
@@ -82,17 +62,6 @@ export type SetupSelectProps = {
   error?: string;
   disabled?: boolean;
   onChange: (value: string) => void;
-};
-
-export type SetupAccountRowFieldsProps = {
-  platform: Platform;
-  platformLabel: string;
-  row: SetupAccountRow;
-  index: number;
-  fieldErrors?: SetupAccountFieldErrors;
-  canRemove: boolean;
-  onChange: (patch: Partial<SetupAccountRow>) => void;
-  onRemove: () => void;
 };
 
 export type SetupTextFieldProps = {
@@ -129,15 +98,6 @@ export type SetupSavePayload = {
   accounts: SetupSaveAccountInput[];
 };
 
-export type SetupCancelButtonProps = {
-  disabled?: boolean;
-  href?: string;
-};
-
-export type ScrollToFirstSetupErrorProps = {
-  token: number;
-};
-
 export type SetupStepId =
   | "profile"
   | "facebook"
@@ -148,19 +108,4 @@ export type SetupStepId =
 export type SetupStep = {
   id: SetupStepId;
   label: string;
-};
-
-export type SetupStepNavProps = {
-  steps: { id: string; label: string }[];
-  currentIndex: number;
-};
-
-export type SetupDraft = {
-  version: 1;
-  userId: number;
-  stepIndex: number;
-  profile: SetupProfile;
-  rowsByPlatform: Record<Platform, SetupAccountRow[]>;
-  targets: Record<Platform, number>;
-  existingSignature: string;
 };

@@ -7,7 +7,6 @@ import type { ManagerTeamHeaderProps } from "@/types/manager";
 
 export function ManagerTeamHeader({
   holderCount,
-  pendingCount,
   overall,
   countries,
   importHolders,
@@ -59,10 +58,10 @@ export function ManagerTeamHeader({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <p className="text-[15px] text-[var(--color-muted)]">
           Account holders in your countries. Expand a row to see saved accounts,
-          use Bulk import to replace or add accounts, or use + to continue setup.
+          or use Bulk import to replace or add accounts.
         </p>
         <p className="text-[13px] font-semibold text-[var(--color-muted)]">
-          {holderCount} holders · {pendingCount} setup pending
+          {holderCount} holders
         </p>
       </div>
     </header>

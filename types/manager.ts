@@ -37,10 +37,7 @@ export type ManagerHolderRow = {
   email: string;
   country: string;
   language: string | null;
-  employee_code: string | null;
   employment_status: EmploymentStatus;
-  setupComplete: boolean;
-  setupNeedsReview: boolean;
   targetAccountsSum: number;
   accountTotal: number;
   accounts: ManagerAccountListItem[];
@@ -131,7 +128,6 @@ export type ManagerCountryTotal = {
 
 export type ManagerTeamHeaderProps = {
   holderCount: number;
-  pendingCount: number;
   overall: ManagerTeamTotals;
   countries: ManagerCountryTotal[];
   importHolders: BulkImportHolderOption[];
@@ -145,34 +141,8 @@ export type ManagerBulkImportButtonProps = {
   variant?: "icon" | "button";
 };
 
-export type ManagerSetupActionButtonProps = {
-  href: string;
-  setupComplete: boolean;
-  setupNeedsReview: boolean;
-  fullName: string;
-};
-
-export type ManagerSetupStatusBadgeProps = {
-  setupComplete: boolean;
-  setupNeedsReview: boolean;
-};
-
 export type ManagerEmployeeStatusSelectProps = {
   employeeId: number;
   fullName: string;
   status: EmploymentStatus;
-};
-
-export type ManagerEmployeeCodeButtonProps = {
-  employeeId: number;
-  fullName: string;
-  employeeCode: string | null;
-};
-
-export type ManagerEmployeeCodeModalProps = {
-  open: boolean;
-  employeeId: number;
-  fullName: string;
-  employeeCode: string | null;
-  onClose: () => void;
 };
