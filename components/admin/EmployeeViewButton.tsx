@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Eye } from "lucide-react";
 import { getAdminEmployeeEditorBundle } from "@/actions/admin";
 import { EmployeeEditModal } from "@/components/admin/EmployeeEditModal";
+import { adminEmployeeProjectLabel } from "@/lib/admin-view";
 import type {
   AdminEmployeeEditorBundle,
   EmployeeViewButtonProps,
@@ -14,17 +15,20 @@ export function EmployeeViewButton({
   employeeId,
   fullName,
   role,
+  source,
+  country,
 }: EmployeeViewButtonProps) {
   const [open, setOpen] = useState(false);
   const [bundle, setBundle] = useState<AdminEmployeeEditorBundle | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const projectLabel = adminEmployeeProjectLabel(source, country);
 
   async function load() {
     setLoading(true);
     setError(null);
     try {
-      const next = await getAdminEmployeeEditorBundle(employeeId);
+      const next = await getAdminEmployeeEditorBundle(employeeId, source);
       if (!next) {
         setBundle(null);
         setError("This person could not be loaded.");
@@ -67,6 +71,8 @@ export function EmployeeViewButton({
         userId={employeeId}
         fullName={fullName}
         role={role}
+        source={source}
+        projectLabel={projectLabel}
         open={open}
         onClose={() => setOpen(false)}
         bundle={bundle}

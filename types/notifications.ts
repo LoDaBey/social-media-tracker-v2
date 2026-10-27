@@ -25,3 +25,16 @@ export type NotificationsApiResponse = {
   unreadCount: number;
   items: TempNotificationRow[];
 };
+
+export type NotificationDropdownPlacement = {
+  top: number;
+  right: number;
+};
+
+export type NotificationDropdownProps = {
+  items: TempNotificationRow[];
+  unreadCount: number;
+  onClose: () => void;
+  onRefresh: () => void;
+  placement: NotificationDropdownPlacement | null;
+};

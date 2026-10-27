@@ -28,7 +28,11 @@ function uniqueLabels(values: string[]) {
   return out;
 }
 
-export function AlphaaEmployeeForm({ initial }: AlphaaEmployeeFormProps) {
+export function AlphaaEmployeeForm({
+  initial,
+  embedded = false,
+  onSaved,
+}: AlphaaEmployeeFormProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -56,6 +60,11 @@ export function AlphaaEmployeeForm({ initial }: AlphaaEmployeeFormProps) {
     form.country,
   ]);
 
+  function cancel() {
+    setForm(base);
+    setError(null);
+  }
+
   function submit() {
     setError(null);
     startTransition(async () => {
@@ -76,6 +85,7 @@ export function AlphaaEmployeeForm({ initial }: AlphaaEmployeeFormProps) {
         });
         toast.success("Profile saved.");
         router.refresh();
+        onSaved?.();
       } catch (e) {
         const message = e instanceof Error ? e.message : "Save failed.";
         setError(message);
@@ -85,22 +95,34 @@ export function AlphaaEmployeeForm({ initial }: AlphaaEmployeeFormProps) {
   }
 
   return (
-    <div className="rounded-[16px] border border-[var(--color-hairline)] bg-[var(--color-surface)] p-5">
-      <p className="text-[13px] font-semibold text-[var(--color-ink)]">
-        ALPHAA profile
-      </p>
-      <p className="mt-1 text-[13px] text-[var(--color-muted)]">
-        Updates this person in the ALPHAA users table. Team lead and manager
-        stay assigned through projects.
-      </p>
+    <div
+      className={
+        embedded
+          ? ""
+          : "rounded-[16px] border border-[var(--color-hairline)] bg-[var(--color-surface)] p-5"
+      }
+    >
+      {embedded ? null : (
+        <>
+          <p className="text-[13px] font-semibold text-[var(--color-ink)]">
+            ALPHAA profile
+          </p>
+          <p className="mt-1 text-[13px] text-[var(--color-muted)]">
+            Updates this person in the ALPHAA users table. Team lead and manager
+            stay assigned through projects.
+          </p>
+        </>
+      )}
 
       {error ? (
-        <p className="mt-4 rounded-lg bg-[var(--color-coral-tint)] px-4 py-2 text-[14px] text-[var(--color-coral)]">
+        <p
+          className={`${embedded ? "mb-4" : "mt-4"} rounded-lg bg-[var(--color-coral-tint)] px-4 py-2 text-[14px] text-[var(--color-coral)]`}
+        >
           {error}
         </p>
       ) : null}
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      <div className={`${embedded ? "" : "mt-4"} grid gap-4 sm:grid-cols-2`}>
         <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
           Name
           <input
@@ -205,22 +227,13 @@ export function AlphaaEmployeeForm({ initial }: AlphaaEmployeeFormProps) {
         </label>
       </div>
 
-      <div className="mt-5 flex justify-end gap-3">
-        <motion.button
-          type="button"
-          layout
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          disabled={pending || !dirty}
-          onClick={() => {
-            setForm(base);
-            setError(null);
-          }}
-          aria-label="Cancel ALPHAA profile changes"
-          className="cursor-pointer rounded-lg border border-[var(--color-hairline)] px-4 py-2 text-[13px] font-semibold text-[var(--color-ink)] outline-none hover:bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] disabled:opacity-50"
-        >
-          Cancel
-        </motion.button>
+      <div
+        className={
+          embedded
+            ? "sticky bottom-0 z-20 flex flex-wrap gap-3 border-t border-[var(--color-hairline)] bg-[var(--color-surface)] py-4"
+            : "mt-5 flex justify-end gap-3"
+        }
+      >
         <motion.button
           type="button"
           layout
@@ -229,9 +242,21 @@ export function AlphaaEmployeeForm({ initial }: AlphaaEmployeeFormProps) {
           disabled={pending || !dirty}
           onClick={submit}
           aria-label="Save ALPHAA profile"
-          className="cursor-pointer rounded-lg bg-[var(--color-emerald)] px-4 py-2 text-[13px] font-semibold text-white outline-none hover:bg-[var(--color-emerald-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] disabled:opacity-50"
+          className="cursor-pointer rounded-lg bg-[var(--color-emerald)] px-5 py-2.5 text-[14px] font-semibold text-white outline-none hover:bg-[var(--color-emerald-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {pending ? "Saving…" : "Save"}
+          {pending ? "Saving…" : "Save changes"}
+        </motion.button>
+        <motion.button
+          type="button"
+          layout
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          disabled={pending || !dirty}
+          onClick={cancel}
+          aria-label="Cancel ALPHAA profile changes"
+          className="cursor-pointer rounded-lg border border-[var(--color-hairline)] px-5 py-2.5 text-[14px] font-semibold text-[var(--color-ink)] outline-none hover:bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Cancel
         </motion.button>
       </div>
     </div>

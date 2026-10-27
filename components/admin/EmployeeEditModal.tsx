@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
-import { adminRoleBadge } from "@/lib/admin-view";
-import { AdminEmployeeActivityList } from "@/components/admin/AdminEmployeeActivityList";
+import { adminEmployeePanelsForSource, adminRoleBadge } from "@/lib/admin-view";
+import { AlphaaEmployeeForm } from "@/components/admin/AlphaaEmployeeForm";
 import { EmployeeEditModalTabs } from "@/components/admin/EmployeeEditModalTabs";
 import { EmployeeForm } from "@/components/admin/EmployeeForm";
+import { EmployeeProjectBadge } from "@/components/admin/EmployeeProjectBadge";
 import { EmployeeTargetsForm } from "@/components/admin/EmployeeTargetsForm";
 import type {
   AdminEmployeePanel,
@@ -17,6 +18,8 @@ function EmployeeEditModalFrame({
   userId,
   fullName,
   role,
+  source,
+  projectLabel,
   onClose,
   bundle,
   loading,
@@ -24,6 +27,14 @@ function EmployeeEditModalFrame({
   onReload,
 }: Omit<EmployeeEditModalProps, "open">) {
   const [panel, setPanel] = useState<AdminEmployeePanel>("profile");
+  const panels = adminEmployeePanelsForSource(source);
+
+  useEffect(() => {
+    const allowed = adminEmployeePanelsForSource(source);
+    if (!allowed.some((item) => item.id === panel)) {
+      setPanel("profile");
+    }
+  }, [panel, source]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -40,6 +51,7 @@ function EmployeeEditModalFrame({
 
   const title = bundle?.fullName ?? fullName;
   const roleBadge = adminRoleBadge(bundle?.role ?? role);
+  const badgeLabel = bundle?.projectLabel ?? projectLabel;
 
   return (
     <div
@@ -73,6 +85,7 @@ function EmployeeEditModalFrame({
               >
                 {title}
               </h2>
+              <EmployeeProjectBadge label={badgeLabel} />
               <span className="rounded-full bg-[var(--color-emerald-tint)] px-3 py-1 text-[12px] font-semibold uppercase tracking-wide text-[var(--color-emerald)]">
                 {roleBadge}
               </span>
@@ -91,9 +104,15 @@ function EmployeeEditModalFrame({
           </motion.button>
         </div>
 
-        <div className="mt-4">
-          <EmployeeEditModalTabs panel={panel} onChange={setPanel} />
-        </div>
+        {panels.length > 1 ? (
+          <div className="mt-4">
+            <EmployeeEditModalTabs
+              panel={panel}
+              onChange={setPanel}
+              source={source}
+            />
+          </div>
+        ) : null}
 
         <div className="mt-5 min-h-[240px]" role="tabpanel">
           {loading && !bundle ? (
@@ -102,7 +121,14 @@ function EmployeeEditModalFrame({
             <p className="rounded-lg bg-[var(--color-coral-tint)] px-4 py-3 text-[14px] text-[var(--color-coral)]">
               {error}
             </p>
-          ) : bundle ? (
+          ) : bundle?.source === "alphaa" ? (
+            <AlphaaEmployeeForm
+              key={bundle.fetchedAt}
+              initial={bundle.profile}
+              embedded
+              onSaved={onReload}
+            />
+          ) : bundle?.source === "temp" ? (
             <>
               {panel === "profile" ? (
                 <EmployeeForm
@@ -126,9 +152,6 @@ function EmployeeEditModalFrame({
                   onSaved={onClose}
                 />
               ) : null}
-              {panel === "activity" ? (
-                <AdminEmployeeActivityList items={bundle.activity} />
-              ) : null}
             </>
           ) : null}
         </div>
@@ -141,6 +164,8 @@ export function EmployeeEditModal({
   userId,
   fullName,
   role,
+  source,
+  projectLabel,
   open,
   onClose,
   bundle,
@@ -152,10 +177,12 @@ export function EmployeeEditModal({
     <AnimatePresence>
       {open ? (
         <EmployeeEditModalFrame
-          key={userId}
+          key={`${source}-${userId}`}
           userId={userId}
           fullName={fullName}
           role={role}
+          source={source}
+          projectLabel={projectLabel}
           onClose={onClose}
           bundle={bundle}
           loading={loading}

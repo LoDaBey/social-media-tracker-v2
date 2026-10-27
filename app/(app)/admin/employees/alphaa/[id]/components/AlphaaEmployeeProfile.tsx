@@ -1,17 +1,7 @@
+import { AlphaaEmployeeForm } from "@/components/admin/AlphaaEmployeeForm";
 import { EmployeeAccountsPanel } from "@/components/admin/EmployeeAccountsPanel";
-import { baseCountryFromDisplay } from "@/lib/overview-country-display";
-import { ALPHAA_SETUP_COUNTRIES } from "@/lib/setup-options";
-import { AlphaaEmployeeForm } from "./AlphaaEmployeeForm";
+import { canonicalAlphaaCountry } from "@/lib/admin-alphaa-employees-data";
 import type { AlphaaEmployeeProfileProps } from "@/types/admin";
-
-function canonicalAlphaaCountry(value: string) {
-  const base = baseCountryFromDisplay(value);
-  return (
-    ALPHAA_SETUP_COUNTRIES.find(
-      (country) => country.toLowerCase() === base.toLowerCase()
-    ) ?? base
-  );
-}
 
 export function AlphaaEmployeeProfile({ profile }: AlphaaEmployeeProfileProps) {
   const country = canonicalAlphaaCountry(

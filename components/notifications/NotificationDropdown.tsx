@@ -2,17 +2,16 @@
 
 import { useTransition } from "react";
 import { markAllReadAction } from "@/actions/notifications";
-import type { TempNotificationRow } from "@/types/notifications";
+import type { NotificationDropdownProps } from "@/types/notifications";
 import { NotificationItem } from "./NotificationItem";
 
-type Props = {
-  items: TempNotificationRow[];
-  unreadCount: number;
-  onClose: () => void;
-  onRefresh: () => void;
-};
-
-export function NotificationDropdown({ items, unreadCount, onClose, onRefresh }: Props) {
+export function NotificationDropdown({
+  items,
+  unreadCount,
+  onClose,
+  onRefresh,
+  placement,
+}: NotificationDropdownProps) {
   const [pending, startTransition] = useTransition();
 
   function markAll() {
@@ -25,12 +24,17 @@ export function NotificationDropdown({ items, unreadCount, onClose, onRefresh }:
   return (
     <>
       <div
-        className="fixed inset-0 z-40 bg-black/50 md:hidden"
+        className="fixed inset-0 z-[80] bg-black/50 md:bg-transparent"
         aria-hidden="true"
         onClick={onClose}
       />
       <div
-        className="z-50 flex max-h-[70vh] flex-col overflow-hidden rounded-b-2xl border border-[var(--color-hairline)] bg-[var(--color-surface)] shadow-[0_12px_32px_rgba(20,20,20,.12)] max-md:fixed max-md:inset-x-0 max-md:top-16 md:absolute md:right-0 md:top-full md:mt-2 md:max-h-[min(420px,calc(100dvh-5rem))] md:w-[380px] md:rounded-2xl"
+        className="fixed z-[90] flex max-h-[70vh] flex-col overflow-hidden rounded-b-2xl border border-[var(--color-hairline)] bg-[var(--color-surface)] shadow-[0_12px_32px_rgba(20,20,20,.12)] max-md:inset-x-0 max-md:top-16 md:max-h-[min(420px,calc(100dvh-5rem))] md:w-[380px] md:rounded-2xl"
+        style={
+          placement
+            ? { top: placement.top, right: placement.right }
+            : undefined
+        }
         role="dialog"
         aria-label="Notifications panel"
       >
@@ -62,7 +66,6 @@ export function NotificationDropdown({ items, unreadCount, onClose, onRefresh }:
             </ul>
           )}
         </div>
-
       </div>
     </>
   );

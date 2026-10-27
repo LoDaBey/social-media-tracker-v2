@@ -11,10 +11,15 @@ import type {
   AdminEmployeeEditorBundle,
   AdminEmployeeListFilters,
   AdminEmployeeListRow,
+  AdminEmployeeSource,
   EmployeeActivityItem,
   EmployeeFormInitial,
 } from "@/types/admin";
-import { fetchAlphaaEmployeesList } from "@/lib/admin-alphaa-employees-data";
+import {
+  fetchAlphaaEmployeeEditorBundle,
+  fetchAlphaaEmployeesList,
+} from "@/lib/admin-alphaa-employees-data";
+import { adminEmployeeProjectLabel } from "@/lib/admin-view";
 import { fetchAdminAccountsByUserIds } from "@/lib/admin-accounts-data";
 import {
   TEMP_MANAGER_NAME_SQL,
@@ -386,8 +391,13 @@ export async function fetchEmployeeActivityTimeline(
 }
 
 export async function fetchAdminEmployeeEditorBundle(
-  userId: number
+  userId: number,
+  source: AdminEmployeeSource = "temp"
 ): Promise<AdminEmployeeEditorBundle | null> {
+  if (source === "alphaa") {
+    return fetchAlphaaEmployeeEditorBundle(userId);
+  }
+
   const user = await queryOne<TempUser>(
     `SELECT * FROM temp_users WHERE id = $1`,
     [userId]
@@ -401,7 +411,6 @@ export async function fetchAdminEmployeeEditorBundle(
     admins,
     managerCountries,
     activeCounts,
-    activity,
   ] = await Promise.all([
     fetchTeamLeadOptions(),
     fetchManagerOptions(),
@@ -411,7 +420,6 @@ export async function fetchAdminEmployeeEditorBundle(
       ? fetchManagerCountriesForUser(userId)
       : Promise.resolve([] as string[]),
     fetchActiveAccountCountsByPlatform(userId),
-    fetchEmployeeActivityTimeline(userId),
   ]);
 
   const profile: EmployeeFormInitial = {
@@ -439,6 +447,9 @@ export async function fetchAdminEmployeeEditorBundle(
   };
 
   return {
+    source: "temp",
+    projectLabel: adminEmployeeProjectLabel("temp", user.country),
+    fetchedAt: new Date().toISOString(),
     fullName: user.full_name,
     role: user.role,
     profile,
@@ -454,7 +465,6 @@ export async function fetchAdminEmployeeEditorBundle(
       target_tiktok_count: user.target_tiktok_count,
     },
     activeCounts,
-    activity,
   };
 }
 

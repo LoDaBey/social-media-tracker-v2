@@ -14,6 +14,8 @@ export type AdminEmployeeListFilters = {
 
 export type AdminEmployeeSource = "temp" | "alphaa";
 
+export type AdminEmployeeProjectLabel = "Africa" | "Europe" | "ALPHAA";
+
 export type AdminEmployeeListRow = {
   id: number;
   /** temp = Africa/Europe roster; alphaa = legacy users + social_media_accounts. */
@@ -203,6 +205,8 @@ export type UpdateAlphaaEmployeePayload = {
 
 export type AlphaaEmployeeFormProps = {
   initial: AlphaaEmployeeFormInitial;
+  embedded?: boolean;
+  onSaved?: () => void;
 };
 
 export type AdminWorkspaceProps = {
@@ -497,6 +501,7 @@ export type AdminCoverageCountCellProps = {
 
 export type AdminOverviewAction = {
   href: string;
+  label: string;
   ariaLabel: string;
   icon: "userPlus" | "users" | "extract" | "strategy" | "logs";
   variant: "primary" | "secondary";
@@ -508,7 +513,10 @@ export type EmployeeActivityItem = {
   description: string;
 };
 
-export type AdminEmployeeEditorBundle = {
+export type AdminTempEmployeeEditorBundle = {
+  source: "temp";
+  projectLabel: AdminEmployeeProjectLabel;
+  fetchedAt: string;
   fullName: string;
   role: Role;
   profile: EmployeeFormInitial;
@@ -518,8 +526,20 @@ export type AdminEmployeeEditorBundle = {
   admins: AdminSupervisorOption[];
   targets: UpdateEmployeeTargetsPayload;
   activeCounts: Record<string, number>;
-  activity: EmployeeActivityItem[];
 };
+
+export type AdminAlphaaEmployeeEditorBundle = {
+  source: "alphaa";
+  projectLabel: "ALPHAA";
+  fetchedAt: string;
+  fullName: string;
+  role: Role;
+  profile: AlphaaEmployeeFormInitial;
+};
+
+export type AdminEmployeeEditorBundle =
+  | AdminTempEmployeeEditorBundle
+  | AdminAlphaaEmployeeEditorBundle;
 
 export type ConfirmDialogProps = {
   open: boolean;
@@ -618,11 +638,12 @@ export type EmployeeViewButtonProps = {
   employeeId: number;
   fullName: string;
   role: Role;
+  source: AdminEmployeeSource;
+  country?: string | null;
 };
 
-export type AlphaaEmployeeViewLinkProps = {
-  employeeId: number;
-  fullName: string;
+export type EmployeeProjectBadgeProps = {
+  label: AdminEmployeeProjectLabel;
 };
 
 export type EmployeeCodeButtonProps = {
@@ -643,6 +664,8 @@ export type EmployeeEditModalProps = {
   userId: number;
   fullName: string;
   role: Role;
+  source: AdminEmployeeSource;
+  projectLabel: AdminEmployeeProjectLabel;
   open: boolean;
   onClose: () => void;
   bundle: AdminEmployeeEditorBundle | null;
@@ -654,6 +677,7 @@ export type EmployeeEditModalProps = {
 export type EmployeeEditModalTabsProps = {
   panel: AdminEmployeePanel;
   onChange: (panel: AdminEmployeePanel) => void;
+  source: AdminEmployeeSource;
 };
 
 export type EmployeeDeleteButtonProps = {

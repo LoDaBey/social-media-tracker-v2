@@ -2,7 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Bell } from "lucide-react";
-import type { NotificationsApiResponse } from "@/types/notifications";
+import type {
+  NotificationDropdownPlacement,
+  NotificationsApiResponse,
+} from "@/types/notifications";
 import { NotificationDropdown } from "./NotificationDropdown";
 
 function formatBadge(n: number) {
@@ -23,6 +26,9 @@ async function fetchNotifications(): Promise<NotificationsApiResponse | null> {
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [data, setData] = useState<NotificationsApiResponse | null>(null);
+  const [placement, setPlacement] = useState<NotificationDropdownPlacement | null>(
+    null
+  );
   const wrapRef = useRef<HTMLDivElement>(null);
 
   function refresh() {
@@ -30,6 +36,16 @@ export function NotificationBell() {
       const json = await fetchNotifications();
       if (json) setData(json);
     })();
+  }
+
+  function measurePlacement(): NotificationDropdownPlacement | null {
+    const el = wrapRef.current;
+    if (!el || window.innerWidth < 768) return null;
+    const rect = el.getBoundingClientRect();
+    return {
+      top: Math.round(rect.bottom + 8),
+      right: Math.round(window.innerWidth - rect.right),
+    };
   }
 
   useEffect(() => {
@@ -55,22 +71,31 @@ export function NotificationBell() {
 
   useEffect(() => {
     if (!open) return;
-    function onPointerDown(ev: MouseEvent | TouchEvent) {
+
+    function updatePlacement() {
       const el = wrapRef.current;
-      const target = ev.target as Node | null;
-      if (el && target && !el.contains(target)) {
-        setOpen(false);
+      if (!el || window.innerWidth < 768) {
+        setPlacement(null);
+        return;
       }
+      const rect = el.getBoundingClientRect();
+      setPlacement({
+        top: Math.round(rect.bottom + 8),
+        right: Math.round(window.innerWidth - rect.right),
+      });
     }
+
     function onKey(ev: KeyboardEvent) {
       if (ev.key === "Escape") setOpen(false);
     }
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("touchstart", onPointerDown, { passive: true });
+
+    updatePlacement();
+    window.addEventListener("resize", updatePlacement);
+    window.addEventListener("scroll", updatePlacement, true);
     document.addEventListener("keydown", onKey);
     return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("touchstart", onPointerDown);
+      window.removeEventListener("resize", updatePlacement);
+      window.removeEventListener("scroll", updatePlacement, true);
       document.removeEventListener("keydown", onKey);
     };
   }, [open]);
@@ -79,11 +104,15 @@ export function NotificationBell() {
   const items = data?.items ?? [];
 
   return (
-    <div className="relative z-50" ref={wrapRef}>
+    <div className="relative" ref={wrapRef}>
       <button
         type="button"
         onClick={() => {
-          setOpen((v) => !v);
+          setOpen((v) => {
+            const next = !v;
+            setPlacement(next ? measurePlacement() : null);
+            return next;
+          });
           refresh();
         }}
         aria-label={
@@ -109,6 +138,7 @@ export function NotificationBell() {
         <NotificationDropdown
           items={items}
           unreadCount={unreadCount}
+          placement={placement}
           onClose={() => {
             setOpen(false);
             refresh();
