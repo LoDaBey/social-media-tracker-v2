@@ -62,7 +62,6 @@ type HolderQueryRow = {
   email: string;
   country: string | null;
   language: string | null;
-  employee_code: string | null;
   employment_status: ManagerHolderRow["employment_status"];
   target_x_count: number;
   target_facebook_personal_count: number;
@@ -84,7 +83,6 @@ export async function fetchManagerHomeGroups(
             email,
             country,
             language,
-            employee_code,
             employment_status,
             target_x_count,
             target_facebook_personal_count,
@@ -153,7 +151,6 @@ export async function fetchManagerHomeGroups(
       email: holder.email,
       country,
       language: holder.language,
-      employee_code: holder.employee_code,
       employment_status: holder.employment_status ?? "active",
       targetAccountsSum: totalAssignedAccountTarget(targets),
       accountTotal: publicAccounts.length,

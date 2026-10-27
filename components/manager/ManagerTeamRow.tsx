@@ -4,7 +4,6 @@ import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { CountryFlag } from "@/lib/country-icons";
 import { AccountTotalsCell } from "@/components/admin/AccountTotalsCell";
-import { ManagerEmployeeCodeButton } from "@/components/manager/ManagerEmployeeCodeButton";
 import { ManagerEmployeeStatusSelect } from "@/components/manager/ManagerEmployeeStatusSelect";
 import { ManagerAccountsPanel } from "@/components/manager/ManagerAccountsPanel";
 import type { ManagerTeamRowProps } from "@/types/manager";
@@ -61,9 +60,6 @@ export function ManagerTeamRow({
         <td className="px-4 py-3 text-[14px] font-semibold text-[var(--color-ink)]">
           {row.full_name}
         </td>
-        <td className="px-4 py-3 text-[14px] font-semibold tabular-nums text-[var(--color-ink)]">
-          {row.employee_code || "—"}
-        </td>
         <td className="hidden px-4 py-3 text-[14px] text-[var(--color-muted)] sm:table-cell">
           {row.email}
         </td>
@@ -83,23 +79,11 @@ export function ManagerTeamRow({
             status={row.employment_status}
           />
         </td>
-        <td className="px-4 py-3">
-          <div
-            className="flex flex-wrap items-center gap-1.5"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <ManagerEmployeeCodeButton
-              employeeId={row.id}
-              fullName={row.full_name}
-              employeeCode={row.employee_code}
-            />
-          </div>
-        </td>
       </tr>
       {expanded ? (
         <tr className="border-b border-[var(--color-hairline)] bg-[var(--color-cream-tint)]/70 last:border-b-0">
           <td
-            colSpan={8}
+            colSpan={6}
             className="px-4 py-4"
             id={panelId}
             onClick={(event) => event.stopPropagation()}

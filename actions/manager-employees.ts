@@ -9,16 +9,6 @@ import { assertManagerCanEditEmployee } from "@/lib/manager-data";
 import { logOrbitAction } from "@/lib/orbit-log";
 import type { EmploymentStatus } from "@/types/db";
 
-const updateCodeSchema = z.object({
-  employee_code: z
-    .union([z.string(), z.null()])
-    .transform((value) => {
-      if (value == null) return null;
-      const trimmed = value.trim();
-      return trimmed === "" ? null : trimmed.slice(0, 50);
-    }),
-});
-
 async function requireManager() {
   const session = await auth();
   const managerId = Number(session?.user?.id);
@@ -34,38 +24,6 @@ function revalidateManagerEmployee(userId: number) {
   revalidatePath("/dashboard");
   revalidatePath("/admin/employees");
   revalidatePath(`/admin/employees/${userId}`);
-}
-
-export async function updateManagerEmployeeCode(
-  employeeId: number,
-  employeeCode: string | null
-): Promise<{ error?: string }> {
-  try {
-    const managerId = await requireManager();
-    if (!Number.isFinite(employeeId)) return { error: "Invalid employee." };
-
-    const parsed = updateCodeSchema.safeParse({ employee_code: employeeCode });
-    if (!parsed.success) return { error: "Enter a valid employee code." };
-
-    const allowed = await assertManagerCanEditEmployee(managerId, employeeId);
-    if (!allowed) return { error: "You cannot edit this employee." };
-
-    await pool.query(`UPDATE temp_users SET employee_code = $2 WHERE id = $1`, [
-      employeeId,
-      parsed.data.employee_code,
-    ]);
-
-    revalidateManagerEmployee(employeeId);
-    await logOrbitAction({
-      action: "update",
-      resource: "employee",
-      summary: `Manager set employee code for #${employeeId}`,
-      details: { employeeId, employee_code: parsed.data.employee_code },
-    });
-    return {};
-  } catch (error) {
-    return { error: publicAdminMutationError(error) };
-  }
 }
 
 export async function updateManagerEmployeeStatus(
