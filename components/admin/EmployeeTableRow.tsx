@@ -7,7 +7,6 @@ import { EmployeeCountryCell } from "@/components/admin/EmployeeCountryCell";
 import { EmployeeActiveToggle } from "@/components/admin/EmployeeActiveToggle";
 import { EmployeeDeleteButton } from "@/components/admin/EmployeeDeleteButton";
 import { EmployeeViewButton } from "@/components/admin/EmployeeViewButton";
-import { AlphaaEmployeeViewLink } from "@/components/admin/AlphaaEmployeeViewLink";
 import { EmployeeCodeButton } from "@/components/admin/EmployeeCodeButton";
 import { EmployeeAccountsPanel } from "@/components/admin/EmployeeAccountsPanel";
 import { AccountTotalsCell } from "@/components/admin/AccountTotalsCell";
@@ -137,25 +136,20 @@ export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.stopPropagation()}
           >
-            {isAlphaa ? (
-              <AlphaaEmployeeViewLink
+            {isAlphaa ? null : (
+              <EmployeeCodeButton
                 employeeId={row.id}
                 fullName={row.full_name}
+                employeeCode={row.employee_code}
               />
-            ) : (
-              <>
-                <EmployeeCodeButton
-                  employeeId={row.id}
-                  fullName={row.full_name}
-                  employeeCode={row.employee_code}
-                />
-                <EmployeeViewButton
-                  employeeId={row.id}
-                  fullName={row.full_name}
-                  role={row.role}
-                />
-              </>
             )}
+            <EmployeeViewButton
+              employeeId={row.id}
+              fullName={row.full_name}
+              role={row.role}
+              source={row.source}
+              country={row.country}
+            />
             <EmployeeDeleteButton
               userId={row.id}
               fullName={row.full_name}

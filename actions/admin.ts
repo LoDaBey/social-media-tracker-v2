@@ -19,6 +19,7 @@ import { isEuropeCountry } from "@/lib/region-config";
 import { isSetupCountry, setupRegionForCountry } from "@/lib/setup-options";
 import type {
   AdminEmployeeEditorBundle,
+  AdminEmployeeSource,
   CreateEmployeePayload,
   CreateEmployeeResult,
   UpdateEmployeeProfilePayload,
@@ -519,11 +520,12 @@ export async function setEmployeeCode(
 }
 
 export async function getAdminEmployeeEditorBundle(
-  userId: number
+  userId: number,
+  source: AdminEmployeeSource = "temp"
 ): Promise<AdminEmployeeEditorBundle | null> {
   await requireAdminSession();
   if (!Number.isFinite(userId)) return null;
-  return fetchAdminEmployeeEditorBundle(userId);
+  return fetchAdminEmployeeEditorBundle(userId, source);
 }
 
 export async function deleteEmployee(user_id: number): Promise<void> {

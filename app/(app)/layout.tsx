@@ -42,7 +42,7 @@ export default async function AppLayout({
 
   return (
     <div className="min-h-dvh bg-[var(--color-cream)]">
-      <header className="isolate h-16 border-b border-[var(--color-hairline)] bg-[var(--color-surface)]">
+      <header className="relative isolate z-50 h-16 border-b border-[var(--color-hairline)] bg-[var(--color-surface)]">
         <div
           className={[
             "mx-auto flex h-full w-full items-center justify-between px-4 sm:px-8",
@@ -100,7 +100,7 @@ export default async function AppLayout({
               </summary>
 
               <div
-                className="absolute z-50 mt-2 w-[260px] rounded-[var(--radius-card)] bg-[var(--color-surface)] border border-[var(--color-hairline)] p-2"
+                className="absolute z-[60] mt-2 w-[260px] rounded-[var(--radius-card)] bg-[var(--color-surface)] border border-[var(--color-hairline)] p-2"
                 style={{ insetInlineEnd: 0, boxShadow: "0 12px 32px rgba(20,20,20,.08)" }}
               >
                 <div className="px-3 py-2 text-[13px] text-[var(--color-muted)]">
@@ -117,7 +117,7 @@ export default async function AppLayout({
 
       <div
         className={[
-          "mx-auto w-full px-3 sm:px-8",
+          "relative z-0 mx-auto w-full px-3 sm:px-8",
           role === "admin" || role === "manager"
             ? "max-w-[1600px]"
             : "max-w-7xl",

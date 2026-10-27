@@ -1,5 +1,11 @@
-import type { AdminEmployeePanel, AdminView } from "@/types/admin";
+import type {
+  AdminEmployeePanel,
+  AdminEmployeeProjectLabel,
+  AdminEmployeeSource,
+  AdminView,
+} from "@/types/admin";
 import { ROLE_LABELS } from "@/lib/role-hierarchy";
+import { setupRegionForCountry } from "@/lib/setup-options";
 
 export function normalizeAdminEmployeePanel(
   raw: string | undefined
@@ -109,3 +115,19 @@ export const ADMIN_EMPLOYEE_PANELS: {
   { id: "targets", label: "Targets" },
   { id: "activity", label: "Activity" },
 ];
+
+export function adminEmployeeProjectLabel(
+  source: AdminEmployeeSource,
+  country?: string | null
+): AdminEmployeeProjectLabel {
+  if (source === "alphaa") return "ALPHAA";
+  return setupRegionForCountry(country ?? "") === "Europe" ? "Europe" : "Africa";
+}
+
+export function adminEmployeePanelsForSource(source: AdminEmployeeSource) {
+  const panels =
+    source === "alphaa"
+      ? ADMIN_EMPLOYEE_PANELS.filter((panel) => panel.id === "profile")
+      : ADMIN_EMPLOYEE_PANELS;
+  return panels.filter((panel) => panel.id !== "activity");
+}

@@ -1,20 +1,23 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ADMIN_EMPLOYEE_PANELS } from "@/lib/admin-view";
+import { adminEmployeePanelsForSource } from "@/lib/admin-view";
 import type { EmployeeEditModalTabsProps } from "@/types/admin";
 
 export function EmployeeEditModalTabs({
   panel,
   onChange,
+  source,
 }: EmployeeEditModalTabsProps) {
+  const panels = adminEmployeePanelsForSource(source);
+
   return (
     <div
       className="flex flex-wrap gap-2"
       role="tablist"
       aria-label="Employee sections"
     >
-      {ADMIN_EMPLOYEE_PANELS.map((item) => {
+      {panels.map((item) => {
         const selected = panel === item.id;
         return (
           <motion.button

@@ -1,6 +1,9 @@
 import { query, queryOne } from "@/lib/db";
 import { ALPHAA_SETUP_COUNTRIES } from "@/lib/setup-options";
-import { overviewDisplayCountry } from "@/lib/overview-country-display";
+import {
+  baseCountryFromDisplay,
+  overviewDisplayCountry,
+} from "@/lib/overview-country-display";
 import {
   mapAlphaaScope,
   mapAlphaaStatus,
@@ -10,6 +13,7 @@ import type {
   AdminEmployeeListFilters,
   AdminEmployeeListRow,
   AdminSocialAccountListItem,
+  AdminAlphaaEmployeeEditorBundle,
   AlphaaEmployeeProfile,
 } from "@/types/admin";
 import type { Role } from "@/types/db";
@@ -60,6 +64,15 @@ function alphaaRoleSql(role: AdminEmployeeListFilters["role"]): string | null {
   return null;
 }
 
+export function canonicalAlphaaCountry(value: string) {
+  const base = baseCountryFromDisplay(value);
+  return (
+    ALPHAA_SETUP_COUNTRIES.find(
+      (country) => country.toLowerCase() === base.toLowerCase()
+    ) ?? base
+  );
+}
+
 function uniqueCountries(values: Array<string | null | undefined>): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
@@ -72,6 +85,19 @@ function uniqueCountries(values: Array<string | null | undefined>): string[] {
     out.push(country);
   }
   return out;
+}
+
+/** ALPHAA `users.is_active` defaults to false and is not employment status. */
+export function alphaaEmployeeIsActive(
+  isActiveFlag: boolean | null | undefined,
+  accounts: Pick<AdminSocialAccountListItem, "is_spare" | "status">[]
+): boolean {
+  if (accounts.length === 0) return true;
+  const hasLiveAccount = accounts.some(
+    (account) => !account.is_spare && account.status === "active"
+  );
+  if (hasLiveAccount) return true;
+  return isActiveFlag !== false;
 }
 
 function mapAlphaaAccount(row: AlphaaAccountQueryRow): AdminSocialAccountListItem {
@@ -183,6 +209,10 @@ export async function fetchAlphaaEmployeesList(
     );
   }
 
+  const hasAnyAccountSql = `EXISTS (
+      SELECT 1 FROM social_media_accounts sma
+       WHERE sma.user_id = u.id
+    )`;
   const hasLiveAccountSql = `EXISTS (
       SELECT 1 FROM social_media_accounts sma
        WHERE sma.user_id = u.id
@@ -193,10 +223,14 @@ export async function fetchAlphaaEmployeesList(
          )
     )`;
   if (status === "active") {
-    where.push(`(COALESCE(u.is_active, TRUE) = TRUE OR ${hasLiveAccountSql})`);
+    where.push(
+      `(COALESCE(u.is_active, TRUE) = TRUE OR ${hasLiveAccountSql} OR NOT ${hasAnyAccountSql})`
+    );
   }
   if (status === "inactive") {
-    where.push(`(COALESCE(u.is_active, TRUE) = FALSE AND NOT ${hasLiveAccountSql})`);
+    where.push(
+      `(COALESCE(u.is_active, TRUE) = FALSE AND ${hasAnyAccountSql} AND NOT ${hasLiveAccountSql})`
+    );
   }
 
   const rows = await query<AlphaaUserQueryRow>(
@@ -248,10 +282,7 @@ export async function fetchAlphaaEmployeesList(
         : uniqueCountries([row.country])
     ).map((value) => overviewDisplayCountry(value, "Alphaa"));
     const planAccounts = accounts.filter((account) => !account.is_spare).length;
-    const hasLiveAccount = accounts.some(
-      (account) => !account.is_spare && account.status === "active"
-    );
-    const isActive = row.is_active || hasLiveAccount;
+    const isActive = alphaaEmployeeIsActive(row.is_active, accounts);
     return {
       id: row.id,
       source: "alphaa",
@@ -330,10 +361,6 @@ export async function fetchAlphaaEmployeeById(
       ? accountCountries
       : uniqueCountries([user.country])
   ).map((value) => overviewDisplayCountry(value, "Alphaa"));
-  const hasLiveAccount = accounts.some(
-    (account) => !account.is_spare && account.status === "active"
-  );
-
   return {
     id: user.id,
     fullName:
@@ -345,12 +372,43 @@ export async function fetchAlphaaEmployeeById(
     country: countries[0] ?? null,
     countries,
     language: languageRow?.language ?? null,
-    isActive: user.is_active !== false || hasLiveAccount,
+    isActive: alphaaEmployeeIsActive(user.is_active, accounts),
     department: user.department,
     location: user.location,
     projects: Array.isArray(user.projects)
       ? user.projects.filter(Boolean)
       : [],
     accounts,
+  };
+}
+
+export async function fetchAlphaaEmployeeEditorBundle(
+  userId: number
+): Promise<AdminAlphaaEmployeeEditorBundle | null> {
+  const profile = await fetchAlphaaEmployeeById(userId);
+  if (!profile) return null;
+
+  const country = canonicalAlphaaCountry(
+    profile.countries[0] ?? profile.country ?? ""
+  );
+
+  return {
+    source: "alphaa",
+    projectLabel: "ALPHAA",
+    fetchedAt: new Date().toISOString(),
+    fullName: profile.fullName,
+    role: profile.mappedRole,
+    profile: {
+      id: profile.id,
+      fullName: profile.fullName,
+      email: profile.email,
+      phone: profile.phone ?? "",
+      roleLabel: profile.roleLabel,
+      country,
+      department: profile.department ?? "",
+      location: profile.location ?? "",
+      projects: profile.projects,
+      isActive: profile.isActive,
+    },
   };
 }
