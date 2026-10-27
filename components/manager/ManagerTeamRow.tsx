@@ -1,14 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { CountryFlag } from "@/lib/country-icons";
 import { AccountTotalsCell } from "@/components/admin/AccountTotalsCell";
 import { ManagerEmployeeCodeButton } from "@/components/manager/ManagerEmployeeCodeButton";
 import { ManagerEmployeeStatusSelect } from "@/components/manager/ManagerEmployeeStatusSelect";
-import { ManagerSetupActionButton } from "@/components/manager/ManagerSetupActionButton";
-import { ManagerSetupStatusBadge } from "@/components/manager/ManagerSetupStatusBadge";
 import { ManagerAccountsPanel } from "@/components/manager/ManagerAccountsPanel";
 import type { ManagerTeamRowProps } from "@/types/manager";
 
@@ -19,8 +16,6 @@ export function ManagerTeamRow({
   allowedCountries,
 }: ManagerTeamRowProps) {
   const [expanded, setExpanded] = useState(false);
-  const setupHref = `/manager/setup?employeeId=${row.id}`;
-  const canOpenSetup = !row.setupComplete;
   const panelId = `manager-accounts-${row.id}`;
 
   function toggle() {
@@ -64,18 +59,7 @@ export function ManagerTeamRow({
           </div>
         </td>
         <td className="px-4 py-3 text-[14px] font-semibold text-[var(--color-ink)]">
-          {canOpenSetup ? (
-            <Link
-              href={setupHref}
-              aria-label={`Add accounts for ${row.full_name}`}
-              className="rounded-lg outline-none hover:underline focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
-              onClick={(event) => event.stopPropagation()}
-            >
-              {row.full_name}
-            </Link>
-          ) : (
-            <span>{row.full_name}</span>
-          )}
+          {row.full_name}
         </td>
         <td className="px-4 py-3 text-[14px] font-semibold tabular-nums text-[var(--color-ink)]">
           {row.employee_code || "—"}
@@ -92,12 +76,6 @@ export function ManagerTeamRow({
             assigned={row.targetAccountsSum}
           />
         </td>
-        <td className="px-4 py-3">
-          <ManagerSetupStatusBadge
-            setupComplete={row.setupComplete}
-            setupNeedsReview={row.setupNeedsReview}
-          />
-        </td>
         <td className="px-4 py-3" onClick={(event) => event.stopPropagation()}>
           <ManagerEmployeeStatusSelect
             employeeId={row.id}
@@ -110,12 +88,6 @@ export function ManagerTeamRow({
             className="flex flex-wrap items-center gap-1.5"
             onClick={(event) => event.stopPropagation()}
           >
-            <ManagerSetupActionButton
-              href={setupHref}
-              setupComplete={row.setupComplete}
-              setupNeedsReview={row.setupNeedsReview}
-              fullName={row.full_name}
-            />
             <ManagerEmployeeCodeButton
               employeeId={row.id}
               fullName={row.full_name}
@@ -127,7 +99,7 @@ export function ManagerTeamRow({
       {expanded ? (
         <tr className="border-b border-[var(--color-hairline)] bg-[var(--color-cream-tint)]/70 last:border-b-0">
           <td
-            colSpan={9}
+            colSpan={8}
             className="px-4 py-4"
             id={panelId}
             onClick={(event) => event.stopPropagation()}

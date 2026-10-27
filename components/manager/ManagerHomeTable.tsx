@@ -6,7 +6,6 @@ import type { ManagerHomeTableProps } from "@/types/manager";
 
 export function ManagerHomeTable({ groups }: ManagerHomeTableProps) {
   const rows = groups.flatMap((group) => group.holders);
-  const pending = rows.filter((h) => !h.setupComplete).length;
   const overall = rows.reduce(
     (sum, holder) => ({
       added: sum.added + holder.accountTotal,
@@ -42,7 +41,6 @@ export function ManagerHomeTable({ groups }: ManagerHomeTableProps) {
     <div className="w-full">
       <ManagerTeamHeader
         holderCount={rows.length}
-        pendingCount={pending}
         overall={overall}
         countries={countries}
         importHolders={importHolders}
@@ -72,9 +70,6 @@ export function ManagerHomeTable({ groups }: ManagerHomeTableProps) {
                 Account total
               </th>
               <th scope="col" className="px-4 py-3">
-                Setup
-              </th>
-              <th scope="col" className="px-4 py-3">
                 Status
               </th>
               <th scope="col" className="px-4 py-3">
@@ -86,7 +81,7 @@ export function ManagerHomeTable({ groups }: ManagerHomeTableProps) {
             {rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={9}
+                  colSpan={8}
                   className="px-4 py-12 text-center text-[14px] text-[var(--color-muted)]"
                 >
                   No account holders in your countries yet.

@@ -2,11 +2,7 @@ import { query, queryOne } from "@/lib/db";
 import { spareItemMatchesCountries } from "@/lib/admin-spare";
 import { managerEmployeeScopeSql } from "@/lib/manager-employee-scope";
 import type { AdminEmployeeSource } from "@/types/admin";
-import {
-  groupAccountsByPlatform,
-  isEmployeeSetupComplete,
-  targetsFromCounts,
-} from "@/lib/setup-complete";
+import { targetsFromCounts } from "@/lib/setup-complete";
 import { totalAssignedAccountTarget } from "@/lib/setup-facebook";
 import type { TempSocialMediaAccount } from "@/types/db";
 import type {
@@ -68,7 +64,6 @@ type HolderQueryRow = {
   language: string | null;
   employee_code: string | null;
   employment_status: ManagerHolderRow["employment_status"];
-  setup_needs_review: boolean;
   target_x_count: number;
   target_facebook_personal_count: number;
   target_facebook_umbrella_count: number;
@@ -91,7 +86,6 @@ export async function fetchManagerHomeGroups(
             language,
             employee_code,
             employment_status,
-            setup_needs_review,
             target_x_count,
             target_facebook_personal_count,
             target_facebook_umbrella_count,
@@ -134,19 +128,7 @@ export async function fetchManagerHomeGroups(
     const country = holder.country ?? "";
     if (!groups.has(country)) continue;
     const holderAccounts = accountsByUser.get(holder.id) ?? [];
-    const activeAccounts = holderAccounts.filter(
-      (account) => account.status === "active" && !account.is_spare
-    );
     const targets = targetsFromCounts(holder);
-    const accountsByPlatform = groupAccountsByPlatform(activeAccounts);
-    const setupNeedsReview = Boolean(holder.setup_needs_review);
-    const setupComplete = isEmployeeSetupComplete({
-      country: holder.country,
-      language: holder.language,
-      targets,
-      accountsByPlatform,
-      setupNeedsReview,
-    });
     const publicAccounts: ManagerAccountListItem[] = holderAccounts.map(
       (account) => ({
         id: account.id,
@@ -173,8 +155,6 @@ export async function fetchManagerHomeGroups(
       language: holder.language,
       employee_code: holder.employee_code,
       employment_status: holder.employment_status ?? "active",
-      setupComplete,
-      setupNeedsReview,
       targetAccountsSum: totalAssignedAccountTarget(targets),
       accountTotal: publicAccounts.length,
       accounts: publicAccounts,

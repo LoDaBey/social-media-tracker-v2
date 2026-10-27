@@ -74,7 +74,6 @@ function revalidateBulkImport(
   } else {
     revalidatePath(`/admin/employees/${userId}`);
     revalidatePath("/manager");
-    revalidatePath("/manager/setup");
     revalidatePath("/dashboard");
   }
 }
@@ -154,7 +153,7 @@ async function importTempHolderAccounts(input: {
           SET country = $2,
               region = $3,
               language = $4,
-              setup_needs_review = TRUE
+              setup_needs_review = FALSE
         WHERE id = $1`,
       [
         input.holderId,

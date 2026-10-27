@@ -39,8 +39,6 @@ export type ManagerHolderRow = {
   language: string | null;
   employee_code: string | null;
   employment_status: EmploymentStatus;
-  setupComplete: boolean;
-  setupNeedsReview: boolean;
   targetAccountsSum: number;
   accountTotal: number;
   accounts: ManagerAccountListItem[];
@@ -131,7 +129,6 @@ export type ManagerCountryTotal = {
 
 export type ManagerTeamHeaderProps = {
   holderCount: number;
-  pendingCount: number;
   overall: ManagerTeamTotals;
   countries: ManagerCountryTotal[];
   importHolders: BulkImportHolderOption[];
@@ -143,18 +140,6 @@ export type ManagerBulkImportButtonProps = {
   allowedCountries: string[];
   initialHolderId?: number;
   variant?: "icon" | "button";
-};
-
-export type ManagerSetupActionButtonProps = {
-  href: string;
-  setupComplete: boolean;
-  setupNeedsReview: boolean;
-  fullName: string;
-};
-
-export type ManagerSetupStatusBadgeProps = {
-  setupComplete: boolean;
-  setupNeedsReview: boolean;
 };
 
 export type ManagerEmployeeStatusSelectProps = {
