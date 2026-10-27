@@ -19,6 +19,16 @@ export function ManagerHomeTable({ groups }: ManagerHomeTableProps) {
     full_name: holder.full_name,
     country: holder.country,
   }));
+  const importHolders = rows.map((holder) => ({
+    id: holder.id,
+    source: "temp" as const,
+    full_name: holder.full_name,
+    country: holder.country,
+    language: holder.language,
+    team_lead_name: null,
+    manager_name: null,
+  }));
+  const allowedCountries = groups.map((group) => group.country);
   const countries = groups.map((group) => ({
     country: group.country,
     added: group.holders.reduce((sum, holder) => sum + holder.accountTotal, 0),
@@ -35,6 +45,8 @@ export function ManagerHomeTable({ groups }: ManagerHomeTableProps) {
         pendingCount={pending}
         overall={overall}
         countries={countries}
+        importHolders={importHolders}
+        allowedCountries={allowedCountries}
       />
 
       <div className="mt-8 overflow-x-auto rounded-[16px] border border-[var(--color-hairline)] bg-[var(--color-surface)]">
@@ -86,6 +98,8 @@ export function ManagerHomeTable({ groups }: ManagerHomeTableProps) {
                   key={row.id}
                   row={row}
                   holderOptions={holderOptions}
+                  importHolders={importHolders}
+                  allowedCountries={allowedCountries}
                 />
               ))
             )}

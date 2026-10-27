@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { fetchAlphaaAccountsForSheetsExport } from "@/lib/alphaa-sheets-export-data";
 import { fetchAccountsForSheetsExport } from "@/lib/admin-sheets-export-data";
 import { syncAccountsToGoogleSheets } from "@/lib/google-sheets";
+import { logOrbitAction } from "@/lib/orbit-log";
 import type { SheetsSyncResult } from "@/types/admin";
 
 export async function POST() {
@@ -37,6 +38,13 @@ export async function POST() {
       balkanCount,
       alphaaCount,
     };
+
+    await logOrbitAction({
+      action: "sync",
+      resource: "sheets",
+      summary: `Synced ${total} accounts to Google Sheets`,
+      details: { africaCount, europeCount, balkanCount, alphaaCount, total },
+    });
 
     return NextResponse.json(result);
   } catch (error) {

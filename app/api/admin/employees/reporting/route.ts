@@ -3,14 +3,16 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { fetchEmployeeReporting } from "@/lib/admin-employee-reporting";
+import { assertManagerCanEditEmployee } from "@/lib/manager-data";
 import type { EmployeeReportingResponse } from "@/types/admin";
 
 export async function GET(request: Request) {
   const session = await auth();
   const userId = Number(session?.user?.id);
-  if (!Number.isFinite(userId) || session?.user?.role !== "admin") {
+  const role = session?.user?.role;
+  if (!Number.isFinite(userId) || (role !== "admin" && role !== "manager")) {
     return NextResponse.json(
-      { ok: false, error: "Unauthorized — admin only." } satisfies EmployeeReportingResponse,
+      { ok: false, error: "Unauthorized." } satisfies EmployeeReportingResponse,
       { status: 401 }
     );
   }
@@ -25,6 +27,28 @@ export async function GET(request: Request) {
       { ok: false, error: "Select an account holder." } satisfies EmployeeReportingResponse,
       { status: 400 }
     );
+  }
+
+  if (role === "manager") {
+    if (source !== "temp") {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "You can only view reporting for your team members.",
+        } satisfies EmployeeReportingResponse,
+        { status: 401 }
+      );
+    }
+    const allowed = await assertManagerCanEditEmployee(userId, id);
+    if (!allowed) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "You can only view reporting for your team members.",
+        } satisfies EmployeeReportingResponse,
+        { status: 401 }
+      );
+    }
   }
 
   try {

@@ -27,6 +27,8 @@ export function SpareAccountsDialog({
   onClose,
   accounts: initialAccounts,
   holders,
+  setSpare = setAdminSocialAccountSpare,
+  subtitle = "Mark or unmark spare accounts for Africa, Europe, and ALPHAA handlers. They stay on handlers but count as extras in KPIs.",
 }: SpareAccountsDialogProps) {
   const router = useRouter();
   const [tab, setTab] = useState<SpareModalTab>("spare");
@@ -60,11 +62,7 @@ export function SpareAccountsDialog({
     const rowKey = spareAccountKey(account.source, account.id);
     setPendingKey(rowKey);
     startTransition(async () => {
-      const result = await setAdminSocialAccountSpare(
-        account.id,
-        false,
-        account.source
-      );
+      const result = await setSpare(account.id, false, account.source);
       setPendingKey(null);
       if (result.error) {
         toast.error(result.error);
@@ -125,8 +123,7 @@ export function SpareAccountsDialog({
               Spare accounts
             </h2>
             <p className="mt-1 text-[14px] text-[var(--color-muted)]">
-              Mark or unmark spare accounts for Africa, Europe, and ALPHAA
-              handlers. They stay on handlers but count as extras in KPIs.
+              {subtitle}
             </p>
           </div>
           <button
@@ -202,6 +199,7 @@ export function SpareAccountsDialog({
             holders={filteredHolders}
             filters={filters}
             onSpareChange={handleSpareChange}
+            setSpare={setSpare}
           />
         )}
       </motion.div>

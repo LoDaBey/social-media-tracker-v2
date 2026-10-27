@@ -7,6 +7,7 @@ import {
   applyCoverageSpareBalance,
   computeCoverageSpareBalance,
 } from "@/lib/admin-balance-spare";
+import { logOrbitAction } from "@/lib/orbit-log";
 import type {
   AdminRegion,
   BalanceCoverageSpareResult,
@@ -59,6 +60,17 @@ export async function balanceAdminCoverageSpare(
     revalidatePath("/admin");
     revalidatePath("/admin/employees");
     revalidatePath("/admin/extract");
+    await logOrbitAction({
+      action: "fit_to_plan",
+      resource: "coverage",
+      summary: `Applied Fit to plan for ${region}`,
+      details: {
+        region,
+        marked: preview.marked.length,
+        unmarked: preview.unmarked.length,
+        missing: preview.missing.length,
+      },
+    });
     return { ...preview, applied: true };
   } catch (error) {
     return {

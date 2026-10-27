@@ -148,6 +148,51 @@ export function spareCategoryOptions(
   return [...seen].sort((left, right) => left.localeCompare(right));
 }
 
+function itemMatchesCountries(
+  item: { country: string | null; projects: string[] },
+  countryKeys: Set<string>
+) {
+  if (!countryKeys.size) return false;
+  const countryKey = spareProjectKey(item.country);
+  if (countryKey && countryKeys.has(countryKey)) return true;
+  return item.projects.some((project) => {
+    const key = spareProjectKey(project);
+    return Boolean(key && countryKeys.has(key));
+  });
+}
+
+export function spareCountryKeys(countries: string[]): Set<string> {
+  const keys = new Set<string>();
+  for (const country of countries) {
+    const key = spareProjectKey(country);
+    if (key) keys.add(key);
+  }
+  return keys;
+}
+
+export function spareAccountsForCountries(
+  accounts: AdminSpareAccountListItem[],
+  countries: string[]
+): AdminSpareAccountListItem[] {
+  const keys = spareCountryKeys(countries);
+  return accounts.filter((account) => itemMatchesCountries(account, keys));
+}
+
+export function spareMarkHoldersForCountries(
+  holders: SpareMarkHolderOption[],
+  countries: string[]
+): SpareMarkHolderOption[] {
+  const keys = spareCountryKeys(countries);
+  return holders.filter((holder) => itemMatchesCountries(holder, keys));
+}
+
+export function spareItemMatchesCountries(
+  item: { country: string | null; projects: string[] },
+  countries: string[]
+) {
+  return itemMatchesCountries(item, spareCountryKeys(countries));
+}
+
 export function spareMarkHoldersForRegion(
   holders: SpareMarkHolderOption[],
   region?: string | null

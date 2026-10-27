@@ -19,6 +19,7 @@ const PROTECTED_APP_PATHS = [
   "/submit",
   "/admin",
   "/manager",
+  "/settings",
 ];
 
 const QC_ALLOWED_ROLES: Role[] = ["team_lead", "admin"];

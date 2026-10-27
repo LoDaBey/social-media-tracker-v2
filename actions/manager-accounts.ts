@@ -3,15 +3,21 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { pool, queryOne } from "@/lib/db";
-import { assertManagerCanEditEmployee } from "@/lib/manager-data";
+import {
+  assertManagerCanEditEmployee,
+  assertManagerCanSpareAccount,
+} from "@/lib/manager-data";
+import { setAlphaaSocialAccountSpareRow } from "@/lib/admin-alphaa-mutate";
 import { normalizeSocialAccountInput } from "@/lib/account-scope";
 import { publicAdminMutationError } from "@/lib/admin-action-error";
 import {
   uniqueAccountUrlError,
   validateSocialAccountInput,
 } from "@/lib/social-account-validation";
+import { logOrbitAction } from "@/lib/orbit-log";
 import type {
   AdminAccountMutationResult,
+  AdminEmployeeSource,
   AdminSocialAccountInput,
 } from "@/types/admin";
 
@@ -28,6 +34,7 @@ async function requireManager() {
 function revalidateManagerAccounts(userId: number) {
   revalidatePath("/manager");
   revalidatePath("/dashboard");
+  revalidatePath("/admin");
   revalidatePath("/admin/employees");
   revalidatePath(`/admin/employees/${userId}`);
 }
@@ -108,6 +115,17 @@ export async function updateManagerSocialAccount(
     if (nextUserId !== existing.user_id) {
       revalidateManagerAccounts(nextUserId);
     }
+    await logOrbitAction({
+      action: "update",
+      resource: "account",
+      summary: `Manager updated ${data.platform} account #${accountId}`,
+      details: {
+        accountId,
+        userId: nextUserId,
+        platform: data.platform,
+        username: data.username,
+      },
+    });
     return {};
   } catch (error) {
     return { error: uniqueAccountUrlError(error) };
@@ -136,6 +154,74 @@ export async function deleteManagerSocialAccount(
       accountId,
     ]);
     revalidateManagerAccounts(existing.user_id);
+    await logOrbitAction({
+      action: "delete",
+      resource: "account",
+      summary: `Manager deleted account #${accountId}`,
+      details: { accountId, userId: existing.user_id },
+    });
+    return {};
+  } catch (error) {
+    return { error: publicAdminMutationError(error) };
+  }
+}
+
+export async function setManagerSocialAccountSpare(
+  accountId: number,
+  isSpare: boolean,
+  source: AdminEmployeeSource = "temp"
+): Promise<AdminAccountMutationResult> {
+  try {
+    const managerId = await requireManager();
+    if (!Number.isFinite(accountId)) return { error: "Invalid account." };
+    const allowed = await assertManagerCanSpareAccount(
+      managerId,
+      accountId,
+      source
+    );
+    if (!allowed) {
+      return { error: "You can only mark spare accounts in your countries." };
+    }
+
+    if (source === "alphaa") {
+      const existing = await queryOne<{ user_id: number }>(
+        `SELECT user_id FROM social_media_accounts WHERE id = $1`,
+        [accountId]
+      );
+      const result = await setAlphaaSocialAccountSpareRow(accountId, isSpare);
+      if (!result.error) {
+        revalidateManagerAccounts(existing?.user_id ?? 0);
+        await logOrbitAction({
+          action: "spare",
+          resource: "account",
+          summary: isSpare
+            ? `Manager marked ALPHAA account #${accountId} as spare`
+            : `Manager unmarked ALPHAA account #${accountId} as spare`,
+          details: { accountId, userId: existing?.user_id, isSpare, source },
+        });
+      }
+      return result;
+    }
+
+    const existing = await queryOne<{ user_id: number }>(
+      `SELECT user_id FROM temp_social_media_accounts WHERE id = $1`,
+      [accountId]
+    );
+    if (!existing) return { error: "Account not found." };
+
+    await pool.query(
+      `UPDATE temp_social_media_accounts SET is_spare = $2 WHERE id = $1`,
+      [accountId, isSpare]
+    );
+    revalidateManagerAccounts(existing.user_id);
+    await logOrbitAction({
+      action: "spare",
+      resource: "account",
+      summary: isSpare
+        ? `Manager marked account #${accountId} as spare`
+        : `Manager unmarked account #${accountId} as spare`,
+      details: { accountId, userId: existing.user_id, isSpare, source },
+    });
     return {};
   } catch (error) {
     return { error: publicAdminMutationError(error) };

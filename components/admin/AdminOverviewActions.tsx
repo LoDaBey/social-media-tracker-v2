@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { FileSpreadsheet, Map, UserPlus, Users, type LucideIcon } from "lucide-react";
+import { FileSpreadsheet, Map, ScrollText, UserPlus, Users, type LucideIcon } from "lucide-react";
 import type { AdminOverviewAction } from "@/types/admin";
 
 const ICONS: Record<AdminOverviewAction["icon"], LucideIcon> = {
@@ -10,6 +10,7 @@ const ICONS: Record<AdminOverviewAction["icon"], LucideIcon> = {
   users: Users,
   extract: FileSpreadsheet,
   strategy: Map,
+  logs: ScrollText,
 };
 
 const ACTIONS: AdminOverviewAction[] = [
@@ -37,11 +38,17 @@ const ACTIONS: AdminOverviewAction[] = [
     icon: "strategy",
     variant: "secondary",
   },
+  {
+    href: "/admin/logs",
+    ariaLabel: "Open Orbit activity log",
+    icon: "logs",
+    variant: "secondary",
+  },
 ];
 
 export function AdminOverviewActions() {
   return (
-    <div className="grid grid-cols-4 gap-2 sm:gap-3">
+    <div className="grid grid-cols-5 gap-2 sm:gap-3">
       {ACTIONS.map((action) => {
         const Icon = ICONS[action.icon];
         const isPrimary = action.variant === "primary";

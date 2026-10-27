@@ -35,7 +35,7 @@ export default async function LoginPage({ searchParams }: Props) {
 
       <div className="relative mx-auto w-full max-w-[440px]">
         <section
-          className="bg-[var(--color-surface)] p-12"
+          className="isolate bg-[var(--color-surface)] p-12"
           style={{
             borderRadius: "var(--radius-card)",
             boxShadow:

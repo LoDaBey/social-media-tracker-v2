@@ -10,6 +10,7 @@ import {
   type Metric,
   type Platform,
 } from "@/lib/platform-config";
+import { logOrbitAction } from "@/lib/orbit-log";
 import type { SubmissionPayload } from "@/types/submissions";
 
 const submissionPayloadSchema = z.object({
@@ -150,6 +151,12 @@ export async function submitPlatformBatch(platform: Platform, payload: Submissio
 
     await client.query("COMMIT");
     revalidatePath("/dashboard");
+    await logOrbitAction({
+      action: "submit",
+      resource: "submission",
+      summary: `Submitted ${platform} for ${inserted} account${inserted === 1 ? "" : "s"}`,
+      details: { platform, inserted, accountIds },
+    });
     return { ok: true, inserted, justSubmitted: platform };
   } catch {
     await client.query("ROLLBACK");

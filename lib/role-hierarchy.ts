@@ -9,7 +9,7 @@ export type ReportingFields = {
 export const ROLE_LABELS: Record<Role, string> = {
   employee: "Employee",
   team_lead: "Team Leader Regional",
-  manager: "Manager Regional",
+  manager: "Regional Manager",
   op: "OP",
   admin: "Admin",
 };

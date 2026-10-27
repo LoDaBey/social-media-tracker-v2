@@ -13,6 +13,7 @@ import {
 } from "@/lib/setup-validation";
 import { setupSavePayloadSchema } from "@/lib/setup-schema";
 import { accountsMeetTargets } from "@/lib/setup-facebook";
+import { logOrbitAction } from "@/lib/orbit-log";
 import type { SetupSaveAccountInput } from "@/types/setup";
 
 function accountUrlKey(account: Pick<SetupSaveAccountInput, "platform" | "url">) {
@@ -189,6 +190,19 @@ export async function saveAccountsAction(formData: FormData) {
     } finally {
       client.release();
     }
+
+    await logOrbitAction({
+      action: "update",
+      resource: "setup",
+      summary: `Saved setup accounts for employee #${userId}`,
+      details: { userId, accountCount: accounts.length },
+      actor: {
+        id: userId,
+        name: "",
+        email: "",
+        role: "employee",
+      },
+    });
   } catch {
     return { error: "Something went wrong. Please try again." };
   }

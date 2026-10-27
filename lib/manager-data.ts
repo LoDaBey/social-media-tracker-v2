@@ -1,5 +1,7 @@
-import { query } from "@/lib/db";
+import { query, queryOne } from "@/lib/db";
+import { spareItemMatchesCountries } from "@/lib/admin-spare";
 import { managerEmployeeScopeSql } from "@/lib/manager-employee-scope";
+import type { AdminEmployeeSource } from "@/types/admin";
 import {
   groupAccountsByPlatform,
   isEmployeeSetupComplete,
@@ -160,6 +162,7 @@ export async function fetchManagerHomeGroups(
         category: account.category,
         account_scope: account.account_scope ?? "personal",
         status: account.status,
+        is_spare: Boolean(account.is_spare),
       })
     );
     groups.get(country)!.push({
@@ -182,6 +185,100 @@ export async function fetchManagerHomeGroups(
     country,
     holders: groups.get(country) ?? [],
   }));
+}
+
+export async function assertManagerCanViewHolder(
+  managerId: number,
+  holderId: number,
+  source: AdminEmployeeSource
+): Promise<boolean> {
+  const managerCountries = await fetchManagerCountries(managerId);
+  if (!managerCountries.length) return false;
+
+  if (source === "temp") {
+    const row = await queryOne<{ country: string | null }>(
+      `SELECT country
+         FROM temp_users
+        WHERE id = $1
+          AND role = 'employee'
+          AND is_active = TRUE`,
+      [holderId]
+    );
+    return spareItemMatchesCountries(
+      { country: row?.country ?? null, projects: row?.country ? [row.country] : [] },
+      managerCountries
+    );
+  }
+
+  const row = await queryOne<{
+    country: string | null;
+    projects: string[] | null;
+  }>(
+    `SELECT INITCAP(TRIM(COALESCE(u.country, ''))) AS country,
+            COALESCE(u.projects, ARRAY[]::text[]) AS projects
+       FROM users u
+      WHERE u.id = $1`,
+    [holderId]
+  );
+  if (!row) return false;
+  return spareItemMatchesCountries(
+    {
+      country: row.country,
+      projects: Array.isArray(row.projects) ? row.projects : [],
+    },
+    managerCountries
+  );
+}
+
+export async function assertManagerCanSpareAccount(
+  managerId: number,
+  accountId: number,
+  source: AdminEmployeeSource
+): Promise<boolean> {
+  const managerCountries = await fetchManagerCountries(managerId);
+  if (!managerCountries.length) return false;
+
+  if (source === "temp") {
+    const row = await queryOne<{
+      country: string | null;
+      region: string | null;
+    }>(
+      `SELECT u.country, u.region
+         FROM temp_social_media_accounts a
+         INNER JOIN temp_users u ON u.id = a.user_id
+        WHERE a.id = $1`,
+      [accountId]
+    );
+    if (!row) return false;
+    const region = row.region?.trim().toLowerCase() ?? "";
+    if (region !== "africa" && region !== "europe" && region !== "balkan") {
+      return false;
+    }
+    return spareItemMatchesCountries(
+      { country: row.country, projects: row.country ? [row.country] : [] },
+      managerCountries
+    );
+  }
+
+  const row = await queryOne<{
+    country: string | null;
+    projects: string[] | null;
+  }>(
+    `SELECT INITCAP(TRIM(COALESCE(sma.country, u.country, ''))) AS country,
+            COALESCE(u.projects, ARRAY[]::text[]) AS projects
+       FROM social_media_accounts sma
+       INNER JOIN users u ON u.id = sma.user_id
+      WHERE sma.id = $1`,
+    [accountId]
+  );
+  if (!row) return false;
+  return spareItemMatchesCountries(
+    {
+      country: row.country,
+      projects: Array.isArray(row.projects) ? row.projects : [],
+    },
+    managerCountries
+  );
 }
 
 export async function assertManagerCanEditEmployee(

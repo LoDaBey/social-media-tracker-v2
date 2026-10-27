@@ -9,6 +9,8 @@ import type { SpareAccountsButtonProps } from "@/types/admin";
 export function SpareAccountsButton({
   accounts,
   holders,
+  setSpare,
+  subtitle,
 }: SpareAccountsButtonProps) {
   const [open, setOpen] = useState(false);
   const count = accounts.length;
@@ -42,6 +44,8 @@ export function SpareAccountsButton({
         onClose={() => setOpen(false)}
         accounts={accounts}
         holders={holders}
+        setSpare={setSpare}
+        subtitle={subtitle}
       />
     </>
   );

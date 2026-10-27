@@ -1,9 +1,9 @@
 /**
- * Which `temp_users` employees a Manager Regional can see and edit.
+ * Which `temp_users` employees a Regional Manager can see and edit.
  *
  * Matches planned coverage (employees in the manager's countries) while respecting
  * the reporting chain when it is set:
- * Employee → Team Leader Regional → Manager Regional.
+ * Employee → Team Leader Regional → Regional Manager.
  *
  * Also keeps legacy direct `manager_id` and transitional rows (imports before
  * team leads / managers are wired).

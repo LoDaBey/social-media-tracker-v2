@@ -12,7 +12,12 @@ import { ManagerSetupStatusBadge } from "@/components/manager/ManagerSetupStatus
 import { ManagerAccountsPanel } from "@/components/manager/ManagerAccountsPanel";
 import type { ManagerTeamRowProps } from "@/types/manager";
 
-export function ManagerTeamRow({ row, holderOptions }: ManagerTeamRowProps) {
+export function ManagerTeamRow({
+  row,
+  holderOptions,
+  importHolders,
+  allowedCountries,
+}: ManagerTeamRowProps) {
   const [expanded, setExpanded] = useState(false);
   const setupHref = `/manager/setup?employeeId=${row.id}`;
   const canOpenSetup = !row.setupComplete;
@@ -135,6 +140,8 @@ export function ManagerTeamRow({ row, holderOptions }: ManagerTeamRowProps) {
               accounts={row.accounts}
               assignedCount={row.targetAccountsSum}
               holderOptions={holderOptions}
+              importHolders={importHolders}
+              allowedCountries={allowedCountries}
             />
           </td>
         </tr>
