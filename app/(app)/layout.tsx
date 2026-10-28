@@ -117,7 +117,7 @@ export default async function AppLayout({
 
       <div
         className={[
-          "relative z-0 mx-auto w-full px-3 sm:px-8",
+          "mx-auto w-full px-3 sm:px-8",
           role === "admin" || role === "manager"
             ? "max-w-[1600px]"
             : "max-w-7xl",
