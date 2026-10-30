@@ -51,6 +51,19 @@ export function ExtractTool({ countries }: ExtractToolProps) {
         value={filters}
         countries={countries}
         onChange={setFilters}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            {pending ? (
+              <span className="text-[13px] font-medium text-[var(--color-muted)]">
+                Updating…
+              </span>
+            ) : null}
+            <ExtractExportButton
+              rows={result?.rows ?? []}
+              disabled={pending || !result || result.rows.length === 0}
+            />
+          </div>
+        }
       />
 
       {error ? (
@@ -61,18 +74,6 @@ export function ExtractTool({ countries }: ExtractToolProps) {
           {error}
         </p>
       ) : null}
-
-      <div className="flex flex-wrap items-center gap-2">
-        <ExtractExportButton
-          rows={result?.rows ?? []}
-          disabled={pending || !result || result.rows.length === 0}
-        />
-        {pending ? (
-          <span className="text-[13px] font-medium text-[var(--color-muted)]">
-            Updating…
-          </span>
-        ) : null}
-      </div>
 
       <ExtractSummary summary={result?.summary ?? null} />
       <ExtractPreviewTable rows={result?.rows ?? []} />

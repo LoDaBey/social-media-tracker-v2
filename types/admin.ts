@@ -1171,6 +1171,7 @@ export type ExtractFiltersProps = {
   value: AdminExtractFilters;
   countries: string[];
   onChange: (next: AdminExtractFilters) => void;
+  actions?: ReactNode;
 };
 
 export type ExtractSummaryProps = {
