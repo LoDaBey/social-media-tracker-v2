@@ -1,4 +1,6 @@
 import { pool, queryOne } from "@/lib/db";
+import { fetchStrategyProjectRegionForAlphaaUser } from "@/lib/strategy-projects-data";
+import { strategyAccountRegionValue } from "@/lib/strategy-regions";
 import { alphaaLegacyPlatformFields } from "@/lib/bulk-import-parse";
 import { uniqueAccountUrlError } from "@/lib/social-account-validation";
 import { PLATFORMS, type Platform } from "@/lib/platform-config";
@@ -70,9 +72,13 @@ async function alphaaAccountDefaults(userId: number) {
     return { error: "Set a country on this person before adding accounts." };
   }
   const language1 = existing?.language1?.trim() || "English";
+  const projectRegion = await fetchStrategyProjectRegionForAlphaaUser(userId);
   return {
     country,
-    region: existing?.region?.trim() || "africa",
+    region:
+      existing?.region?.trim() ||
+      (projectRegion ? strategyAccountRegionValue(projectRegion) : "") ||
+      "africa",
     language1,
     language2: existing?.language2?.trim() || language1,
   };

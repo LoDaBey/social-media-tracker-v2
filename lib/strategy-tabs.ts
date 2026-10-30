@@ -1,39 +1,22 @@
-import type { StrategyBook, StrategyTab } from "@/types/strategy";
+import type { StrategyPageSearchParams, StrategyProjectSummary } from "@/types/strategy";
 
-export const STRATEGY_TABS: { tab: StrategyTab; label: string }[] = [
-  { tab: "alphaa", label: "ALPHAA" },
-  { tab: "africa", label: "Africa" },
-  { tab: "europe", label: "Europe" },
-];
-
-export function strategyTabLabel(tab: StrategyTab): string {
-  if (tab === "africa") return "Africa";
-  if (tab === "europe") return "Europe";
-  return "ALPHAA";
+export function strategySlugFromSearchParams(
+  params: StrategyPageSearchParams
+): string | null {
+  const project = params.project?.trim();
+  if (project) return project;
+  const book = params.book?.trim();
+  if (book && book !== "project") return book;
+  return null;
 }
 
-export function strategyBookFromTab(tab: StrategyTab): StrategyBook {
-  return tab === "alphaa" ? "alphaa" : "africa_europe";
+export function strategySelectedSlug(
+  params: StrategyPageSearchParams,
+  projects: Pick<StrategyProjectSummary, "slug">[]
+): string | null {
+  return strategySlugFromSearchParams(params) ?? projects[0]?.slug ?? null;
 }
 
-export function strategyRegionFromTab(
-  tab: StrategyTab
-): "Africa" | "Europe" | undefined {
-  if (tab === "africa") return "Africa";
-  if (tab === "europe") return "Europe";
-  return undefined;
-}
-
-export function strategyTabFromSearchParams(params: {
-  book?: string;
-  region?: string;
-}): StrategyTab {
-  if (params.book === "europe") return "europe";
-  if (params.book === "africa") return "africa";
-  if (params.book === "africa_europe") {
-    return params.region === "Europe" ? "europe" : "africa";
-  }
-  if (params.region === "Europe") return "europe";
-  if (params.region === "Africa") return "africa";
-  return "alphaa";
+export function strategyHrefForProject(slug: string): string {
+  return `/admin/strategy?project=${encodeURIComponent(slug)}`;
 }

@@ -1,4 +1,4 @@
-import { extractPlatformLabel } from "@/lib/admin-extract-platform";
+import { extractFilterPlatformLabel } from "@/lib/admin-extract-platform";
 import { accountScopeLabel } from "@/lib/account-scope";
 import { AccountUrlCell } from "@/components/admin/AccountUrlCell";
 import type { ExtractPreviewTableProps } from "@/types/admin";
@@ -74,7 +74,7 @@ export function ExtractPreviewTable({ rows }: ExtractPreviewTableProps) {
                   {row.handler_name}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap">
-                  {extractPlatformLabel(row.platform)}
+                  {extractFilterPlatformLabel(row.platform)}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap">
                   {accountScopeLabel(row.account_scope)}

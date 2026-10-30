@@ -13,35 +13,20 @@ function TotalRow({ label, value }: { label: string; value: number }) {
 
 export function StrategyCountryTotals({
   allAccounts,
-  target,
-  actual,
-  missing,
   personal,
   umbrella,
   native,
   showNative,
 }: StrategyCountryTotalsProps) {
   return (
-    <section aria-label="Account totals" className="px-1">
-      <h3 className="text-[12px] font-semibold text-[var(--color-muted)]">Totals</h3>
+    <section aria-label="Planned holdings" className="px-1">
+      <h3 className="text-[12px] font-semibold text-[var(--color-muted)]">
+        Holdings
+      </h3>
       <p className="mt-2 text-[12px] text-[var(--color-muted)]">All accounts</p>
       <p className="text-[28px] font-bold leading-none tabular-nums tracking-tight text-[var(--color-ink)]">
         {allAccounts}
       </p>
-      <div className="mt-2 flex flex-wrap items-center gap-2 text-[12px]">
-        <span className="text-[var(--color-muted)]">
-          On books{" "}
-          <span className="font-semibold tabular-nums text-[var(--color-ink)]">
-            {actual}
-          </span>
-          <span className="text-[var(--color-muted)]"> / {target}</span>
-        </span>
-        {missing > 0 ? (
-          <span className="rounded-md bg-[var(--color-coral-tint)] px-1.5 py-0.5 font-semibold tabular-nums text-[var(--color-coral)]">
-            {missing} missing
-          </span>
-        ) : null}
-      </div>
       <div className="mt-3 border-t border-[var(--color-hairline)] pt-1">
         <TotalRow label="Personal" value={personal} />
         <TotalRow label="Umbrella" value={umbrella} />

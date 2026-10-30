@@ -1,6 +1,3 @@
-"use client";
-
-import { useEffect, useRef } from "react";
 import {
   editableScopesForPlatform,
   platformTotal,
@@ -27,11 +24,8 @@ export function StrategyPlatformCard({
   book,
   value,
   onChange,
-  missing,
-  highlighted,
-  highlightToken,
+  readOnly = false,
 }: StrategyPlatformCardProps) {
-  const cardRef = useRef<HTMLElement>(null);
   const scopes = strategyDisplayScopesForBook(book);
   const editable = editableScopesForPlatform(book, platform);
   const total = platformTotal(value, platform);
@@ -40,25 +34,9 @@ export function StrategyPlatformCard({
   ) as Record<StrategyAccountScope, number>;
   const maxCount = Math.max(...scopes.map((scope) => counts[scope]), 1);
 
-  useEffect(() => {
-    if (!highlighted) return;
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    cardRef.current?.scrollIntoView({
-      behavior: reduceMotion ? "auto" : "smooth",
-      block: "nearest",
-    });
-  }, [highlighted, highlightToken]);
-
   return (
     <article
-      ref={cardRef}
-      id={`strategy-platform-${platform}`}
-      className={[
-        "relative flex scroll-mt-3 flex-col gap-2.5 rounded-[14px] bg-[var(--color-surface)] p-3",
-        highlighted
-          ? "ring-2 ring-[var(--color-coral)]"
-          : "ring-1 ring-[var(--color-hairline)]",
-      ].join(" ")}
+      className="relative flex flex-col gap-2.5 rounded-[14px] bg-[var(--color-surface)] p-3 ring-1 ring-[var(--color-hairline)]"
     >
       <header className="flex items-center gap-2">
         <StrategyPlatformIcon platform={platform} className="h-6 w-6" />
@@ -66,14 +44,6 @@ export function StrategyPlatformCard({
           {STRATEGY_PLATFORM_SHORT_LABELS[platform]}
         </h4>
         <p className="text-[16px] font-bold tabular-nums text-[var(--color-ink)]">{total}</p>
-        {missing > 0 ? (
-          <span
-            className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-coral)] px-1 text-[10px] font-bold leading-none text-white"
-            aria-label={`${missing} missing on ${STRATEGY_PLATFORM_SHORT_LABELS[platform]}`}
-          >
-            {missing > 9 ? "!" : missing}
-          </span>
-        ) : null}
       </header>
 
       <ul className="flex flex-col gap-2">
@@ -88,7 +58,7 @@ export function StrategyPlatformCard({
                 <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-[var(--color-muted)]">
                   {STRATEGY_SCOPE_LABELS[scope]}
                 </span>
-                {canEdit ? (
+                {canEdit && !readOnly ? (
                   <input
                     type="number"
                     min={0}

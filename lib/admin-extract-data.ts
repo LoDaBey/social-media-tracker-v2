@@ -1,6 +1,6 @@
 import { fetchAlphaaAdminExtract } from "@/lib/admin-extract-alphaa-data";
 import { countriesForExtractSource } from "@/lib/admin-extract-filters";
-import { extractPlatformLabel } from "@/lib/admin-extract-platform";
+import { extractFilterPlatformLabel } from "@/lib/admin-extract-platform";
 import { overviewDisplayCountry } from "@/lib/overview-country-display";
 import { query } from "@/lib/db";
 import type { AccountScope } from "@/types/db";
@@ -62,8 +62,8 @@ function buildSummary(rows: AdminExtractRow[]): AdminExtractSummary {
     ),
     byPlatform: countBy(
       rows,
-      (row) => row.platform,
-      (key) => extractPlatformLabel(key)
+      (row) => extractFilterPlatformLabel(row.platform),
+      (key) => key
     ),
     byScope: countBy(
       rows,

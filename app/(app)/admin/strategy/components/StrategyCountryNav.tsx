@@ -36,11 +36,6 @@ export function StrategyCountryNav({
             <span className="text-[12px] font-medium tabular-nums">
               {item.totalAccounts}
             </span>
-            {item.missing > 0 ? (
-              <span className="rounded-md bg-[var(--color-coral-tint)] px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-[var(--color-coral)]">
-                {item.missing}
-              </span>
-            ) : null}
           </button>
         );
       })}
