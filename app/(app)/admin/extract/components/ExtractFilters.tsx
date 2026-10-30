@@ -40,6 +40,7 @@ export function ExtractFilters({
   value,
   countries,
   onChange,
+  actions,
 }: ExtractFiltersProps) {
   const countryOptions = extractCountryOptions(value.region).filter(
     (country) =>
@@ -252,7 +253,7 @@ export function ExtractFilters({
         ) : null}
       </fieldset>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <motion.button
           type="button"
           aria-label="Reset extract filters"
@@ -264,6 +265,7 @@ export function ExtractFilters({
         >
           Reset
         </motion.button>
+        {actions}
       </div>
     </section>
   );

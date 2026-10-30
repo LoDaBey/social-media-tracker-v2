@@ -2,6 +2,8 @@ import type { AdminCoverageCount, AdminRegion } from "@/types/admin";
 
 export type StrategyBook = "alphaa" | "africa_europe";
 
+export type StrategyTab = "alphaa" | "africa" | "europe";
+
 export type StrategyAccountScope = "personal" | "umbrella" | "native";
 
 export type StrategyPlatformKey =
@@ -72,6 +74,7 @@ export type StrategyGapLine = {
 export type StrategyProjectGaps = {
   country: string;
   totalPlanned: number;
+  totalActual: number;
   lines: StrategyGapLine[];
 };
 
@@ -88,13 +91,13 @@ export type StrategyCountryGaps = {
 };
 
 export type StrategyToolProps = {
-  book: StrategyBook;
+  tab: StrategyTab;
   rows: StrategyCountryRow[];
   gapsByCountry: Record<string, StrategyCountryGaps>;
 };
 
 export type StrategyBookTabsProps = {
-  book: StrategyBook;
+  tab: StrategyTab;
 };
 
 export type StrategyUploadButtonProps = {
@@ -102,14 +105,16 @@ export type StrategyUploadButtonProps = {
   onFile: (file: File) => void;
 };
 
-export type StrategyProjectTableProps = {
-  book: StrategyBook;
-  rows: StrategyCountryRow[];
-  expandedCountry: string | null;
-  onToggle: (country: string) => void;
-  savingCountry: string | null;
-  onSave: (input: StrategySaveCountryInput) => void;
-  gapsByCountry: Record<string, StrategyCountryGaps>;
+export type StrategyCountryOption = {
+  country: string;
+  totalAccounts: number;
+  missing: number;
+};
+
+export type StrategyCountryNavProps = {
+  countries: StrategyCountryOption[];
+  selectedCountry: string;
+  onSelect: (country: string) => void;
 };
 
 export type StrategyCountryPanelProps = {
@@ -119,16 +124,85 @@ export type StrategyCountryPanelProps = {
   onSave: (input: StrategySaveCountryInput) => void;
 };
 
+export type StrategyCountryToolbarProps = {
+  country: string;
+  book: StrategyBook;
+  language: string;
+  language2: string;
+  resources: number;
+  saving: boolean;
+  onLanguageChange: (value: string) => void;
+  onLanguage2Change: (value: string) => void;
+  onResourcesChange: (value: number) => void;
+  onSave: () => void;
+};
+
+export type StrategyLanguageSelectProps = {
+  id: string;
+  label: string;
+  value: string;
+  allowEmpty?: boolean;
+  emptyLabel?: string;
+  onChange: (value: string) => void;
+};
+
+export type StrategyCountryTotalsProps = {
+  allAccounts: number;
+  target: number;
+  actual: number;
+  missing: number;
+  personal: number;
+  umbrella: number;
+  native: number;
+  showNative: boolean;
+};
+
+export type StrategyPlatformIconProps = {
+  platform: StrategyPlatformKey;
+  className?: string;
+};
+
+export type StrategyPlatformCardProps = {
+  platform: StrategyPlatformKey;
+  book: StrategyBook;
+  value: StrategyScopeCounts;
+  onChange: (next: StrategyScopeCounts) => void;
+  missing: number;
+  highlighted: boolean;
+  highlightToken: number;
+};
+
+export type StrategyPlatformGridProps = {
+  book: StrategyBook;
+  value: StrategyScopeCounts;
+  onChange: (next: StrategyScopeCounts) => void;
+  missingByPlatform: Partial<Record<StrategyPlatformKey, number>>;
+  highlightedPlatform: StrategyPlatformKey | null;
+  highlightToken: number;
+};
+
 export type StrategySheetGroup = {
   label: string;
   scope: StrategyAccountScope;
   platforms: StrategyPlatformKey[];
 };
 
+export type StrategyHandlerField = {
+  label: string;
+  platform: StrategyPlatformKey;
+  scope: StrategyAccountScope | "all";
+};
+
 export type StrategyHandlerEditorProps = {
   book: StrategyBook;
   value: StrategyScopeCounts;
   onChange: (next: StrategyScopeCounts) => void;
+};
+
+export type StrategyHandlerFieldsProps = {
+  value: StrategyScopeCounts;
+  onChange: (next: StrategyScopeCounts) => void;
+  fields: StrategyHandlerField[];
 };
 
 export type StrategySheetEditorProps = {
@@ -140,6 +214,7 @@ export type StrategySheetEditorProps = {
 
 export type StrategyProjectGapsProps = {
   gaps: StrategyProjectGaps;
+  onSelectPlatform?: (platform: StrategyPlatformKey) => void;
 };
 
 export type StrategyPageSearchParams = {
@@ -157,6 +232,8 @@ export type StrategyActualsSnapshot = {
   instagram: number;
   tiktok: number;
   extraPlatforms: Partial<Record<StrategyPlatformKey, number>>;
+  /** Live non-spare accounts currently on the country. */
+  accounts: number;
 };
 
 export type StrategyHolderSnapshot = {

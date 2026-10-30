@@ -21,6 +21,49 @@ function extrasFrom(
   return { ...extra };
 }
 
+function countryKey(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function lookupByCountry<T>(map: Map<string, T>, country: string): T | undefined {
+  const exact = map.get(country);
+  if (exact) return exact;
+  const needle = countryKey(country);
+  for (const [key, value] of map) {
+    if (countryKey(key) === needle) return value;
+  }
+  return undefined;
+}
+
+function hasAnyActuals(actual: {
+  employees: number;
+  x: number;
+  facebookPersonal: number;
+  accounts?: number;
+}) {
+  return (
+    (actual.accounts ?? 0) > 0 ||
+    actual.employees > 0 ||
+    actual.x > 0 ||
+    actual.facebookPersonal > 0
+  );
+}
+
+function pickCountryActuals<T extends {
+  employees: number;
+  x: number;
+  facebookPersonal: number;
+  accounts?: number;
+}>(map: Map<string, T>, country: string): T | undefined {
+  const exact = map.get(country);
+  if (exact && hasAnyActuals(exact)) return exact;
+  const needle = countryKey(country);
+  for (const [key, value] of map) {
+    if (countryKey(key) === needle && hasAnyActuals(value)) return value;
+  }
+  return exact;
+}
+
 export async function fetchStrategyGapsByCountry(
   book: StrategyBook,
   rows: StrategyCountryRow[]
@@ -35,8 +78,9 @@ export async function fetchStrategyGapsByCountry(
     ]);
     const gaps: Record<string, StrategyCountryGaps> = {};
     for (const row of rows) {
-      const actual = actuals.get(row.country);
-      const holderRows = holders.get(row.country) ?? [];
+      const actual = pickCountryActuals(actuals, row.country);
+      const holderRows =
+        lookupByCountry(holders, row.country) ?? holders.get(row.country) ?? [];
       const snapshot: StrategyActualsSnapshot | undefined = actual
         ? {
             employees: actual.employees,
@@ -46,6 +90,7 @@ export async function fetchStrategyGapsByCountry(
             instagram: actual.instagram,
             tiktok: actual.tiktok,
             extraPlatforms: extrasFrom(actual.extraPlatforms),
+            accounts: actual.accounts,
           }
         : undefined;
       const handlerSnapshots: StrategyHolderSnapshot[] = holderRows.map((holder) => ({
@@ -63,13 +108,23 @@ export async function fetchStrategyGapsByCountry(
     return gaps;
   }
 
+  const regions = new Set(rows.map((row) => row.region));
+  const regionScope =
+    regions.size === 1 && regions.has("Europe")
+      ? "Europe"
+      : regions.size === 1 && regions.has("Africa")
+        ? "Africa"
+        : "AfricaAndEurope";
   const coverage = await fetchTempCountryCoverage(countries, {
-    regionScope: "AfricaAndEurope",
+    regionScope,
   });
   const gaps: Record<string, StrategyCountryGaps> = {};
   for (const row of rows) {
-    const actual = coverage.actualByCountry.get(row.country);
-    const holderRows = coverage.holdersByCountry.get(row.country) ?? [];
+    const actual = pickCountryActuals(coverage.actualByCountry, row.country);
+    const holderRows =
+      lookupByCountry(coverage.holdersByCountry, row.country) ??
+      coverage.holdersByCountry.get(row.country) ??
+      [];
     const snapshot: StrategyActualsSnapshot | undefined = actual
       ? {
           employees: actual.employees,
@@ -79,6 +134,12 @@ export async function fetchStrategyGapsByCountry(
           instagram: actual.instagram,
           tiktok: actual.tiktok,
           extraPlatforms: {},
+          accounts:
+            actual.x +
+            actual.facebookPersonal +
+            actual.facebookUmbrella +
+            actual.instagram +
+            actual.tiktok,
         }
       : undefined;
     const handlerSnapshots: StrategyHolderSnapshot[] = holderRows.map((holder) => ({

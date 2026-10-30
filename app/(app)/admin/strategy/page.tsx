@@ -3,36 +3,39 @@ import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import { adminViewStrategy } from "@/lib/admin-view";
 import { fetchStrategyGapsByCountry } from "@/lib/strategy-actuals";
 import { fetchStrategyRows } from "@/lib/strategy-plans-data";
-import type { StrategyBook } from "@/types/strategy";
+import {
+  strategyBookFromTab,
+  strategyRegionFromTab,
+  strategyTabFromSearchParams,
+  strategyTabLabel,
+} from "@/lib/strategy-tabs";
 import { StrategyTool } from "./components/StrategyTool";
 
 type StrategyPageProps = {
-  searchParams: Promise<{ book?: string }>;
+  searchParams: Promise<{ book?: string; region?: string }>;
 };
-
-function bookFromParam(value: string | undefined): StrategyBook {
-  return value === "africa_europe" ? "africa_europe" : "alphaa";
-}
 
 export async function generateMetadata({
   searchParams,
 }: StrategyPageProps): Promise<Metadata> {
   const params = await searchParams;
-  const book = bookFromParam(params.book);
+  const tab = strategyTabFromSearchParams(params);
   return {
-    title: book === "africa_europe" ? "Strategy · Africa & Balkans" : "Strategy · ALPHAA",
+    title: `Strategy · ${strategyTabLabel(tab)}`,
   };
 }
 
 export default async function AdminStrategyPage({ searchParams }: StrategyPageProps) {
   const params = await searchParams;
-  const book = bookFromParam(params.book);
-  const rows = await fetchStrategyRows(book);
+  const tab = strategyTabFromSearchParams(params);
+  const book = strategyBookFromTab(tab);
+  const region = strategyRegionFromTab(tab);
+  const rows = await fetchStrategyRows(book, region);
   const gapsByCountry = await fetchStrategyGapsByCountry(book, rows);
 
   return (
     <AdminWorkspace view={adminViewStrategy()}>
-      <StrategyTool book={book} rows={rows} gapsByCountry={gapsByCountry} />
+      <StrategyTool key={tab} tab={tab} rows={rows} gapsByCountry={gapsByCountry} />
     </AdminWorkspace>
   );
 }

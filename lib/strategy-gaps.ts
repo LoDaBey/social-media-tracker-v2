@@ -22,6 +22,22 @@ function extraActual(
   return extra?.[platform] ?? 0;
 }
 
+function snapshotAccounts(actuals: StrategyActualsSnapshot): number {
+  if (actuals.accounts > 0) return actuals.accounts;
+  const extras = Object.values(actuals.extraPlatforms ?? {}).reduce(
+    (sum, count) => sum + count,
+    0
+  );
+  return (
+    actuals.x +
+    actuals.facebookPersonal +
+    actuals.facebookUmbrella +
+    actuals.instagram +
+    actuals.tiktok +
+    extras
+  );
+}
+
 function projectLines(
   targets: StrategyScopeCounts,
   actuals: StrategyActualsSnapshot
@@ -114,6 +130,12 @@ function handlerLines(
     instagram: holder.instagram,
     tiktok: holder.tiktok,
     extraPlatforms: holder.extraPlatforms,
+    accounts:
+      holder.x +
+      holder.facebookPersonal +
+      holder.facebookUmbrella +
+      holder.instagram +
+      holder.tiktok,
   }).filter((line) => line.missing > 0 || line.planned > 0);
 }
 
@@ -130,12 +152,14 @@ export function buildStrategyCountryGaps(
     instagram: 0,
     tiktok: 0,
     extraPlatforms: {},
+    accounts: 0,
   };
   const snapshot = actuals ?? emptyActuals;
 
   const project = {
     country: row.country,
     totalPlanned: row.totalAccounts,
+    totalActual: snapshotAccounts(snapshot),
     lines: projectLines(row.projectTargets, snapshot).filter(
       (line) => line.missing > 0
     ),
