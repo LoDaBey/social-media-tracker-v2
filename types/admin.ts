@@ -1167,6 +1167,12 @@ export type ExtractToolProps = {
   countries: string[];
 };
 
+export type ExtractPlatformChip = {
+  id: string;
+  label: string;
+  platforms: string[];
+};
+
 export type ExtractFiltersProps = {
   value: AdminExtractFilters;
   countries: string[];

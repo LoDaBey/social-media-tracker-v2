@@ -10,7 +10,9 @@ import { baseCountryFromDisplay } from "@/lib/overview-country-display";
 import {
   EXTRACT_ALPHAA_EXTRA_PLATFORMS,
   EXTRACT_CORE_PLATFORMS,
-  extractPlatformLabel,
+  extractChipIsActive,
+  extractPlatformChips,
+  toggleExtractPlatformChip,
 } from "@/lib/admin-extract-platform";
 import { accountScopeLabel, ACCOUNT_SCOPE_OPTIONS } from "@/lib/account-scope";
 import type { AccountScope } from "@/types/db";
@@ -49,9 +51,7 @@ export function ExtractFilters({
   );
   const showAlphaaPlatforms =
     value.region === "all" || value.region === "Alphaa";
-  const platformOptions = showAlphaaPlatforms
-    ? [...EXTRACT_CORE_PLATFORMS, ...EXTRACT_ALPHAA_EXTRA_PLATFORMS]
-    : [...EXTRACT_CORE_PLATFORMS];
+  const platformChips = extractPlatformChips(showAlphaaPlatforms);
 
   function patch(partial: Partial<AdminExtractFilters>) {
     onChange({ ...value, ...partial });
@@ -143,24 +143,24 @@ export function ExtractFilters({
           </span>
         </legend>
         <div className="flex flex-wrap gap-2">
-          {platformOptions.map((platform) => {
-            const active = value.platforms.includes(platform);
+          {platformChips.map((chip) => {
+            const active = extractChipIsActive(value.platforms, chip);
             return (
               <button
-                key={platform}
+                key={chip.id}
                 type="button"
-                aria-label={`Toggle ${extractPlatformLabel(platform)}`}
+                aria-label={`Toggle ${chip.label}`}
                 aria-pressed={active}
                 onClick={() =>
                   patch({
-                    platforms: toggleValue(value.platforms, platform),
+                    platforms: toggleExtractPlatformChip(value.platforms, chip),
                   })
                 }
                 className={`cursor-pointer rounded-lg border px-3 py-1.5 text-[13px] font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] ${
                   active ? chipActive : chipIdle
                 }`}
               >
-                {extractPlatformLabel(platform)}
+                {chip.label}
               </button>
             );
           })}

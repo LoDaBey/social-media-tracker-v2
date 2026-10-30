@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import {
-  missingCountByPlatform,
   strategyDisplayScopesForBook,
   strategyScopeTotal,
   targetsGrandTotal,
@@ -11,16 +10,13 @@ import { StrategyCountryToolbar } from "./StrategyCountryToolbar";
 import { StrategyCountryTotals } from "./StrategyCountryTotals";
 import { StrategyHandlerEditor } from "./StrategyHandlerEditor";
 import { StrategyPlatformGrid } from "./StrategyPlatformGrid";
-import { StrategyProjectGaps } from "./StrategyProjectGaps";
 import type {
   StrategyCountryPanelProps,
-  StrategyPlatformKey,
   StrategyScopeCounts,
 } from "@/types/strategy";
 
 export function StrategyCountryPanel({
   row,
-  gaps,
   saving,
   onSave,
 }: StrategyCountryPanelProps) {
@@ -33,18 +29,9 @@ export function StrategyCountryPanel({
   const [handlerTargets, setHandlerTargets] = useState<StrategyScopeCounts>(
     row.handlerTargets
   );
-  const [highlightedPlatform, setHighlightedPlatform] =
-    useState<StrategyPlatformKey | null>(null);
-  const [highlightToken, setHighlightToken] = useState(0);
 
   const computedTotal = targetsGrandTotal(projectTargets);
   const showNative = strategyDisplayScopesForBook(row.book).includes("native");
-  const projectLines = gaps?.project.lines ?? [];
-  const missingTotal = Math.max(
-    0,
-    (gaps?.project.totalPlanned ?? row.totalAccounts) -
-      (gaps?.project.totalActual ?? 0)
-  );
 
   function handleSave() {
     onSave({
@@ -58,11 +45,6 @@ export function StrategyCountryPanel({
       projectTargets,
       handlerTargets,
     });
-  }
-
-  function handleSelectPlatform(platform: StrategyPlatformKey) {
-    setHighlightedPlatform(platform);
-    setHighlightToken((token) => token + 1);
   }
 
   return (
@@ -84,29 +66,17 @@ export function StrategyCountryPanel({
         <aside className="flex flex-col gap-3">
           <StrategyCountryTotals
             allAccounts={computedTotal}
-            target={row.totalAccounts}
-            actual={gaps?.project.totalActual ?? 0}
-            missing={missingTotal}
             personal={strategyScopeTotal(projectTargets, "personal")}
             umbrella={strategyScopeTotal(projectTargets, "umbrella")}
             native={strategyScopeTotal(projectTargets, "native")}
             showNative={showNative}
           />
-          {gaps ? (
-            <StrategyProjectGaps
-              gaps={gaps.project}
-              onSelectPlatform={handleSelectPlatform}
-            />
-          ) : null}
         </aside>
 
         <StrategyPlatformGrid
           book={row.book}
           value={projectTargets}
           onChange={setProjectTargets}
-          missingByPlatform={missingCountByPlatform(projectLines)}
-          highlightedPlatform={highlightedPlatform}
-          highlightToken={highlightToken}
         />
       </div>
 

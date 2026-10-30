@@ -12,6 +12,8 @@ import {
 } from "@/lib/bulk-import-parse";
 import { uniqueAccountUrlError } from "@/lib/social-account-validation";
 import { isAlphaaCountry } from "@/lib/region-config";
+import { fetchStrategyProjectRegionForAlphaaUser } from "@/lib/strategy-projects-data";
+import { strategyAccountRegionValue } from "@/lib/strategy-regions";
 import {
   isSetupCountry,
   isSetupLanguage,
@@ -257,7 +259,13 @@ async function importAlphaaHolderAccounts(input: {
   );
 
   const country = existing?.country?.trim() || input.country;
-  const region = existing?.region?.trim() || "africa";
+  const projectRegion = await fetchStrategyProjectRegionForAlphaaUser(
+    input.holderId
+  );
+  const region =
+    existing?.region?.trim() ||
+    (projectRegion ? strategyAccountRegionValue(projectRegion) : "") ||
+    "africa";
   const language1 =
     existing?.language1?.trim() || input.language || "English";
   const language2 =

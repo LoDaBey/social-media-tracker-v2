@@ -21,6 +21,12 @@ async function main() {
     console.log(`Applied ${file}`);
   }
 
+  const { seedStrategyProjectsFromCountryPlans } = await import(
+    "../lib/strategy-projects-data"
+  );
+  await seedStrategyProjectsFromCountryPlans();
+  console.log("Seeded strategy projects from country plans");
+
   await pool.end();
 }
 

@@ -1,8 +1,57 @@
 import type { AdminCoverageCount, AdminRegion } from "@/types/admin";
 
-export type StrategyBook = "alphaa" | "africa_europe";
+export type StrategyBook = "alphaa" | "africa_europe" | "custom";
 
-export type StrategyTab = "alphaa" | "africa" | "europe";
+/** Geographic region stamped onto the project's accounts, e.g. Gulf, Asia, Levant. */
+export type StrategyProjectRegion = string;
+
+export type StrategyProject = {
+  id: number;
+  name: string;
+  slug: string;
+  region: StrategyProjectRegion | "";
+  platforms: StrategyPlatformKey[];
+  language: string;
+  resources: number;
+  totalAccounts: number;
+  projectTargets: StrategyScopeCounts;
+  handlerTargets: StrategyScopeCounts;
+  updatedAt: string;
+};
+
+export type StrategyProjectSummary = {
+  name: string;
+  slug: string;
+};
+
+export type StrategyCreateProjectInput = {
+  name: string;
+  region: StrategyProjectRegion;
+  platforms: StrategyPlatformKey[];
+};
+
+export type StrategySaveProjectInput = {
+  slug: string;
+  region: StrategyProjectRegion | "";
+  platforms: StrategyPlatformKey[];
+  language: string;
+  resources: number;
+  totalAccounts: number;
+  projectTargets: StrategyScopeCounts;
+  handlerTargets: StrategyScopeCounts;
+};
+
+export type StrategyCreateProjectResult =
+  | { ok: true; project: StrategyProjectSummary }
+  | { ok: false; error: string };
+
+export type StrategySaveProjectResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+export type StrategyDeleteProjectResult =
+  | { ok: true }
+  | { ok: false; error: string };
 
 export type StrategyAccountScope = "personal" | "umbrella" | "native";
 
@@ -91,13 +140,85 @@ export type StrategyCountryGaps = {
 };
 
 export type StrategyToolProps = {
-  tab: StrategyTab;
-  rows: StrategyCountryRow[];
-  gapsByCountry: Record<string, StrategyCountryGaps>;
+  selectedSlug: string | null;
+  projects: StrategyProjectSummary[];
+  activeProject: StrategyProject | null;
+  regionOptions: string[];
 };
 
 export type StrategyBookTabsProps = {
-  tab: StrategyTab;
+  selectedSlug: string | null;
+  projects: StrategyProjectSummary[];
+};
+
+export type StrategyNewProjectButtonProps = {
+  onClick: () => void;
+};
+
+export type StrategyNewProjectModalProps = {
+  open: boolean;
+  pending: boolean;
+  error: string | null;
+  regionOptions: string[];
+  onClose: () => void;
+  onCreate: (input: StrategyCreateProjectInput) => void;
+};
+
+export type StrategyDeleteProjectButtonProps = {
+  name: string;
+  onClick: () => void;
+};
+
+export type StrategyEditProjectButtonProps = {
+  name: string;
+  onClick: () => void;
+};
+
+export type StrategyDeleteProjectModalProps = {
+  open: boolean;
+  pending: boolean;
+  error: string | null;
+  name: string;
+  onClose: () => void;
+  onConfirm: () => void;
+};
+
+export type StrategyProjectPlatformPickerProps = {
+  value: StrategyPlatformKey[];
+  onChange: (next: StrategyPlatformKey[]) => void;
+  readOnly?: boolean;
+};
+
+export type StrategyProjectRegionSelectProps = {
+  id: string;
+  value: StrategyProjectRegion | "";
+  options: string[];
+  required?: boolean;
+  layout?: "stack" | "inline";
+  onChange: (value: StrategyProjectRegion | "") => void;
+};
+
+export type StrategyProjectToolbarProps = {
+  name: string;
+  region: StrategyProjectRegion | "";
+  regionOptions: string[];
+  resources: number;
+  editing: boolean;
+  saving: boolean;
+  onEdit: () => void;
+  onCancel: () => void;
+  onRegionChange: (value: StrategyProjectRegion | "") => void;
+  onResourcesChange: (value: number) => void;
+  onSave: () => void;
+  onDelete: () => void;
+};
+
+export type StrategyProjectPanelProps = {
+  project: StrategyProject;
+  saving: boolean;
+  regionOptions: string[];
+  onSave: (input: StrategySaveProjectInput) => Promise<boolean>;
+  onDelete: () => void;
 };
 
 export type StrategyUploadButtonProps = {
@@ -105,10 +226,13 @@ export type StrategyUploadButtonProps = {
   onFile: (file: File) => void;
 };
 
+export type StrategyEmptyStateProps = {
+  onCreate: () => void;
+};
+
 export type StrategyCountryOption = {
   country: string;
   totalAccounts: number;
-  missing: number;
 };
 
 export type StrategyCountryNavProps = {
@@ -119,7 +243,6 @@ export type StrategyCountryNavProps = {
 
 export type StrategyCountryPanelProps = {
   row: StrategyCountryRow;
-  gaps: StrategyCountryGaps | undefined;
   saving: boolean;
   onSave: (input: StrategySaveCountryInput) => void;
 };
@@ -148,9 +271,6 @@ export type StrategyLanguageSelectProps = {
 
 export type StrategyCountryTotalsProps = {
   allAccounts: number;
-  target: number;
-  actual: number;
-  missing: number;
   personal: number;
   umbrella: number;
   native: number;
@@ -167,18 +287,19 @@ export type StrategyPlatformCardProps = {
   book: StrategyBook;
   value: StrategyScopeCounts;
   onChange: (next: StrategyScopeCounts) => void;
-  missing: number;
-  highlighted: boolean;
-  highlightToken: number;
+  readOnly?: boolean;
 };
 
 export type StrategyPlatformGridProps = {
   book: StrategyBook;
   value: StrategyScopeCounts;
   onChange: (next: StrategyScopeCounts) => void;
-  missingByPlatform: Partial<Record<StrategyPlatformKey, number>>;
-  highlightedPlatform: StrategyPlatformKey | null;
-  highlightToken: number;
+  platforms?: StrategyPlatformKey[];
+  showHeader?: boolean;
+  embedded?: boolean;
+  readOnly?: boolean;
+  label?: string;
+  description?: string;
 };
 
 export type StrategySheetGroup = {
@@ -197,29 +318,30 @@ export type StrategyHandlerEditorProps = {
   book: StrategyBook;
   value: StrategyScopeCounts;
   onChange: (next: StrategyScopeCounts) => void;
+  platforms?: StrategyPlatformKey[];
+  description?: string;
+  readOnly?: boolean;
 };
 
 export type StrategyHandlerFieldsProps = {
   value: StrategyScopeCounts;
   onChange: (next: StrategyScopeCounts) => void;
   fields: StrategyHandlerField[];
+  readOnly?: boolean;
 };
 
-export type StrategySheetEditorProps = {
+export type StrategyHandlerSeatCardProps = {
+  platform: StrategyPlatformKey;
+  fields: StrategyHandlerField[];
   value: StrategyScopeCounts;
   onChange: (next: StrategyScopeCounts) => void;
-  label: string;
-  groups: StrategySheetGroup[];
-};
-
-export type StrategyProjectGapsProps = {
-  gaps: StrategyProjectGaps;
-  onSelectPlatform?: (platform: StrategyPlatformKey) => void;
+  readOnly?: boolean;
 };
 
 export type StrategyPageSearchParams = {
   book?: string;
   region?: string;
+  project?: string;
 };
 
 export type AdminStrategyRegion = Extract<AdminRegion, "Africa" | "Europe" | "Alphaa">;

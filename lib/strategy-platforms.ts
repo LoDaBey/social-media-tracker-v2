@@ -2,7 +2,6 @@ import { ALPHAA_EXTRA_PLATFORM_KEYS } from "@/lib/alphaa-coverage-platforms";
 import type {
   StrategyAccountScope,
   StrategyBook,
-  StrategyGapLine,
   StrategyHandlerField,
   StrategyPlatformKey,
   StrategyScopeCounts,
@@ -77,18 +76,6 @@ export const STRATEGY_PLATFORM_SHORT_LABELS: Record<StrategyPlatformKey, string>
     kizlarsoruyor: "KızlarSoruyor",
     balatarin: "Balatarin",
   };
-
-export function strategyNeedsSentence(lines: StrategyGapLine[]): string {
-  const parts = lines
-    .filter((line) => line.missing > 0)
-    .map((line) => {
-      const scope =
-        line.scope === "all" ? "" : ` ${STRATEGY_SCOPE_LABELS[line.scope]}`;
-      return `${line.missing} ${STRATEGY_PLATFORM_SHORT_LABELS[line.platform]}${scope}`;
-    });
-  if (parts.length === 0) return "";
-  return `Need ${parts.join(", ")}`;
-}
 
 const CORE_SUMMARY_PLATFORMS: StrategyPlatformKey[] = [
   "twitter",
@@ -169,16 +156,63 @@ export const ALPHAA_SHEET_GROUPS: StrategySheetGroup[] = [
   },
 ];
 
+export const DEFAULT_CUSTOM_PROJECT_PLATFORMS: StrategyPlatformKey[] = [
+  ...CORE_SUMMARY_PLATFORMS,
+];
+
+export function strategyProjectSlugFromName(name: string) {
+  const slug = name
+    .trim()
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+  return slug || "project";
+}
+
+export function orderedStrategyPlatforms(
+  selected: readonly string[]
+): StrategyPlatformKey[] {
+  const allowed = new Set(selected);
+  return STRATEGY_PLATFORM_KEYS.filter((platform) => allowed.has(platform));
+}
+
+export function filterStrategyTargets(
+  targets: StrategyScopeCounts,
+  platforms: readonly StrategyPlatformKey[]
+): StrategyScopeCounts {
+  const allowed = new Set(platforms);
+  const next: StrategyScopeCounts = {};
+  for (const platform of STRATEGY_PLATFORM_KEYS) {
+    if (!allowed.has(platform)) continue;
+    const row = targets[platform];
+    if (row) next[platform] = row;
+  }
+  return next;
+}
+
 export function strategySummaryPlatformsForBook(
   book: StrategyBook
 ): StrategyPlatformKey[] {
-  return book === "alphaa" ? ALPHAA_SUMMARY_PLATFORMS : CORE_SUMMARY_PLATFORMS;
+  if (book === "alphaa") return ALPHAA_SUMMARY_PLATFORMS;
+  if (book === "custom") return [...STRATEGY_PLATFORM_KEYS];
+  return CORE_SUMMARY_PLATFORMS;
 }
 
 export function strategySheetGroupsForBook(
   book: StrategyBook
 ): StrategySheetGroup[] {
-  return book === "alphaa" ? ALPHAA_SHEET_GROUPS : AFRICA_EUROPE_SHEET_GROUPS;
+  if (book === "alphaa") return ALPHAA_SHEET_GROUPS;
+  if (book === "custom") {
+    return STRATEGY_SCOPES.map((scope) => ({
+      label: STRATEGY_SCOPE_LABELS[scope],
+      scope,
+      platforms: [...STRATEGY_PLATFORM_KEYS],
+    }));
+  }
+  return AFRICA_EUROPE_SHEET_GROUPS;
 }
 
 /** Africa/Europe handler seat: X is one count; Facebook is Personal vs Umbrella. */
@@ -190,10 +224,31 @@ export const AFRICA_EUROPE_HANDLER_FIELDS: StrategyHandlerField[] = [
   { label: "TikTok", platform: "tiktok", scope: "all" },
 ];
 
+export function groupHandlerFieldsByPlatform(
+  fields: StrategyHandlerField[]
+): { platform: StrategyPlatformKey; fields: StrategyHandlerField[] }[] {
+  const order: StrategyPlatformKey[] = [];
+  const grouped = new Map<StrategyPlatformKey, StrategyHandlerField[]>();
+  for (const field of fields) {
+    const existing = grouped.get(field.platform);
+    if (!existing) {
+      grouped.set(field.platform, [field]);
+      order.push(field.platform);
+      continue;
+    }
+    existing.push(field);
+  }
+  return order.map((platform) => ({
+    platform,
+    fields: grouped.get(platform) ?? [],
+  }));
+}
+
 export function strategyDisplayScopesForBook(
   book: StrategyBook
 ): StrategyAccountScope[] {
-  return book === "alphaa" ? [...STRATEGY_SCOPES] : ["personal", "umbrella"];
+  if (book === "africa_europe") return ["personal", "umbrella"];
+  return [...STRATEGY_SCOPES];
 }
 
 export function strategyGridPlatformsForBook(
@@ -206,6 +261,7 @@ export function editableScopesForPlatform(
   book: StrategyBook,
   platform: StrategyPlatformKey
 ): StrategyAccountScope[] {
+  if (book === "custom") return [...STRATEGY_SCOPES];
   const scopes = new Set<StrategyAccountScope>();
   for (const group of strategySheetGroupsForBook(book)) {
     if (group.platforms.includes(platform)) {
@@ -223,17 +279,6 @@ export function strategyScopeTotal(
     (sum, platform) => sum + scopeCount(targets, platform, scope),
     0
   );
-}
-
-export function missingCountByPlatform(
-  lines: StrategyGapLine[]
-): Partial<Record<StrategyPlatformKey, number>> {
-  const counts: Partial<Record<StrategyPlatformKey, number>> = {};
-  for (const line of lines) {
-    if (line.missing <= 0) continue;
-    counts[line.platform] = (counts[line.platform] ?? 0) + line.missing;
-  }
-  return counts;
 }
 
 const PLATFORM_ALIASES: Record<string, StrategyPlatformKey> = {
