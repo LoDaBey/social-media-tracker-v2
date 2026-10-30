@@ -3,6 +3,7 @@ import type {
   StrategyAccountScope,
   StrategyBook,
   StrategyGapLine,
+  StrategyHandlerField,
   StrategyPlatformKey,
   StrategyScopeCounts,
   StrategySheetGroup,
@@ -180,6 +181,61 @@ export function strategySheetGroupsForBook(
   return book === "alphaa" ? ALPHAA_SHEET_GROUPS : AFRICA_EUROPE_SHEET_GROUPS;
 }
 
+/** Africa/Europe handler seat: X is one count; Facebook is Personal vs Umbrella. */
+export const AFRICA_EUROPE_HANDLER_FIELDS: StrategyHandlerField[] = [
+  { label: "X", platform: "twitter", scope: "all" },
+  { label: "Facebook Personal", platform: "facebook", scope: "personal" },
+  { label: "Facebook Umbrella", platform: "facebook", scope: "umbrella" },
+  { label: "Instagram", platform: "instagram", scope: "all" },
+  { label: "TikTok", platform: "tiktok", scope: "all" },
+];
+
+export function strategyDisplayScopesForBook(
+  book: StrategyBook
+): StrategyAccountScope[] {
+  return book === "alphaa" ? [...STRATEGY_SCOPES] : ["personal", "umbrella"];
+}
+
+export function strategyGridPlatformsForBook(
+  book: StrategyBook
+): StrategyPlatformKey[] {
+  return strategySummaryPlatformsForBook(book);
+}
+
+export function editableScopesForPlatform(
+  book: StrategyBook,
+  platform: StrategyPlatformKey
+): StrategyAccountScope[] {
+  const scopes = new Set<StrategyAccountScope>();
+  for (const group of strategySheetGroupsForBook(book)) {
+    if (group.platforms.includes(platform)) {
+      scopes.add(group.scope);
+    }
+  }
+  return STRATEGY_SCOPES.filter((scope) => scopes.has(scope));
+}
+
+export function strategyScopeTotal(
+  targets: StrategyScopeCounts,
+  scope: StrategyAccountScope
+): number {
+  return STRATEGY_PLATFORM_KEYS.reduce(
+    (sum, platform) => sum + scopeCount(targets, platform, scope),
+    0
+  );
+}
+
+export function missingCountByPlatform(
+  lines: StrategyGapLine[]
+): Partial<Record<StrategyPlatformKey, number>> {
+  const counts: Partial<Record<StrategyPlatformKey, number>> = {};
+  for (const line of lines) {
+    if (line.missing <= 0) continue;
+    counts[line.platform] = (counts[line.platform] ?? 0) + line.missing;
+  }
+  return counts;
+}
+
 const PLATFORM_ALIASES: Record<string, StrategyPlatformKey> = {
   twitter: "twitter",
   x: "twitter",
@@ -269,6 +325,49 @@ export function setScopeCount(
     next[platform] = current;
   }
   return next;
+}
+
+/** Write a combined platform total without inventing a Personal/Umbrella split. */
+export function setPlatformTotal(
+  targets: StrategyScopeCounts,
+  platform: StrategyPlatformKey,
+  value: number
+): StrategyScopeCounts {
+  const safe = Number.isFinite(value) && value > 0 ? Math.round(value) : 0;
+  const personal = scopeCount(targets, platform, "personal");
+  const umbrella = scopeCount(targets, platform, "umbrella");
+  const native = scopeCount(targets, platform, "native");
+
+  if (umbrella > 0 && personal === 0 && native === 0) {
+    return setScopeCount(targets, platform, "umbrella", safe);
+  }
+  if (native > 0 && personal === 0 && umbrella === 0) {
+    return setScopeCount(targets, platform, "native", safe);
+  }
+
+  const keptUmbrella = Math.min(umbrella, safe);
+  let next = setScopeCount(targets, platform, "umbrella", keptUmbrella);
+  next = setScopeCount(next, platform, "personal", safe - keptUmbrella);
+  return next;
+}
+
+export function handlerFieldValue(
+  targets: StrategyScopeCounts,
+  field: StrategyHandlerField
+) {
+  if (field.scope === "all") return platformTotal(targets, field.platform);
+  return scopeCount(targets, field.platform, field.scope);
+}
+
+export function setHandlerFieldValue(
+  targets: StrategyScopeCounts,
+  field: StrategyHandlerField,
+  value: number
+) {
+  if (field.scope === "all") {
+    return setPlatformTotal(targets, field.platform, value);
+  }
+  return setScopeCount(targets, field.platform, field.scope, value);
 }
 
 export function parseStrategyPlatformKey(raw: string): StrategyPlatformKey | null {

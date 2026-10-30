@@ -111,9 +111,14 @@ export async function fetchAfricaEuropeStrategyRows(): Promise<StrategyCountryRo
   return rows.map(mapAfricaEuropeRow);
 }
 
-export async function fetchStrategyRows(book: StrategyBook) {
+export async function fetchStrategyRows(
+  book: StrategyBook,
+  region?: "Africa" | "Europe"
+) {
   if (book === "alphaa") return fetchAlphaaStrategyRows();
-  return fetchAfricaEuropeStrategyRows();
+  const rows = await fetchAfricaEuropeStrategyRows();
+  if (!region) return rows;
+  return rows.filter((row) => row.region === region);
 }
 
 function staticPlansForRegion(region: AdminRegion): AdminCountryPlan[] {

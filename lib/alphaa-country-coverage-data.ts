@@ -45,6 +45,15 @@ function countrySqlClause(paramIndex: number) {
   return `${ALPHAA_LEGACY_COUNTRY} = ANY($${paramIndex}::text[])`;
 }
 
+function existingCountryKey(map: Map<string, unknown>, country: string): string {
+  if (map.has(country)) return country;
+  const needle = country.trim().toLowerCase();
+  for (const key of map.keys()) {
+    if (key.trim().toLowerCase() === needle) return key;
+  }
+  return country;
+}
+
 /**
  * ALPHAA tab only — legacy users + social_media_accounts (TableCreations.sql).
  * Never reads temp_users or temp_social_media_accounts.
@@ -116,7 +125,10 @@ export async function fetchAlphaaCountryActuals(
   }
 
   for (const row of employeeRows) {
-    const country = row.country.trim() || "Unassigned";
+    const country = existingCountryKey(
+      actualByCountry,
+      row.country.trim() || "Unassigned"
+    );
     const current = actualByCountry.get(country) ?? {
       employees: 0,
       x: 0,
@@ -132,7 +144,10 @@ export async function fetchAlphaaCountryActuals(
   }
 
   for (const row of accountRows) {
-    const country = row.country.trim() || "Unassigned";
+    const country = existingCountryKey(
+      actualByCountry,
+      row.country.trim() || "Unassigned"
+    );
     const current = actualByCountry.get(country) ?? {
       employees: 0,
       x: 0,
