@@ -137,6 +137,15 @@ export type StrategyCountryToolbarProps = {
   onSave: () => void;
 };
 
+export type StrategyLanguageSelectProps = {
+  id: string;
+  label: string;
+  value: string;
+  allowEmpty?: boolean;
+  emptyLabel?: string;
+  onChange: (value: string) => void;
+};
+
 export type StrategyCountryTotalsProps = {
   allAccounts: number;
   target: number;

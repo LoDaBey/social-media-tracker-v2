@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { CountryFlag } from "@/lib/country-icons";
+import { StrategyLanguageSelect } from "./StrategyLanguageSelect";
 import type { StrategyCountryToolbarProps } from "@/types/strategy";
 
 const fieldClass =
@@ -29,25 +30,21 @@ export function StrategyCountryToolbar({
       </div>
 
       <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
-        <label className="flex min-w-0 items-center gap-2 text-[12px] font-medium text-[var(--color-muted)]">
-          Language
-          <input
-            value={language}
-            aria-label={`${country} language`}
-            onChange={(event) => onLanguageChange(event.target.value)}
-            className={`${fieldClass} w-[132px]`}
-          />
-        </label>
+        <StrategyLanguageSelect
+          id={`strategy-language-${country}`}
+          label="Language"
+          value={language}
+          onChange={onLanguageChange}
+        />
         {book === "africa_europe" ? (
-          <label className="flex min-w-0 items-center gap-2 text-[12px] font-medium text-[var(--color-muted)]">
-            Language 2
-            <input
-              value={language2}
-              aria-label={`${country} second language`}
-              onChange={(event) => onLanguage2Change(event.target.value)}
-              className={`${fieldClass} w-[132px]`}
-            />
-          </label>
+          <StrategyLanguageSelect
+            id={`strategy-language-2-${country}`}
+            label="Language 2"
+            value={language2}
+            allowEmpty
+            emptyLabel="None"
+            onChange={onLanguage2Change}
+          />
         ) : null}
         <label className="flex items-center gap-2 text-[12px] font-medium text-[var(--color-muted)]">
           Resources
