@@ -9,6 +9,7 @@ import type { AdminHeaderNavLink, AdminHeaderNavProps } from "@/types/layout";
 const LINKS: AdminHeaderNavLink[] = [
   { href: "/admin", label: "Overview", match: "exact" },
   { href: "/admin/employees", label: "Employees", match: "prefix" },
+  { href: "/admin/extract", label: "Extract", match: "prefix" },
   { href: "/admin/strategy", label: "Strategy", match: "prefix" },
   { href: "/admin/logs", label: "Activity", match: "prefix" },
 ];
@@ -31,7 +32,7 @@ export function AdminHeaderNav({
         className="flex h-full min-w-0 items-center overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         aria-label="Admin sections"
       >
-        {LINKS.slice(0, 2).map((link) => (
+        {LINKS.slice(0, 3).map((link) => (
           <AdminHeaderNavItem
             key={link.href}
             link={link}
@@ -43,7 +44,7 @@ export function AdminHeaderNav({
           accounts={spareAccounts}
           holders={spareHolders}
         />
-        {LINKS.slice(2).map((link) => (
+        {LINKS.slice(3).map((link) => (
           <AdminHeaderNavItem
             key={link.href}
             link={link}
