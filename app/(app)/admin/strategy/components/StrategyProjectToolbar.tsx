@@ -14,6 +14,7 @@ export function StrategyProjectToolbar({
   region,
   regionOptions,
   resources,
+  resourcesLocked = false,
   editing,
   saving,
   onEdit,
@@ -35,24 +36,34 @@ export function StrategyProjectToolbar({
               id={`${name}-project-region`}
               value={region}
               options={regionOptions}
+              emptyLabel="None — multiple regions"
               layout="inline"
               onChange={onRegionChange}
             />
-            <label className="flex items-center gap-2 text-[12px] font-medium text-[var(--color-muted)]">
-              Resources
-              <input
-                type="number"
-                min={0}
-                step={1}
-                inputMode="numeric"
-                value={resources}
-                aria-label={`${name} resources`}
-                onChange={(event) =>
-                  onResourcesChange(Number(event.target.value) || 0)
-                }
-                className={`${fieldClass} w-[64px] text-center tabular-nums`}
-              />
-            </label>
+            {resourcesLocked ? (
+              <p className="text-[12px] font-medium text-[var(--color-muted)]">
+                Resources{" "}
+                <span className="font-semibold tabular-nums text-[var(--color-ink)]">
+                  {resources}
+                </span>
+              </p>
+            ) : (
+              <label className="flex items-center gap-2 text-[12px] font-medium text-[var(--color-muted)]">
+                Resources
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  inputMode="numeric"
+                  value={resources}
+                  aria-label={`${name} resources`}
+                  onChange={(event) =>
+                    onResourcesChange(Number(event.target.value) || 0)
+                  }
+                  className={`${fieldClass} w-[64px] text-center tabular-nums`}
+                />
+              </label>
+            )}
             <motion.button
               type="button"
               layout

@@ -7,7 +7,10 @@ import { auth } from "@/auth";
 import { publicAdminMutationError } from "@/lib/admin-action-error";
 import { logOrbitAction } from "@/lib/orbit-log";
 import { isStrategyPlatformKey } from "@/lib/strategy-platforms";
-import { isStrategyProjectRegion } from "@/lib/strategy-regions";
+import {
+  isStrategyProjectRegion,
+  normalizeStrategyProjectRegion,
+} from "@/lib/strategy-regions";
 import {
   applyStrategyProjectRegionToAccounts,
   createStrategyProject,
@@ -16,7 +19,7 @@ import type { StrategyCreateProjectResult } from "@/types/strategy";
 
 const createSchema = z.object({
   name: z.string().trim().min(1).max(60),
-  region: z.string().trim().min(1).max(60),
+  region: z.string().trim().max(60).optional(),
   platforms: z.array(z.string()).min(1),
 });
 
@@ -37,17 +40,18 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           ok: false,
-          error: "Give the project a name, region, and at least one platform.",
+          error: "Give the project a name and at least one platform.",
         } satisfies StrategyCreateProjectResult,
         { status: 400 }
       );
     }
 
-    if (!isStrategyProjectRegion(parsed.data.region)) {
+    const region = normalizeStrategyProjectRegion(parsed.data.region ?? "");
+    if ((parsed.data.region ?? "").trim() && !isStrategyProjectRegion(region)) {
       return NextResponse.json(
         {
           ok: false,
-          error: "Choose a geographic region such as Gulf, Asia, or Levant.",
+          error: "Choose a geographic region such as Gulf, Asia, or Levant, or leave it empty.",
         } satisfies StrategyCreateProjectResult,
         { status: 400 }
       );
@@ -66,7 +70,7 @@ export async function POST(request: Request) {
 
     const project = await createStrategyProject({
       name: parsed.data.name,
-      region: parsed.data.region,
+      region,
       platforms,
     });
     await applyStrategyProjectRegionToAccounts(project.name, project.region);

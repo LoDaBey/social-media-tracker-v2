@@ -292,7 +292,7 @@ export async function saveStrategyCountry(input: StrategySaveCountryInput) {
      ON CONFLICT (country) DO UPDATE SET
        region = EXCLUDED.region,
        language = EXCLUDED.language,
-       language2 = EXCLUDED.language2,
+       language2 = COALESCE(EXCLUDED.language2, africa_europe_country_plans.language2),
        resources = EXCLUDED.resources,
        total_accounts = EXCLUDED.total_accounts,
        project_targets = EXCLUDED.project_targets,

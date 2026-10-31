@@ -62,7 +62,7 @@ export function StrategyCountryPanel({
         onSave={handleSave}
       />
 
-      <div className="grid items-start gap-4 lg:grid-cols-[200px_minmax(0,1fr)]">
+      <div className="grid items-start gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
         <aside className="flex flex-col gap-3">
           <StrategyCountryTotals
             allAccounts={computedTotal}

@@ -6,6 +6,7 @@ import {
   getTodayCairoDate,
   normalizePgDateColumn,
 } from "@/lib/cairo-date";
+import { commandPalettePeopleFromRows } from "@/lib/admin-command-palette";
 import type {
   AdminEmployeeCycleStatus,
   AdminEmployeeEditorBundle,
@@ -15,6 +16,7 @@ import type {
   EmployeeActivityItem,
   EmployeeFormInitial,
 } from "@/types/admin";
+import type { CommandPalettePerson } from "@/types/layout";
 import {
   fetchAlphaaEmployeeEditorBundle,
   fetchAlphaaEmployeesList,
@@ -466,5 +468,12 @@ export async function fetchAdminEmployeeEditorBundle(
     },
     activeCounts,
   };
+}
+
+export async function fetchAdminCommandPalettePeople(): Promise<
+  CommandPalettePerson[]
+> {
+  const rows = await fetchAdminEmployeesList({});
+  return commandPalettePeopleFromRows(rows);
 }
 

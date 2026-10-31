@@ -3,13 +3,22 @@ import type { Platform, Role, EmploymentStatus, AccountScope } from "@/types/db"
 import type { ReactNode } from "react";
 export type AdminEmployeeCycleStatus = "pending" | "mid-cycle" | "payable";
 
+export type EmployeeListStatusFilter = "all" | "active" | "on_hold" | "inactive";
+
 export type AdminEmployeeListFilters = {
   q?: string;
-  status?: "all" | "active" | "inactive";
+  status?: EmployeeListStatusFilter;
   role?: "all" | "employee" | "manager" | "team_lead" | "op";
   region?: "Africa" | "Europe" | "Alphaa";
   country?: string;
   teamLeadId?: number | null;
+};
+
+export type EmployeeListStatusCounts = {
+  all: number;
+  active: number;
+  onHold: number;
+  inactive: number;
 };
 
 export type AdminEmployeeSource = "temp" | "alphaa";
@@ -211,7 +220,22 @@ export type AlphaaEmployeeFormProps = {
 
 export type AdminWorkspaceProps = {
   view: AdminView;
+  subtitle?: ReactNode;
+  actions?: ReactNode;
   children: ReactNode;
+};
+
+export type AdminOverviewSubtitleProps = {
+  countryCount: number;
+  generatedAt: string;
+};
+
+export type AdminOverviewUpdatedAtProps = {
+  generatedAt: string;
+};
+
+export type AdminOverviewHeadingActionsProps = {
+  region: AdminRegion;
 };
 
 export type AdminPageLoaderProps = {
@@ -499,14 +523,6 @@ export type AdminCoverageCountCellProps = {
   label: string;
 };
 
-export type AdminOverviewAction = {
-  href: string;
-  label: string;
-  ariaLabel: string;
-  icon: "userPlus" | "users" | "extract" | "strategy" | "logs";
-  variant: "primary" | "secondary";
-};
-
 export type EmployeeActivityItem = {
   kind: string;
   created_at: string;
@@ -580,6 +596,39 @@ export type EmployeeTableRowProps = {
 export type EmployeesTableProps = {
   rows: AdminEmployeeListRow[];
   holders: BulkImportHolderOption[];
+  toolbar?: ReactNode;
+};
+
+export type EmployeesTableToolbarProps = {
+  initialQ: string;
+  counts: EmployeeListStatusCounts;
+};
+
+export type EmployeesHeadingActionsProps = {
+  holders: BulkImportHolderOption[];
+};
+
+export type EmployeesToolbarSearchProps = {
+  initialQ: string;
+};
+
+export type EmployeesStatusChipsProps = {
+  counts: EmployeeListStatusCounts;
+};
+
+export type EmployeesToolbarSelectOption = {
+  value: string;
+  label: string;
+  country?: string;
+};
+
+export type EmployeesToolbarSelectProps = {
+  label: string;
+  value: string;
+  ariaLabel: string;
+  allLabel: string;
+  options: EmployeesToolbarSelectOption[];
+  onChange: (value: string) => void;
 };
 
 export type EmployeeCountryCellProps = {
@@ -606,14 +655,6 @@ export type AdminCountrySelectProps = {
   ariaInvalid?: boolean;
   ariaDescribedBy?: string;
   invalid?: boolean;
-};
-
-export type EmployeesSearchFormProps = {
-  initialQ: string;
-  hiddenStatus?: string;
-  hiddenRole?: string;
-  hiddenRegion?: string;
-  hiddenCountry?: string;
 };
 
 export type EmployeeStatusSelectProps = {

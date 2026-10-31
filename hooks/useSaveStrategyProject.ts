@@ -28,6 +28,7 @@ export function useSaveStrategyProject() {
               totalAccounts: input.totalAccounts,
               projectTargets: input.projectTargets,
               handlerTargets: input.handlerTargets,
+              subProjects: input.subProjects,
             }),
           }
         );

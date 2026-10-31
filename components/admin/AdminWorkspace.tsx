@@ -8,14 +8,19 @@ import {
 } from "@/lib/admin-view";
 import type { AdminWorkspaceProps } from "@/types/admin";
 
-export function AdminWorkspace({ view, children }: AdminWorkspaceProps) {
+export function AdminWorkspace({
+  view,
+  subtitle,
+  actions,
+  children,
+}: AdminWorkspaceProps) {
   const router = useRouter();
   const backHref = adminWorkspaceBackHref(view);
 
   return (
     <div className="flex flex-col gap-4 sm:gap-5">
       {view.kind === "strategy" ? null : (
-        <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 flex-col gap-2">
             {backHref ? (
               <Link
@@ -36,28 +41,38 @@ export function AdminWorkspace({ view, children }: AdminWorkspaceProps) {
                 </span>
               ) : null}
             </div>
+            {subtitle ? (
+              <div className="text-[14px] text-[var(--color-muted)]">
+                {subtitle}
+              </div>
+            ) : null}
           </div>
 
-          {view.kind === "employee" ? (
-            <label className="flex min-w-[180px] flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
-              Section
-              <select
-                value={view.panel}
-                aria-label="Choose employee section"
-                onChange={(event) => {
-                  const panel = event.target.value;
-                  router.push(`/admin/employees/${view.employeeId}?panel=${panel}`);
-                }}
-                className="cursor-pointer rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 py-2 text-[14px] font-medium text-[var(--color-ink)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
-              >
-                {ADMIN_EMPLOYEE_PANELS.map((panel) => (
-                  <option key={panel.id} value={panel.id}>
-                    {panel.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : null}
+          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+            {actions}
+            {view.kind === "employee" ? (
+              <label className="flex min-w-[180px] flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
+                Section
+                <select
+                  value={view.panel}
+                  aria-label="Choose employee section"
+                  onChange={(event) => {
+                    const panel = event.target.value;
+                    router.push(
+                      `/admin/employees/${view.employeeId}?panel=${panel}`
+                    );
+                  }}
+                  className="cursor-pointer rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 py-2 text-[14px] font-medium text-[var(--color-ink)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+                >
+                  {ADMIN_EMPLOYEE_PANELS.map((panel) => (
+                    <option key={panel.id} value={panel.id}>
+                      {panel.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+          </div>
         </header>
       )}
 

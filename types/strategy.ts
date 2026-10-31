@@ -9,6 +9,7 @@ export type StrategyProject = {
   id: number;
   name: string;
   slug: string;
+  parentId: number | null;
   region: StrategyProjectRegion | "";
   platforms: StrategyPlatformKey[];
   language: string;
@@ -16,6 +17,7 @@ export type StrategyProject = {
   totalAccounts: number;
   projectTargets: StrategyScopeCounts;
   handlerTargets: StrategyScopeCounts;
+  subProjects: StrategyProject[];
   updatedAt: string;
 };
 
@@ -26,8 +28,16 @@ export type StrategyProjectSummary = {
 
 export type StrategyCreateProjectInput = {
   name: string;
-  region: StrategyProjectRegion;
+  region: StrategyProjectRegion | "";
   platforms: StrategyPlatformKey[];
+};
+
+export type StrategySaveSubProjectInput = {
+  slug?: string;
+  name: string;
+  language: string;
+  resources: number;
+  projectTargets: StrategyScopeCounts;
 };
 
 export type StrategySaveProjectInput = {
@@ -37,6 +47,17 @@ export type StrategySaveProjectInput = {
   language: string;
   resources: number;
   totalAccounts: number;
+  projectTargets: StrategyScopeCounts;
+  handlerTargets: StrategyScopeCounts;
+  subProjects: StrategySaveSubProjectInput[];
+};
+
+export type StrategySubProjectDraft = {
+  key: string;
+  slug: string | null;
+  name: string;
+  language: string;
+  resources: number;
   projectTargets: StrategyScopeCounts;
   handlerTargets: StrategyScopeCounts;
 };
@@ -194,6 +215,7 @@ export type StrategyProjectRegionSelectProps = {
   value: StrategyProjectRegion | "";
   options: string[];
   required?: boolean;
+  emptyLabel?: string;
   layout?: "stack" | "inline";
   onChange: (value: StrategyProjectRegion | "") => void;
 };
@@ -203,6 +225,7 @@ export type StrategyProjectToolbarProps = {
   region: StrategyProjectRegion | "";
   regionOptions: string[];
   resources: number;
+  resourcesLocked?: boolean;
   editing: boolean;
   saving: boolean;
   onEdit: () => void;
@@ -267,6 +290,17 @@ export type StrategyLanguageSelectProps = {
   allowEmpty?: boolean;
   emptyLabel?: string;
   onChange: (value: string) => void;
+};
+
+export type StrategyTotalsKind = "personal" | "umbrella" | "native";
+
+export type StrategyTotalsHeroProps = {
+  value: number;
+};
+
+export type StrategyTotalsRowProps = {
+  kind: StrategyTotalsKind;
+  value: number;
 };
 
 export type StrategyCountryTotalsProps = {
@@ -336,6 +370,52 @@ export type StrategyHandlerSeatCardProps = {
   value: StrategyScopeCounts;
   onChange: (next: StrategyScopeCounts) => void;
   readOnly?: boolean;
+};
+
+export type StrategySubProjectOption = {
+  key: string;
+  name: string;
+  totalAccounts: number;
+};
+
+export type StrategySubProjectNavProps = {
+  projects: StrategySubProjectOption[];
+  selectedKey: string | null;
+  onSelect: (key: string) => void;
+};
+
+export type StrategyAddSubProjectButtonProps = {
+  onClick: () => void;
+};
+
+export type StrategyAddSubProjectModalProps = {
+  open: boolean;
+  error: string | null;
+  onClose: () => void;
+  onCreate: (input: { name: string; language: string }) => void;
+};
+
+export type StrategyDeleteSubProjectButtonProps = {
+  name: string;
+  onClick: () => void;
+};
+
+export type StrategyDeleteSubProjectModalProps = {
+  open: boolean;
+  name: string;
+  onClose: () => void;
+  onConfirm: () => void;
+};
+
+export type StrategySubProjectSectionProps = {
+  drafts: StrategySubProjectDraft[];
+  selectedKey: string | null;
+  platforms: StrategyPlatformKey[];
+  editing: boolean;
+  onSelect: (key: string) => void;
+  onChange: (key: string, next: StrategySubProjectDraft) => void;
+  onAdd: (input: { name: string; language: string }) => boolean;
+  onDelete: (key: string) => void;
 };
 
 export type StrategyPageSearchParams = {
