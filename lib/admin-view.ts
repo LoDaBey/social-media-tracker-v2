@@ -32,7 +32,7 @@ export function adminRoleBadge(role: string) {
 }
 
 export function adminViewOverview(): AdminView {
-  return { kind: "overview", title: "Admin overview" };
+  return { kind: "overview", title: "Overview" };
 }
 
 export function adminViewEmployees(): AdminView {

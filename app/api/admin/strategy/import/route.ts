@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { parseStrategyWorkbook } from "@/lib/strategy-excel-import";
 import { importProjectRows } from "@/lib/strategy-plans-data";
+import { syncLegacyBookSubProjectsFromCountryPlans } from "@/lib/strategy-projects-data";
 import type { StrategyImportResult } from "@/types/strategy";
 
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
@@ -83,6 +84,8 @@ export async function POST(request: Request) {
         projectTargets: row.projectTargets,
       }))
     );
+
+    await syncLegacyBookSubProjectsFromCountryPlans();
 
     revalidatePath("/admin");
     revalidatePath("/admin/strategy");

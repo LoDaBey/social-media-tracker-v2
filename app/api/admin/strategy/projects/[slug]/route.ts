@@ -24,6 +24,14 @@ import type {
   StrategySaveProjectResult,
 } from "@/types/strategy";
 
+const saveSubProjectSchema = z.object({
+  slug: z.string().trim().min(1).optional(),
+  name: z.string().trim().min(1).max(60),
+  language: z.string().trim(),
+  resources: z.number().int().nonnegative(),
+  projectTargets: z.unknown(),
+});
+
 const saveSchema = z.object({
   region: z.string().trim().max(60),
   platforms: z.array(z.string()).min(1),
@@ -32,6 +40,7 @@ const saveSchema = z.object({
   totalAccounts: z.number().int().nonnegative(),
   projectTargets: z.unknown(),
   handlerTargets: z.unknown(),
+  subProjects: z.array(saveSubProjectSchema).optional(),
 });
 
 type RouteContext = {
@@ -101,6 +110,19 @@ export async function PATCH(request: Request, context: RouteContext) {
       parsed.data.totalAccounts > 0
         ? parsed.data.totalAccounts
         : targetsGrandTotal(projectTargets);
+    const subProjects = (parsed.data.subProjects ?? existing.subProjects.map((child) => ({
+      slug: child.slug,
+      name: child.name,
+      language: child.language,
+      resources: child.resources,
+      projectTargets: child.projectTargets,
+    }))).map((item) => ({
+      ...item,
+      projectTargets: filterStrategyTargets(
+        normalizeStrategyTargets(item.projectTargets),
+        platforms
+      ),
+    }));
 
     await saveStrategyProject({
       slug,
@@ -111,6 +133,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       totalAccounts,
       projectTargets,
       handlerTargets,
+      subProjects,
     });
     await applyStrategyProjectRegionToAccounts(existing.name, region);
     revalidatePath("/admin/strategy");

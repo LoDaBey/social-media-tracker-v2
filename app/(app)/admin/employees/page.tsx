@@ -1,29 +1,17 @@
 import type { Metadata } from "next";
-import {
-  fetchAdminSpareAccounts,
-  fetchAdminSpareMarkHolders,
-} from "@/lib/admin-accounts-data";
-import {
-  spareAccountsForRegion,
-  spareMarkHoldersForRegion,
-} from "@/lib/admin-spare";
 import { fetchAdminEmployeesList } from "@/lib/admin-data";
+import {
+  employeeListStatusCounts,
+  filterEmployeesByListStatus,
+  parseEmployeeListStatus,
+} from "@/lib/admin-employee-list";
 import { EmployeesTable } from "@/components/admin/EmployeesTable";
-import {
-  EmployeesBulkImportButton,
-} from "@/components/admin/EmployeesBulkImportButton";
-import { SpareAccountsButton } from "@/components/admin/SpareAccountsButton";
-import { SyncSheetsButton } from "@/components/admin/SyncSheetsButton";
-import {
-  EmployeesCreateButton,
-  EmployeesFilters,
-  EmployeesSearchForm,
-} from "@/components/admin/EmployeesFilters";
+import { EmployeesHeadingActions } from "@/app/(app)/admin/employees/components/EmployeesHeadingActions";
+import { EmployeesTableToolbar } from "@/app/(app)/admin/employees/components/EmployeesTableToolbar";
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import { adminViewEmployees } from "@/lib/admin-view";
 import {
   employeeListRegionFromSlug,
-  employeeListRegionSlug,
   isCountryInEmployeeListRegion,
 } from "@/lib/setup-options";
 
@@ -40,9 +28,9 @@ export default async function AdminEmployeesPage({
 }) {
   const sp = (await searchParams) ?? {};
   const q = typeof sp.q === "string" ? sp.q : "";
-  const statusRaw = typeof sp.status === "string" ? sp.status : "all";
-  const status =
-    statusRaw === "active" || statusRaw === "inactive" ? statusRaw : "all";
+  const status = parseEmployeeListStatus(
+    typeof sp.status === "string" ? sp.status : undefined
+  );
   const roleRaw = typeof sp.role === "string" ? sp.role : "all";
   const role =
     roleRaw === "employee" ||
@@ -61,18 +49,15 @@ export default async function AdminEmployeesPage({
     ? countryRaw
     : "";
 
-  const [rows, spareAccounts, spareHolders] = await Promise.all([
-    fetchAdminEmployeesList({
-      q,
-      status: status === "all" ? undefined : status,
-      role: role === "all" ? undefined : role,
-      region,
-      country: country || undefined,
-    }),
-    fetchAdminSpareAccounts(),
-    fetchAdminSpareMarkHolders(),
-  ]);
-  const holders = rows
+  const listed = await fetchAdminEmployeesList({
+    q,
+    role: role === "all" ? undefined : role,
+    region,
+    country: country || undefined,
+  });
+  const counts = employeeListStatusCounts(listed);
+  const rows = filterEmployeesByListStatus(listed, status);
+  const holders = listed
     .filter(
       (row) =>
         row.role === "employee" && (row.is_active || row.source === "alphaa")
@@ -88,29 +73,17 @@ export default async function AdminEmployeesPage({
     }));
 
   return (
-    <AdminWorkspace view={adminViewEmployees()}>
-      <div className="flex flex-col gap-4 sm:gap-5">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <EmployeesSearchForm
-            initialQ={q}
-            hiddenStatus={status === "all" ? undefined : status}
-            hiddenRole={role === "all" ? undefined : role}
-            hiddenRegion={region ? employeeListRegionSlug(region) : undefined}
-            hiddenCountry={country || undefined}
-          />
-          <EmployeesBulkImportButton holders={holders} />
-          <SpareAccountsButton
-            accounts={spareAccountsForRegion(spareAccounts, region)}
-            holders={spareMarkHoldersForRegion(spareHolders, region)}
-          />
-          <SyncSheetsButton />
-          <EmployeesCreateButton />
-        </div>
-
-        <EmployeesFilters />
-
-        <EmployeesTable rows={rows} holders={holders} />
-      </div>
+    <AdminWorkspace
+      view={adminViewEmployees()}
+      actions={<EmployeesHeadingActions holders={holders} />}
+    >
+      <EmployeesTable
+        rows={rows}
+        holders={holders}
+        toolbar={
+          <EmployeesTableToolbar initialQ={q} counts={counts} />
+        }
+      />
     </AdminWorkspace>
   );
 }

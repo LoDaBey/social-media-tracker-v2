@@ -11,6 +11,7 @@ export function StrategyProjectRegionSelect({
   value,
   options,
   required = false,
+  emptyLabel = "Select a region",
   layout = "stack",
   onChange,
 }: StrategyProjectRegionSelectProps) {
@@ -43,7 +44,7 @@ export function StrategyProjectRegionSelect({
             : "h-9 min-w-[168px] cursor-pointer rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 text-[13px] text-[var(--color-ink)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
         }
       >
-        <option value="">Select a region</option>
+        <option value="">{emptyLabel}</option>
         {suggestions.map((region) => (
           <option key={region} value={region}>
             {region}

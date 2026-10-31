@@ -47,12 +47,10 @@ function StrategyNewProjectModalFrame({
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
     const trimmed = name.trim();
-    if (
-      !trimmed ||
-      !isStrategyProjectRegion(region) ||
-      platforms.length === 0 ||
-      pending
-    ) {
+    if (!trimmed || platforms.length === 0 || pending) {
+      return;
+    }
+    if (region.trim() && !isStrategyProjectRegion(region)) {
       return;
     }
     onCreate({ name: trimmed, region, platforms });
@@ -91,9 +89,9 @@ function StrategyNewProjectModalFrame({
               New project
             </h2>
             <p className="mt-1 text-[13px] text-[var(--color-muted)]">
-              Name the book, set a geography such as Gulf or Asia, then pick
-              platforms. The region is applied to every platform and account on
-              this project.
+              Name the book and pick platforms. Region is optional — leave it
+              empty if this project spans more than one geography. If you set
+              one, it is applied to every account on this project.
             </p>
           </div>
           <motion.button
@@ -129,7 +127,7 @@ function StrategyNewProjectModalFrame({
             id="new-strategy-project-region"
             value={region}
             options={regionOptions}
-            required
+            emptyLabel="None — multiple regions"
             onChange={setRegion}
           />
         </div>
@@ -164,7 +162,6 @@ function StrategyNewProjectModalFrame({
             disabled={
               pending ||
               name.trim().length === 0 ||
-              !isStrategyProjectRegion(region) ||
               platforms.length === 0
             }
             aria-label="Create strategy project"

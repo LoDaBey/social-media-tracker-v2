@@ -7,7 +7,7 @@ export function StrategyEmptyState({ onCreate }: StrategyEmptyStateProps) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-[20px] border border-[var(--color-hairline)] bg-[var(--color-surface)] px-5 py-12 text-center">
       <p className="text-[14px] text-[var(--color-muted)]">
-        No strategy projects yet. Create one to plan holdings and the handler template.
+        No strategy projects yet. Create one to plan holdings and nested sub-projects.
       </p>
       <motion.button
         type="button"
