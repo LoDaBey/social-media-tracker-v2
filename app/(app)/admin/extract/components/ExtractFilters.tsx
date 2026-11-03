@@ -7,6 +7,7 @@ import {
 } from "@/lib/admin-extract-filters";
 import { CountryFlag } from "@/lib/country-icons";
 import { baseCountryFromDisplay } from "@/lib/overview-country-display";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import {
   EXTRACT_ALPHAA_EXTRA_PLATFORMS,
   EXTRACT_CORE_PLATFORMS,
@@ -95,7 +96,7 @@ export function ExtractFilters({
             <option value="all">All regions</option>
             <option value="Africa">Africa</option>
             <option value="Europe">Europe</option>
-            <option value="Alphaa">Alphaa</option>
+            <option value="Alphaa">{MAIN_PROJECT_LABEL}</option>
           </select>
         </label>
 
@@ -208,7 +209,7 @@ export function ExtractFilters({
         </legend>
         {value.region === "all" ? (
           <p className="text-[12px] text-[var(--color-muted)]">
-            Sudan is listed twice: Africa (temp) and ALPHAA (legacy).
+            Sudan is listed twice: Africa (temp) and {MAIN_PROJECT_LABEL} (legacy).
           </p>
         ) : null}
         <div className="max-h-40 overflow-y-auto rounded-lg border border-[var(--color-hairline)] p-2">

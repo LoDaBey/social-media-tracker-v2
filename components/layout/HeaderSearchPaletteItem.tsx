@@ -24,11 +24,7 @@ export function HeaderSearchPaletteItem({
           : "hover:bg-[var(--color-cream-tint)]"
       }`}
     >
-      <HeaderSearchPaletteItemIcon
-        id={item.id}
-        kind={item.kind}
-        title={item.title}
-      />
+      <HeaderSearchPaletteItemIcon kind={item.kind} title={item.title} />
       <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-[var(--color-ink)]">
         {item.title}
       </span>

@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { AdminCountrySelect } from "@/components/admin/AdminCountrySelect";
 import { CountryFlag } from "@/lib/country-icons";
 import { bulkImportHolderKey } from "@/lib/bulk-import-parse";
+import { MAIN_PROJECT_LABEL, regionDisplayLabel } from "@/lib/project-labels";
 import {
   ALPHAA_EXCLUSIVE_SETUP_COUNTRIES,
   EUROPE_SETUP_COUNTRIES,
@@ -86,7 +87,7 @@ export function BulkImportHolderStep({
             >
               {holder.full_name}
               {holder.country ? ` — ${holder.country}` : ""}
-              {holder.source === "alphaa" ? " · ALPHAA" : ""}
+              {holder.source === "alphaa" ? ` · ${MAIN_PROJECT_LABEL}` : ""}
             </option>
           ))}
         </select>
@@ -112,7 +113,7 @@ export function BulkImportHolderStep({
           <option value="">Select a region</option>
           {regionOptions.map((option) => (
             <option key={option} value={option}>
-              {option === "Alphaa" ? "ALPHAA" : option}
+              {regionDisplayLabel(option)}
             </option>
           ))}
         </select>
@@ -131,7 +132,7 @@ export function BulkImportHolderStep({
         <p className="sm:col-span-2 inline-flex items-center gap-2 text-[13px] text-[var(--color-muted)]">
           <CountryFlag country={country} title={country} className="h-4 w-6" />
           Accounts in this file will be assigned to this holder in {country}
-          {assignedRegion ? ` (${assignedRegion})` : ""}.
+          {assignedRegion ? ` (${regionDisplayLabel(assignedRegion)})` : ""}.
         </p>
       ) : null}
     </div>

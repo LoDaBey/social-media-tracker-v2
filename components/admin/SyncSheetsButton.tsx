@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Sheet } from "lucide-react";
 import toast from "react-hot-toast";
 import { useSyncSheets } from "@/hooks/useSyncSheets";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import type { SyncSheetsButtonProps } from "@/types/admin";
 
 export function SyncSheetsButton({
@@ -33,7 +34,7 @@ export function SyncSheetsButton({
         parts.push(`${result.europeCount ?? result.balkanCount} Europe`);
       }
       if (result.alphaaCount != null) {
-        parts.push(`${result.alphaaCount} ALPHAA`);
+        parts.push(`${result.alphaaCount} ${MAIN_PROJECT_LABEL}`);
       }
       toast.success(
         parts.length > 0

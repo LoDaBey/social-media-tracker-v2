@@ -73,9 +73,7 @@ async function main() {
        country,
        region,
        language,
-       base_salary,
        current_level,
-       pay_cycle_start_date,
        target_x_count,
        target_facebook_personal_count,
        target_facebook_umbrella_count,
@@ -93,12 +91,10 @@ async function main() {
        'English',
        $6,
        $7,
-       CURRENT_DATE,
        $8,
        $9,
        $10,
-       $11,
-       $12
+       $11
      )
      ON CONFLICT (email) DO UPDATE SET
        team_lead_id = EXCLUDED.team_lead_id,
@@ -106,9 +102,7 @@ async function main() {
        country = EXCLUDED.country,
        region = EXCLUDED.region,
        language = EXCLUDED.language,
-       base_salary = EXCLUDED.base_salary,
        current_level = EXCLUDED.current_level,
-       pay_cycle_start_date = EXCLUDED.pay_cycle_start_date,
        target_x_count = EXCLUDED.target_x_count,
        target_facebook_personal_count = EXCLUDED.target_facebook_personal_count,
        target_facebook_umbrella_count = EXCLUDED.target_facebook_umbrella_count,
@@ -120,7 +114,6 @@ async function main() {
       password_hash,
       lead.id,
       manager.id,
-      4500,
       3,
       5,
       1,

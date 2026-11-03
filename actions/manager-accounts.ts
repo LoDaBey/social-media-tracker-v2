@@ -15,6 +15,7 @@ import {
   validateSocialAccountInput,
 } from "@/lib/social-account-validation";
 import { logOrbitAction } from "@/lib/orbit-log";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import type {
   AdminAccountMutationResult,
   AdminEmployeeSource,
@@ -195,8 +196,8 @@ export async function setManagerSocialAccountSpare(
           action: "spare",
           resource: "account",
           summary: isSpare
-            ? `Manager marked ALPHAA account #${accountId} as spare`
-            : `Manager unmarked ALPHAA account #${accountId} as spare`,
+            ? `Manager marked ${MAIN_PROJECT_LABEL} account #${accountId} as spare`
+            : `Manager unmarked ${MAIN_PROJECT_LABEL} account #${accountId} as spare`,
           details: { accountId, userId: existing?.user_id, isSpare, source },
         });
       }

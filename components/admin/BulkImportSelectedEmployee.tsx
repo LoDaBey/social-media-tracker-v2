@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { CountryFlag } from "@/lib/country-icons";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import { useEmployeeReporting } from "@/hooks/useEmployeeReporting";
 import type { BulkImportSelectedEmployeeProps } from "@/types/admin";
 
@@ -29,7 +30,7 @@ export function BulkImportSelectedEmployee({
     <div className="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-cream-tint)] px-3 py-3">
       <p className="text-[12px] font-semibold text-[var(--color-ink)]">
         {holder.full_name}
-        {holder.source === "alphaa" ? " · ALPHAA" : ""}
+        {holder.source === "alphaa" ? ` · ${MAIN_PROJECT_LABEL}` : ""}
       </p>
       <p className="mt-1 text-[12px] text-[var(--color-muted)]">
         New accounts replace this person&apos;s current social accounts. Role,

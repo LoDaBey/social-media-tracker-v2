@@ -1,4 +1,5 @@
 import { CountryFlag } from "@/lib/country-icons";
+import { regionDisplayLabel } from "@/lib/project-labels";
 import {
   ALPHAA_SETUP_COUNTRIES,
   EUROPE_SETUP_COUNTRIES,
@@ -59,9 +60,9 @@ export function ManagerCountriesField({
         }`}
       >
         {REGION_GROUPS.map(({ region, countries }) => (
-          <section key={region} aria-label={`${region} countries`}>
+          <section key={region} aria-label={`${regionDisplayLabel(region)} countries`}>
             <h3 className="text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--color-muted)]">
-              {region === "Alphaa" ? "ALPHAA" : region}
+              {regionDisplayLabel(region)}
             </h3>
             <div className="mt-2.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
               {[...countries]

@@ -9,7 +9,6 @@
     "lint": "eslint",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
-    "db:backfill-wallet": "tsx scripts/backfill-wallet.ts",
     "db:seed-notifications": "tsx scripts/seed-notifications.ts",
     "db:reset": "tsx scripts/migrate.ts && tsx scripts/seed.ts"
   },

@@ -1,4 +1,5 @@
 import { query, queryOne } from "@/lib/db";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import {
   fetchAfricaEuropeStrategyRows,
   fetchAlphaaStrategyRows,
@@ -688,7 +689,7 @@ export async function seedStrategyProjectsFromCountryPlans() {
 
     const books: SeedBook[] = [
       {
-        name: "ALPHAA",
+        name: MAIN_PROJECT_LABEL,
         slug: "alphaa",
         createdAt: "2020-01-01T00:00:00.000Z",
         defaultPlatforms: ALPHAA_SUMMARY_PLATFORMS,

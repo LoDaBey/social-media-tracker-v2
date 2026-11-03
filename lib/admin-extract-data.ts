@@ -2,6 +2,7 @@ import { fetchAlphaaAdminExtract } from "@/lib/admin-extract-alphaa-data";
 import { countriesForExtractSource } from "@/lib/admin-extract-filters";
 import { extractFilterPlatformLabel } from "@/lib/admin-extract-platform";
 import { overviewDisplayCountry } from "@/lib/overview-country-display";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import { query } from "@/lib/db";
 import type { AccountScope } from "@/types/db";
 import type {
@@ -29,6 +30,7 @@ function scopeLabel(scope: AccountScope) {
 function regionLabel(region: string | null | undefined) {
   const trimmed = region?.trim() || "Unassigned";
   if (trimmed.toLowerCase() === "balkan") return "Europe";
+  if (trimmed.toLowerCase() === "alphaa") return MAIN_PROJECT_LABEL;
   return trimmed;
 }
 

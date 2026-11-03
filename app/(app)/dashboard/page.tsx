@@ -45,30 +45,6 @@ function formatLongCairoDate() {
   }).format(new Date());
 }
 
-function dateString(value: string | Date | null) {
-  if (!value) return null;
-  if (value instanceof Date) return value.toISOString().slice(0, 10);
-  return value.slice(0, 10);
-}
-
-function getCycleDay(todayCairoDate: string, cycleStart: string | Date | null) {
-  const start = dateString(cycleStart);
-  if (!start) return 1;
-
-  const startMs = Date.UTC(
-    Number(start.slice(0, 4)),
-    Number(start.slice(5, 7)) - 1,
-    Number(start.slice(8, 10))
-  );
-  const todayMs = Date.UTC(
-    Number(todayCairoDate.slice(0, 4)),
-    Number(todayCairoDate.slice(5, 7)) - 1,
-    Number(todayCairoDate.slice(8, 10))
-  );
-  const diffDays = Math.floor((todayMs - startMs) / (1000 * 60 * 60 * 24)) + 1;
-  return Math.max(1, Math.min(30, diffDays));
-}
-
 function firstName(fullName: string) {
   return fullName.trim().split(/\s+/)[0] || "there";
 }
@@ -102,7 +78,6 @@ export default async function DashboardPage() {
   );
 
   const timeOfDay = getTimeOfDayWord(getCairoHour());
-  const cycleDay = getCycleDay(data.todayCairoDate, data.user.pay_cycle_start_date);
 
   return (
     <main className="w-full">
@@ -112,7 +87,7 @@ export default async function DashboardPage() {
             Good {timeOfDay}, {firstName(data.user.full_name)}
           </h1>
           <p className="mt-2 text-[13px] font-medium tracking-[0.04em] text-[var(--color-muted)]">
-            {formatLongCairoDate()} · Day {cycleDay} of this pay cycle
+            {formatLongCairoDate()}
           </p>
         </div>
 

@@ -7,7 +7,6 @@ import { AdminHeaderNav } from "@/components/layout/AdminHeaderNav";
 import { BrandLogo } from "@/components/layout/BrandLogo";
 import { HeaderSearch } from "@/components/layout/HeaderSearch";
 import { HeaderUserMenu } from "@/components/layout/HeaderUserMenu";
-import { DateBadge } from "@/components/dashboard/DateBadge";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import type { AppHeaderProps } from "@/types/layout";
@@ -61,17 +60,12 @@ export async function AppHeader({
               spareAccounts={spareAccounts}
               spareHolders={spareHolders}
             />
-          ) : (
-            <DateBadge />
-          )}
+          ) : null}
         </div>
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           {isAdmin ? (
-            <>
-              <DateBadge variant="plain" />
-              <HeaderSearch people={people} />
-            </>
+            <HeaderSearch people={people} />
           ) : roleLabel ? (
             <span className="rounded-full bg-[var(--color-emerald)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-white">
               {roleLabel}

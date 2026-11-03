@@ -32,6 +32,8 @@ export function StrategySubProjectSection({
   selectedKey,
   platforms,
   editing,
+  canEdit = false,
+  onStartEdit,
   onSelect,
   onChange,
   onAdd,
@@ -47,11 +49,19 @@ export function StrategySubProjectSection({
     0
   );
   const deleteTarget = drafts.find((item) => item.key === deleteKey) ?? null;
+  const showAdd = canEdit || editing;
+
+  function openAdd() {
+    if (!editing) onStartEdit?.();
+    setAddError(null);
+    setAddOpen(true);
+  }
 
   function handleAdd(input: { name: string; language: string }) {
+    if (!editing) onStartEdit?.();
     const ok = onAdd(input);
     if (!ok) {
-      setAddError("That sub-project name is already used here.");
+      setAddError("That country name is already used here.");
       return;
     }
     setAddError(null);
@@ -71,10 +81,10 @@ export function StrategySubProjectSection({
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h3 className="text-[13px] font-semibold text-[var(--color-ink)]">
-            Sub-projects
+            Countries
           </h3>
           <p className="mt-0.5 text-[12px] text-[var(--color-muted)]">
-            How many accounts each nested project holds.
+            Add each country, then set how many accounts it needs per platform.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -92,23 +102,19 @@ export function StrategySubProjectSection({
           <p className="text-[16px] font-bold tabular-nums text-[var(--color-ink)]">
             {total}
           </p>
+          {showAdd && drafts.length > 0 ? (
+            <StrategyAddSubProjectButton onClick={openAdd} />
+          ) : null}
         </div>
       </div>
 
       {drafts.length === 0 ? (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-[12px] bg-[var(--color-surface)]/70 px-3 py-4">
           <p className="text-[13px] text-[var(--color-muted)]">
-            No nested projects yet. ALPHAA holds Turkey, Iran, Sudan, Somalia and
-            Palestine; Africa and Europe hold their countries the same way.
+            No countries yet. Add a country, set Personal / Umbrella / Native
+            counts per platform, then save the project.
           </p>
-          {editing ? (
-            <StrategyAddSubProjectButton
-              onClick={() => {
-                setAddError(null);
-                setAddOpen(true);
-              }}
-            />
-          ) : null}
+          {showAdd ? <StrategyAddSubProjectButton onClick={openAdd} /> : null}
         </div>
       ) : (
         <>
@@ -122,14 +128,6 @@ export function StrategySubProjectSection({
               selectedKey={selectedKey}
               onSelect={onSelect}
             />
-            {editing ? (
-              <StrategyAddSubProjectButton
-                onClick={() => {
-                  setAddError(null);
-                  setAddOpen(true);
-                }}
-              />
-            ) : null}
           </div>
 
           {selected ? (

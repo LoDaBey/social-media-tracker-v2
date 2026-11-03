@@ -1,14 +1,12 @@
 import { query, queryOne } from "@/lib/db";
 import {
   addDaysToIsoDate,
-  compareIsoDates,
   formatShortDate,
   getTodayCairoDate,
   normalizePgDateColumn,
 } from "@/lib/cairo-date";
 import { commandPalettePeopleFromRows } from "@/lib/admin-command-palette";
 import type {
-  AdminEmployeeCycleStatus,
   AdminEmployeeEditorBundle,
   AdminEmployeeListFilters,
   AdminEmployeeListRow,
@@ -77,20 +75,9 @@ export async function fetchAdminHealthMetrics(): Promise<AdminHealthMetrics> {
   };
 }
 
-function mapCycleStatus(
-  payCycle: string | null,
-  todayCairo: string
-): AdminEmployeeCycleStatus {
-  if (!payCycle) return "pending";
-  const end = addDaysToIsoDate(payCycle.slice(0, 10), 30);
-  if (compareIsoDates(end, todayCairo) > 0) return "mid-cycle";
-  return "payable";
-}
-
 export async function fetchAdminEmployeesList(
   filters: AdminEmployeeListFilters
 ): Promise<AdminEmployeeListRow[]> {
-  const today = getTodayCairoDate();
   const q = filters.q?.trim() ?? "";
   const status = filters.status ?? "all";
   const role = filters.role ?? "all";
@@ -202,8 +189,7 @@ export async function fetchAdminEmployeesList(
       ) AS manager_countries,
       u.current_level,
       (u.target_x_count + u.target_facebook_personal_count + u.target_facebook_umbrella_count
-        + u.target_instagram_count + u.target_tiktok_count)::int AS target_accounts_sum,
-      u.pay_cycle_start_date::text AS pay_cycle_start_date
+        + u.target_instagram_count + u.target_tiktok_count)::int AS target_accounts_sum
     FROM temp_users u
     LEFT JOIN temp_users tl ON tl.id = u.team_lead_id
     LEFT JOIN temp_users mgr ON mgr.id = u.manager_id
@@ -233,7 +219,6 @@ export async function fetchAdminEmployeesList(
       manager_countries: string[] | null;
       current_level: number;
       target_accounts_sum: number;
-      pay_cycle_start_date: string | null;
     }>(sql, params),
     fetchAlphaaEmployeesList(filters),
   ]);
@@ -272,7 +257,6 @@ export async function fetchAdminEmployeesList(
       countries,
       current_level: r.current_level,
       target_accounts_sum: r.target_accounts_sum,
-      cycle_status: mapCycleStatus(r.pay_cycle_start_date, today),
       accounts: r.role === "employee" ? (accountsByUser.get(r.id) ?? []) : [],
     };
   });
@@ -370,20 +354,6 @@ export async function fetchEmployeeActivityTimeline(
          FROM temp_growth g
          JOIN temp_social_media_accounts a ON a.id = g.social_media_account_id
         WHERE g.user_id = $1 AND g.qc_reviewed_at IS NOT NULL
-       UNION ALL
-       SELECT
-         twt.type::text,
-         twt.created_at::text,
-         (CASE twt.type
-            WHEN 'bonus' THEN 'Bonus: ' || twt.reason
-            WHEN 'payout' THEN 'Payout (cycle closed)'
-            WHEN 'deduction' THEN 'Deduction: ' || twt.reason
-            WHEN 'base_salary' THEN 'Base salary credit'
-            WHEN 'level_adjustment' THEN twt.reason
-            ELSE twt.reason
-          END)::text
-         FROM temp_wallet_transactions twt
-        WHERE twt.user_id = $1
      ) q
      WHERE q.created_at IS NOT NULL
      ORDER BY q.created_at DESC
@@ -438,9 +408,7 @@ export async function fetchAdminEmployeeEditorBundle(
     manager_id: user.manager_id,
     op_id: user.op_id ?? null,
     manager_countries: managerCountries,
-    base_salary: user.base_salary,
     current_level: user.current_level,
-    pay_cycle_start_date: normalizePgDateColumn(user.pay_cycle_start_date),
     country: user.country ?? "",
     updated_at:
       typeof user.updated_at === "string"

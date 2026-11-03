@@ -5,6 +5,7 @@ import type {
   AdminView,
 } from "@/types/admin";
 import { ROLE_LABELS } from "@/lib/role-hierarchy";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import { setupRegionForCountry } from "@/lib/setup-options";
 
 export function normalizeAdminEmployeePanel(
@@ -120,7 +121,7 @@ export function adminEmployeeProjectLabel(
   source: AdminEmployeeSource,
   country?: string | null
 ): AdminEmployeeProjectLabel {
-  if (source === "alphaa") return "ALPHAA";
+  if (source === "alphaa") return MAIN_PROJECT_LABEL;
   return setupRegionForCountry(country ?? "") === "Europe" ? "Europe" : "Africa";
 }
 

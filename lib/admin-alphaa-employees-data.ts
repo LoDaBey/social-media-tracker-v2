@@ -1,5 +1,6 @@
 import { query, queryOne } from "@/lib/db";
 import { ALPHAA_SETUP_COUNTRIES } from "@/lib/setup-options";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import {
   baseCountryFromDisplay,
   overviewDisplayCountry,
@@ -303,7 +304,6 @@ export async function fetchAlphaaEmployeesList(
       countries,
       current_level: 0,
       target_accounts_sum: planAccounts,
-      cycle_status: "pending",
       accounts,
     };
   });
@@ -394,7 +394,7 @@ export async function fetchAlphaaEmployeeEditorBundle(
 
   return {
     source: "alphaa",
-    projectLabel: "ALPHAA",
+    projectLabel: MAIN_PROJECT_LABEL,
     fetchedAt: new Date().toISOString(),
     fullName: profile.fullName,
     role: profile.mappedRole,

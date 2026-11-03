@@ -12,6 +12,7 @@ import { EmployeeAccountsPanel } from "@/components/admin/EmployeeAccountsPanel"
 import { AccountTotalsCell } from "@/components/admin/AccountTotalsCell";
 import { EmployeeStatusSelect } from "@/components/admin/EmployeeStatusSelect";
 import { isTempPlanCountry } from "@/lib/region-config";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import type { EmployeeTableRowProps } from "@/types/admin";
 
 export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
@@ -90,8 +91,8 @@ export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
               <p className="flex flex-wrap items-center gap-2 text-[14px] font-semibold text-[var(--color-ink)]">
                 <span>{row.full_name}</span>
                 {isAlphaa ? (
-                  <span className="inline-flex rounded-full bg-[var(--color-cream-tint)] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-                    ALPHAA
+                  <span className="inline-flex rounded-full bg-[var(--color-cream-tint)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-muted)]">
+                    {MAIN_PROJECT_LABEL}
                   </span>
                 ) : null}
               </p>

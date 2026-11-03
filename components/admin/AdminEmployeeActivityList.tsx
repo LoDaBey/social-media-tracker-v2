@@ -1,15 +1,11 @@
-import { Check, FileText, Gift, MinusCircle, Wallet } from "lucide-react";
+import { Check, FileText } from "lucide-react";
 import { formatShortDate } from "@/lib/cairo-date";
 import type { AdminEmployeeActivityListProps } from "@/types/admin";
 
 function ActivityKindIcon({ kind }: { kind: string }) {
   const className = "h-[18px] w-[18px]";
-  if (kind === "submission") return <FileText className={className} aria-hidden="true" />;
   if (kind === "qc") return <Check className={className} aria-hidden="true" />;
-  if (kind === "bonus") return <Gift className={className} aria-hidden="true" />;
-  if (kind === "payout") return <Wallet className={className} aria-hidden="true" />;
-  if (kind === "deduction") return <MinusCircle className={className} aria-hidden="true" />;
-  return <Wallet className={className} aria-hidden="true" />;
+  return <FileText className={className} aria-hidden="true" />;
 }
 
 export function AdminEmployeeActivityList({

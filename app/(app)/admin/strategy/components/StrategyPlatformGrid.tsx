@@ -20,7 +20,7 @@ export function StrategyPlatformGrid({
   showHeader = true,
   embedded = false,
   readOnly = false,
-  label = "Project holdings",
+  label = "Strategy requirement per platform",
   description = "How many accounts this country holds, by platform. Save country when done.",
 }: StrategyPlatformGridProps) {
   const platforms = platformsOverride ?? strategyGridPlatformsForBook(book);
@@ -39,11 +39,13 @@ export function StrategyPlatformGrid({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h3 className="text-[13px] font-semibold text-[var(--color-ink)]">
-              Project holdings
+              Strategy requirement per platform
             </h3>
-            <p className="mt-0.5 text-[12px] text-[var(--color-muted)]">
-              {description}
-            </p>
+            {description ? (
+              <p className="mt-0.5 text-[12px] text-[var(--color-muted)]">
+                {description}
+              </p>
+            ) : null}
           </div>
           <ul className="flex flex-wrap items-center gap-3" aria-label="Category legend">
             {scopes.map((scope) => (

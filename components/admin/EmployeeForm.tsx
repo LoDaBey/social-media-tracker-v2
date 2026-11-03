@@ -8,6 +8,7 @@ import { updateEmployeeProfile } from "@/actions/admin";
 import { LEVEL_LABELS } from "@/lib/level-labels";
 import { EMPLOYMENT_STATUSES, EMPLOYMENT_STATUS_LABELS } from "@/lib/employment-status";
 import { setupRegionForCountry } from "@/lib/setup-options";
+import { regionDisplayLabel } from "@/lib/project-labels";
 import {
   ROLE_LABELS,
   reportingFieldsFromSupervisor,
@@ -69,9 +70,7 @@ export function EmployeeForm({
       manager_id: initial.manager_id,
       op_id: initial.op_id,
       manager_countries: initial.manager_countries,
-      base_salary: String(initial.base_salary),
       current_level: initial.current_level,
-      pay_cycle_start_date: normalizeDate(initial.pay_cycle_start_date),
       country: initial.country,
     }),
     [initial]
@@ -108,9 +107,9 @@ export function EmployeeForm({
 
   const assignedRegion = useMemo(() => {
     if (isManagerRole && form.manager_countries.length > 0) {
-      return setupRegionForCountry(form.manager_countries[0]);
+      return regionDisplayLabel(setupRegionForCountry(form.manager_countries[0]));
     }
-    if (form.country) return setupRegionForCountry(form.country);
+    if (form.country) return regionDisplayLabel(setupRegionForCountry(form.country));
     return "";
   }, [form.country, form.manager_countries, isManagerRole]);
 
@@ -172,9 +171,7 @@ export function EmployeeForm({
       op_id: form.op_id,
       manager_countries:
         form.role === "manager" ? form.manager_countries : undefined,
-      base_salary: Number(form.base_salary),
       current_level: form.current_level,
-      pay_cycle_start_date: form.pay_cycle_start_date === "" ? null : form.pay_cycle_start_date,
       country:
         form.role === "manager"
           ? form.manager_countries[0] ?? form.country
@@ -210,7 +207,7 @@ export function EmployeeForm({
           role="status"
           className="rounded-lg bg-[var(--color-gold)]/15 px-4 py-2 text-[14px] text-[var(--color-ink)]"
         >
-          Warning: {form.country} is not in the regional manager&apos;s countries (
+          Warning: {form.country} is not in the country manager&apos;s countries (
           {regionalManagerCountries.join(", ") || "none"}). The employee may stay
           hidden from that manager until countries overlap.
         </p>
@@ -384,21 +381,6 @@ export function EmployeeForm({
         ) : null}
 
         <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
-          Base salary
-          <span className="flex items-center gap-2 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 py-2">
-            <span className="text-[13px] font-semibold text-[var(--color-muted)]">EGP</span>
-            <input
-              type="number"
-              min={0}
-              step={100}
-              value={form.base_salary}
-              onChange={(e) => setForm((f) => ({ ...f, base_salary: e.target.value }))}
-              className="min-w-0 flex-1 border-0 bg-transparent text-[14px] font-medium text-[var(--color-ink)] outline-none"
-            />
-          </span>
-        </label>
-
-        <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
           Current level
           <select
             value={form.current_level}
@@ -413,21 +395,6 @@ export function EmployeeForm({
               </option>
             ))}
           </select>
-        </label>
-
-        <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
-          Pay cycle start date
-          <input
-            type="date"
-            value={form.pay_cycle_start_date}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, pay_cycle_start_date: e.target.value }))
-            }
-            className={fieldClass}
-          />
-          <span className="text-[12px] font-normal text-[var(--color-muted)]">
-            Changing this will reset the cycle for this employee.
-          </span>
         </label>
       </div>
 

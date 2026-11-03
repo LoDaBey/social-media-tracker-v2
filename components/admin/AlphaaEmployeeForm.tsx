@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { updateAlphaaEmployeeProfile } from "@/actions/admin-alphaa";
 import { ALPHAA_SETUP_COUNTRIES } from "@/lib/setup-options";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import { AdminCountrySelect } from "@/components/admin/AdminCountrySelect";
 import type { AlphaaEmployeeFormProps } from "@/types/admin";
 
@@ -105,10 +106,10 @@ export function AlphaaEmployeeForm({
       {embedded ? null : (
         <>
           <p className="text-[13px] font-semibold text-[var(--color-ink)]">
-            ALPHAA profile
+            {MAIN_PROJECT_LABEL} profile
           </p>
           <p className="mt-1 text-[13px] text-[var(--color-muted)]">
-            Updates this person in the ALPHAA users table. Team lead and manager
+            Updates this person in the {MAIN_PROJECT_LABEL} users table. Team lead and manager
             stay assigned through projects.
           </p>
         </>
@@ -127,7 +128,7 @@ export function AlphaaEmployeeForm({
           Name
           <input
             value={form.fullName}
-            aria-label="ALPHAA employee name"
+            aria-label={`${MAIN_PROJECT_LABEL} employee name`}
             onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
             className={fieldClass}
           />
@@ -137,7 +138,7 @@ export function AlphaaEmployeeForm({
           <input
             type="email"
             value={form.email}
-            aria-label="ALPHAA employee email"
+            aria-label={`${MAIN_PROJECT_LABEL} employee email`}
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
             className={fieldClass}
           />
@@ -146,7 +147,7 @@ export function AlphaaEmployeeForm({
           Phone
           <input
             value={form.phone}
-            aria-label="ALPHAA employee phone"
+            aria-label={`${MAIN_PROJECT_LABEL} employee phone`}
             onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
             className={fieldClass}
           />
@@ -155,7 +156,7 @@ export function AlphaaEmployeeForm({
           Role
           <select
             value={form.roleLabel}
-            aria-label="ALPHAA employee role"
+            aria-label={`${MAIN_PROJECT_LABEL} employee role`}
             onChange={(e) =>
               setForm((f) => ({ ...f, roleLabel: e.target.value }))
             }
@@ -173,7 +174,7 @@ export function AlphaaEmployeeForm({
           <AdminCountrySelect
             value={form.country}
             countries={countryOptions}
-            ariaLabel="ALPHAA employee country"
+            ariaLabel={`${MAIN_PROJECT_LABEL} employee country`}
             onChange={(country) => setForm((f) => ({ ...f, country }))}
           />
         </label>
@@ -181,7 +182,7 @@ export function AlphaaEmployeeForm({
           Status
           <select
             value={form.isActive ? "active" : "deactivated"}
-            aria-label="ALPHAA employee status"
+            aria-label={`${MAIN_PROJECT_LABEL} employee status`}
             onChange={(e) =>
               setForm((f) => ({ ...f, isActive: e.target.value === "active" }))
             }
@@ -195,7 +196,7 @@ export function AlphaaEmployeeForm({
           Department
           <input
             value={form.department}
-            aria-label="ALPHAA employee department"
+            aria-label={`${MAIN_PROJECT_LABEL} employee department`}
             onChange={(e) =>
               setForm((f) => ({ ...f, department: e.target.value }))
             }
@@ -206,7 +207,7 @@ export function AlphaaEmployeeForm({
           Location
           <input
             value={form.location}
-            aria-label="ALPHAA employee location"
+            aria-label={`${MAIN_PROJECT_LABEL} employee location`}
             onChange={(e) =>
               setForm((f) => ({ ...f, location: e.target.value }))
             }
@@ -217,7 +218,7 @@ export function AlphaaEmployeeForm({
           Projects
           <input
             value={form.projects}
-            aria-label="ALPHAA employee projects"
+            aria-label={`${MAIN_PROJECT_LABEL} employee projects`}
             placeholder="sudan, somalia"
             onChange={(e) =>
               setForm((f) => ({ ...f, projects: e.target.value }))
@@ -241,7 +242,7 @@ export function AlphaaEmployeeForm({
           whileTap={{ scale: 0.95 }}
           disabled={pending || !dirty}
           onClick={submit}
-          aria-label="Save ALPHAA profile"
+          aria-label={`Save ${MAIN_PROJECT_LABEL} profile`}
           className="cursor-pointer rounded-lg bg-[var(--color-emerald)] px-5 py-2.5 text-[14px] font-semibold text-white outline-none hover:bg-[var(--color-emerald-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] disabled:cursor-not-allowed disabled:opacity-40"
         >
           {pending ? "Saving…" : "Save changes"}
@@ -253,7 +254,7 @@ export function AlphaaEmployeeForm({
           whileTap={{ scale: 0.95 }}
           disabled={pending || !dirty}
           onClick={cancel}
-          aria-label="Cancel ALPHAA profile changes"
+          aria-label={`Cancel ${MAIN_PROJECT_LABEL} profile changes`}
           className="cursor-pointer rounded-lg border border-[var(--color-hairline)] px-5 py-2.5 text-[14px] font-semibold text-[var(--color-ink)] outline-none hover:bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] disabled:cursor-not-allowed disabled:opacity-40"
         >
           Cancel

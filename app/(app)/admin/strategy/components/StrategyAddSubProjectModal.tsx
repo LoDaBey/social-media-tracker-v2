@@ -46,7 +46,7 @@ function StrategyAddSubProjectModalFrame({
     >
       <motion.button
         type="button"
-        aria-label="Close add sub-project dialog"
+        aria-label="Close add country dialog"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -69,11 +69,11 @@ function StrategyAddSubProjectModalFrame({
               id="add-strategy-subproject-title"
               className="text-[20px] font-extrabold text-[var(--color-ink)]"
             >
-              New sub-project
+              New country
             </h2>
             <p className="mt-1 text-[13px] text-[var(--color-muted)]">
-              Nested books sit inside this project — Turkey under ALPHAA, or a
-              country under Africa or Europe.
+              After you add it, set Personal / Umbrella / Native counts for each
+              platform, then save the project.
             </p>
           </div>
           <motion.button
@@ -82,7 +82,7 @@ function StrategyAddSubProjectModalFrame({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onClose}
-            aria-label="Close add sub-project dialog"
+            aria-label="Close add country dialog"
             className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-[var(--color-ink)] outline-none hover:bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
           >
             <X className="h-5 w-5" aria-hidden="true" />
@@ -90,15 +90,15 @@ function StrategyAddSubProjectModalFrame({
         </div>
 
         <label className="mt-5 flex flex-col gap-1.5 text-[12px] font-semibold text-[var(--color-muted)]">
-          Sub-project name
+          Country name
           <input
             ref={nameRef}
             type="text"
             required
             maxLength={60}
             value={name}
-            aria-label="Sub-project name"
-            placeholder="Turkey, Iran, Kenya…"
+            aria-label="Country name"
+            placeholder="Japan, India, Kenya…"
             onChange={(event) => setName(event.target.value)}
             className={fieldClass}
           />
@@ -128,7 +128,7 @@ function StrategyAddSubProjectModalFrame({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onClose}
-            aria-label="Cancel add sub-project"
+            aria-label="Cancel add country"
             className="inline-flex h-10 cursor-pointer items-center rounded-lg border border-[var(--color-hairline)] px-4 text-[13px] font-semibold text-[var(--color-ink)] outline-none hover:bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
           >
             Cancel
@@ -139,10 +139,10 @@ function StrategyAddSubProjectModalFrame({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             disabled={name.trim().length === 0}
-            aria-label="Create sub-project"
+            aria-label="Create country"
             className="inline-flex h-10 cursor-pointer items-center rounded-lg bg-[var(--color-emerald)] px-4 text-[13px] font-semibold text-white outline-none hover:bg-[var(--color-emerald-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] disabled:cursor-not-allowed disabled:opacity-70"
           >
-            Add sub-project
+            Add country
           </motion.button>
         </div>
       </motion.form>

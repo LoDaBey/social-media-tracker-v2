@@ -16,6 +16,7 @@ import {
   updateAlphaaSocialAccountRow,
 } from "@/lib/admin-alphaa-mutate";
 import { logOrbitAction } from "@/lib/orbit-log";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import type {
   AdminAccountMutationResult,
   AdminEmployeeSource,
@@ -78,7 +79,7 @@ export async function createAdminSocialAccount(
         await logOrbitAction({
           action: "create",
           resource: "account",
-          summary: `Created ALPHAA ${data.platform} account for employee #${userId}`,
+          summary: `Created ${MAIN_PROJECT_LABEL} ${data.platform} account for employee #${userId}`,
           details: { userId, platform: data.platform, username: data.username, source },
         });
       }
@@ -152,7 +153,7 @@ export async function updateAdminSocialAccount(
         await logOrbitAction({
           action: "update",
           resource: "account",
-          summary: `Updated ALPHAA ${data.platform} account #${accountId}`,
+          summary: `Updated ${MAIN_PROJECT_LABEL} ${data.platform} account #${accountId}`,
           details: {
             accountId,
             userId: existing?.user_id,
@@ -240,7 +241,7 @@ export async function deleteAdminSocialAccount(
         await logOrbitAction({
           action: "delete",
           resource: "account",
-          summary: `Deleted ALPHAA account #${accountId}`,
+          summary: `Deleted ${MAIN_PROJECT_LABEL} account #${accountId}`,
           details: { accountId, userId: existing?.user_id, source },
         });
       }
@@ -289,8 +290,8 @@ export async function setAdminSocialAccountSpare(
           action: "spare",
           resource: "account",
           summary: isSpare
-            ? `Marked ALPHAA account #${accountId} as spare`
-            : `Unmarked ALPHAA account #${accountId} as spare`,
+            ? `Marked ${MAIN_PROJECT_LABEL} account #${accountId} as spare`
+            : `Unmarked ${MAIN_PROJECT_LABEL} account #${accountId} as spare`,
           details: { accountId, userId: existing?.user_id, isSpare, source },
         });
       }

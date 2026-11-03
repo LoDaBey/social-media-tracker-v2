@@ -1,4 +1,5 @@
 import { pool, queryOne } from "@/lib/db";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import { fetchStrategyProjectRegionForAlphaaUser } from "@/lib/strategy-projects-data";
 import { strategyAccountRegionValue } from "@/lib/strategy-regions";
 import { alphaaLegacyPlatformFields } from "@/lib/bulk-import-parse";
@@ -166,7 +167,7 @@ export async function deleteAlphaaEmployeeRow(userId: number): Promise<void> {
         : null;
     if (code === "23503") {
       throw new Error(
-        "This person still has linked ALPHAA records. Deactivate them instead of deleting."
+        `This person still has linked ${MAIN_PROJECT_LABEL} records. Deactivate them instead of deleting.`
       );
     }
     throw error;

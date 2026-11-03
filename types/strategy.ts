@@ -165,6 +165,8 @@ export type StrategyToolProps = {
   projects: StrategyProjectSummary[];
   activeProject: StrategyProject | null;
   regionOptions: string[];
+  /** Only admins may mutate strategy. Operation managers and others stay read-only. */
+  canEdit?: boolean;
 };
 
 export type StrategyBookTabsProps = {
@@ -174,6 +176,7 @@ export type StrategyBookTabsProps = {
 
 export type StrategyNewProjectButtonProps = {
   onClick: () => void;
+  disabled?: boolean;
 };
 
 export type StrategyNewProjectModalProps = {
@@ -228,6 +231,7 @@ export type StrategyProjectToolbarProps = {
   resourcesLocked?: boolean;
   editing: boolean;
   saving: boolean;
+  canEdit?: boolean;
   onEdit: () => void;
   onCancel: () => void;
   onRegionChange: (value: StrategyProjectRegion | "") => void;
@@ -240,6 +244,7 @@ export type StrategyProjectPanelProps = {
   project: StrategyProject;
   saving: boolean;
   regionOptions: string[];
+  canEdit?: boolean;
   onSave: (input: StrategySaveProjectInput) => Promise<boolean>;
   onDelete: () => void;
 };
@@ -247,10 +252,11 @@ export type StrategyProjectPanelProps = {
 export type StrategyUploadButtonProps = {
   pending: boolean;
   onFile: (file: File) => void;
+  disabled?: boolean;
 };
 
 export type StrategyEmptyStateProps = {
-  onCreate: () => void;
+  onCreate?: () => void;
 };
 
 export type StrategyCountryOption = {
@@ -412,6 +418,8 @@ export type StrategySubProjectSectionProps = {
   selectedKey: string | null;
   platforms: StrategyPlatformKey[];
   editing: boolean;
+  canEdit?: boolean;
+  onStartEdit?: () => void;
   onSelect: (key: string) => void;
   onChange: (key: string, next: StrategySubProjectDraft) => void;
   onAdd: (input: { name: string; language: string }) => boolean;

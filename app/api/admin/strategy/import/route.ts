@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import { parseStrategyWorkbook } from "@/lib/strategy-excel-import";
 import { importProjectRows } from "@/lib/strategy-plans-data";
 import { syncLegacyBookSubProjectsFromCountryPlans } from "@/lib/strategy-projects-data";
@@ -92,7 +93,7 @@ export async function POST(request: Request) {
 
     const result: StrategyImportResult = {
       success: true,
-      message: `Updated ${parsed.alphaa.length} ALPHAA and ${parsed.africaEurope.length} Africa/Europe countries. Handler templates were kept.`,
+      message: `Updated ${parsed.alphaa.length} ${MAIN_PROJECT_LABEL} and ${parsed.africaEurope.length} Africa/Europe countries. Handler templates were kept.`,
       alphaaCount: parsed.alphaa.length,
       africaEuropeCount: parsed.africaEurope.length,
     };

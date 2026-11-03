@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { extractPlatformLabel } from "@/lib/admin-extract-platform";
 import { spareAccountKey } from "@/lib/admin-spare";
+import { MAIN_PROJECT_LABEL, regionDisplayLabel } from "@/lib/project-labels";
 import { AccountCategoryBadge } from "@/components/admin/AccountCategoryBadge";
 import { AccountStatusBadge } from "@/components/admin/AccountStatusBadge";
 import { AccountUrlCell } from "@/components/admin/AccountUrlCell";
@@ -72,7 +73,7 @@ export function SpareAccountsList({
                 <td className="px-4 py-2.5 text-[13px] font-semibold text-[var(--color-ink)]">
                   {account.handler_name}
                   <span className="mt-0.5 block text-[11px] font-medium text-[var(--color-muted)]">
-                    {account.source === "alphaa" ? "ALPHAA" : "Africa / Europe"}
+                    {account.source === "alphaa" ? MAIN_PROJECT_LABEL : "Africa / Europe"}
                   </span>
                 </td>
                 <td className="px-4 py-2.5 text-[13px] text-[var(--color-ink)]">
@@ -85,7 +86,7 @@ export function SpareAccountsList({
                     </span>
                   ) : account.region ? (
                     <span className="block text-[11px] text-[var(--color-muted)]">
-                      {account.region}
+                      {regionDisplayLabel(account.region)}
                     </span>
                   ) : null}
                 </td>

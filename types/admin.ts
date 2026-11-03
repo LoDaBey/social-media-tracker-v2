@@ -1,7 +1,8 @@
 import type { SetupRegion } from "@/lib/setup-options";
+import type { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import type { Platform, Role, EmploymentStatus, AccountScope } from "@/types/db";
+import type { StrategyPlatformKey } from "@/types/strategy";
 import type { ReactNode } from "react";
-export type AdminEmployeeCycleStatus = "pending" | "mid-cycle" | "payable";
 
 export type EmployeeListStatusFilter = "all" | "active" | "on_hold" | "inactive";
 
@@ -23,7 +24,9 @@ export type EmployeeListStatusCounts = {
 
 export type AdminEmployeeSource = "temp" | "alphaa";
 
-export type AdminEmployeeProjectLabel = "Africa" | "Europe" | "ALPHAA";
+export type MainProjectLabel = typeof MAIN_PROJECT_LABEL;
+
+export type AdminEmployeeProjectLabel = "Africa" | "Europe" | MainProjectLabel;
 
 export type AdminEmployeeListRow = {
   id: number;
@@ -46,7 +49,6 @@ export type AdminEmployeeListRow = {
   countries: string[];
   current_level: number;
   target_accounts_sum: number;
-  cycle_status: AdminEmployeeCycleStatus;
   accounts: AdminSocialAccountListItem[];
 };
 
@@ -61,9 +63,7 @@ export type CreateEmployeePayload = {
   op_id?: number | null;
   /** Required when role is manager — one or more countries this manager owns. */
   manager_countries?: string[];
-  base_salary?: number;
   hire_date?: string;
-  pay_cycle_start_date?: string | null;
   current_level?: number;
   country: string;
 };
@@ -119,9 +119,7 @@ export type UpdateEmployeeProfilePayload = {
   manager_id: number | null;
   op_id: number | null;
   manager_countries?: string[];
-  base_salary: number;
   current_level: number;
-  pay_cycle_start_date: string | null;
   country: string;
 };
 
@@ -225,15 +223,6 @@ export type AdminWorkspaceProps = {
   children: ReactNode;
 };
 
-export type AdminOverviewSubtitleProps = {
-  countryCount: number;
-  generatedAt: string;
-};
-
-export type AdminOverviewUpdatedAtProps = {
-  generatedAt: string;
-};
-
 export type AdminOverviewHeadingActionsProps = {
   region: AdminRegion;
 };
@@ -256,9 +245,7 @@ export type EmployeeFormInitial = {
   manager_id: number | null;
   op_id: number | null;
   manager_countries: string[];
-  base_salary: string;
   current_level: number;
-  pay_cycle_start_date: string | null;
   country: string;
   /** Bumps when the user row changes so the parent can reset client form state via `key`. */
   updated_at: string;
@@ -318,7 +305,6 @@ export type AdminKpiTileProps = {
   icon:
     | "users"
     | "clipboard"
-    | "wallet"
     | "refresh"
     | "globe"
     | "layers"
@@ -422,9 +408,15 @@ export type AdminCountryCoverage = {
   spareCount: number;
 };
 
-export type AdminRegion = "Overview" | "Africa" | "Europe" | "Alphaa";
+/** Legacy books plus any Strategy project slug (e.g. "asia"). */
+export type AdminRegion = "Overview" | "Africa" | "Europe" | "Alphaa" | string;
 
-export type AdminRegionSlug = "overview" | "africa" | "europe" | "alphaa";
+export type AdminRegionSlug = "overview" | "africa" | "europe" | "alphaa" | string;
+
+export type AdminOverviewProjectTab = {
+  slug: string;
+  name: string;
+};
 
 export type AdminCountryCoverageFilter = {
   countries?: string[];
@@ -438,6 +430,7 @@ export type AdminCoverageKpisProps = {
 export type AdminCountryCoverageSectionProps = {
   coverage: AdminCountryCoverage;
   region: AdminRegion;
+  projectName?: string;
 };
 
 export type BalanceCoverageSpareChange = {
@@ -486,6 +479,7 @@ export type BalanceCoverageResultProps = {
 
 export type AdminOverviewRegionTabsProps = {
   region: AdminRegion;
+  projects: AdminOverviewProjectTab[];
   children: ReactNode;
 };
 
@@ -493,6 +487,13 @@ export type AdminCountryCoverageTableProps = {
   rows: AdminCountryCoverageRow[];
   totals: AdminCountryCoverageTotals;
   showAlphaaPlatforms?: boolean;
+};
+
+export type AdminCoveragePlatformHeadCellProps = {
+  platform: StrategyPlatformKey;
+  label: string;
+  caption?: string;
+  className?: string;
 };
 
 export type AdminCountryCoverageRowProps = {
@@ -546,7 +547,7 @@ export type AdminTempEmployeeEditorBundle = {
 
 export type AdminAlphaaEmployeeEditorBundle = {
   source: "alphaa";
-  projectLabel: "ALPHAA";
+  projectLabel: MainProjectLabel;
   fetchedAt: string;
   fullName: string;
   role: Role;

@@ -43,10 +43,12 @@ export function StrategyProjectPanel({
   project,
   saving,
   regionOptions,
+  canEdit = false,
   onSave,
   onDelete,
 }: StrategyProjectPanelProps) {
   const [editing, setEditing] = useState(false);
+  const isEditing = canEdit && editing;
   const [region, setRegion] = useState<StrategyProjectRegion | "">(
     project.region
   );
@@ -163,8 +165,9 @@ export function StrategyProjectPanel({
         regionOptions={regionOptions}
         resources={computedResources}
         resourcesLocked={hasSubProjects}
-        editing={editing}
+        editing={isEditing}
         saving={saving}
+        canEdit={canEdit}
         onEdit={() => setEditing(true)}
         onCancel={() => {
           resetFromProject();
@@ -180,15 +183,17 @@ export function StrategyProjectPanel({
 
       <StrategyProjectPlatformPicker
         value={selected}
-        readOnly={!editing}
+        readOnly={!isEditing}
         onChange={handlePlatformsChange}
       />
 
       {selected.length === 0 ? (
         <p className="rounded-[16px] bg-[var(--color-cream-tint)] px-4 py-6 text-[14px] text-[var(--color-muted)]">
-          {editing
+          {isEditing
             ? "Choose at least one platform to set holdings and sub-projects."
-            : "This project has no platforms yet. Edit the project to add some."}
+            : canEdit
+              ? "This project has no platforms yet. Edit the project to add some."
+              : "This project has no platforms yet."}
         </p>
       ) : (
         <>
@@ -207,11 +212,11 @@ export function StrategyProjectPanel({
               platforms={selected}
               value={derivedProjectTargets}
               onChange={setProjectTargets}
-              readOnly={!editing || hasSubProjects}
+              readOnly={!isEditing || hasSubProjects}
               description={
                 hasSubProjects
-                  ? "How many accounts this project holds, by platform. Totals come from the sub-projects below."
-                  : editing
+                  ? ""
+                  : isEditing
                     ? "How many accounts this project holds, by platform. Save project when done."
                     : "How many accounts this project holds, by platform."
               }
@@ -221,7 +226,9 @@ export function StrategyProjectPanel({
             drafts={subProjects}
             selectedKey={selectedKey}
             platforms={selected}
-            editing={editing}
+            editing={isEditing}
+            canEdit={canEdit}
+            onStartEdit={() => setEditing(true)}
             onSelect={setSelectedKey}
             onChange={(key, next) =>
               setSubProjects((current) =>
