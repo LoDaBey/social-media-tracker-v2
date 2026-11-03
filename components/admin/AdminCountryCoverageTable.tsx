@@ -43,13 +43,13 @@ export function AdminCountryCoverageTable({
             <AdminCoveragePlatformHeadCell
               platform="facebook"
               label="Facebook personal"
-              caption="Personal"
+              scopeIcon="personal"
               className="min-w-[5.75rem] px-4 py-3 align-bottom"
             />
             <AdminCoveragePlatformHeadCell
               platform="facebook"
               label="Facebook umbrella"
-              caption="Umbrella"
+              scopeIcon="umbrella"
               className="min-w-[5.75rem] px-4 py-3 align-bottom"
             />
             <AdminCoveragePlatformHeadCell

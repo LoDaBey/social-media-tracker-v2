@@ -47,12 +47,12 @@ export function AdminCountryHolderGapsTable({
               <AdminCoveragePlatformHeadCell
                 platform="facebook"
                 label="Facebook personal"
-                caption="Personal"
+                scopeIcon="personal"
               />
               <AdminCoveragePlatformHeadCell
                 platform="facebook"
                 label="Facebook umbrella"
-                caption="Umbrella"
+                scopeIcon="umbrella"
               />
               <AdminCoveragePlatformHeadCell
                 platform="instagram"

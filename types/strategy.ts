@@ -394,11 +394,17 @@ export type StrategyAddSubProjectButtonProps = {
   onClick: () => void;
 };
 
+export type StrategyAddSubProjectInput = {
+  name: string;
+  language: string;
+  resources: number;
+};
+
 export type StrategyAddSubProjectModalProps = {
   open: boolean;
   error: string | null;
   onClose: () => void;
-  onCreate: (input: { name: string; language: string }) => void;
+  onCreate: (input: StrategyAddSubProjectInput) => void;
 };
 
 export type StrategyDeleteSubProjectButtonProps = {
@@ -422,7 +428,7 @@ export type StrategySubProjectSectionProps = {
   onStartEdit?: () => void;
   onSelect: (key: string) => void;
   onChange: (key: string, next: StrategySubProjectDraft) => void;
-  onAdd: (input: { name: string; language: string }) => boolean;
+  onAdd: (input: StrategyAddSubProjectInput) => boolean;
   onDelete: (key: string) => void;
 };
 
