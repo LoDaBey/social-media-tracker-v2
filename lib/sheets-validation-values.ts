@@ -83,6 +83,13 @@ export const SHEET_LANGUAGE_OPTIONS = [
   // ALPHAA sheet languages (not used on Africa/Europe tabs)
   "Turkish",
   "Persian",
+  // Asia languages
+  "Korean",
+  "Japanese",
+  "Mongolian",
+  "Azerbaijani",
+  "Armenian",
+  "Georgian",
 ] as const;
 
 /** Sheet Region column values. */
@@ -91,6 +98,7 @@ export const SHEET_REGION_EUROPE = "Europe" as const;
 /** @deprecated Use SHEET_REGION_EUROPE */
 export const SHEET_REGION_BALKAN = SHEET_REGION_EUROPE;
 export const SHEET_REGION_ALPHAA = "ALPHAA" as const;
+export const SHEET_REGION_ASIA = "Asia" as const;
 
 export type SheetPlatform = (typeof SHEET_PLATFORM_OPTIONS)[number];
 export type SheetStatus = (typeof SHEET_STATUS_OPTIONS)[number];
@@ -114,6 +122,7 @@ const STATUS_TO_SHEET: Record<SheetsExportAccountRow["status"], SheetStatus> = {
 /** Legacy / alternate app labels → sheet Language1 values. */
 const APP_LANGUAGE_TO_SHEET: Record<string, SheetLanguage> = {
   Macedonian: "Macdonian",
+  Mangolian: "Mongolian",
 };
 
 const SHEET_LANGUAGE_SET = new Set<string>(SHEET_LANGUAGE_OPTIONS);
@@ -143,10 +152,15 @@ export function normalizeSheetLanguage(
 }
 
 export function sheetRegion(
-  region: "Africa" | "Europe" | "Balkan" | "Alphaa" = SHEET_REGION
-): typeof SHEET_REGION | typeof SHEET_REGION_EUROPE | typeof SHEET_REGION_ALPHAA {
+  region: "Africa" | "Europe" | "Balkan" | "Alphaa" | "Asia" = SHEET_REGION
+):
+  | typeof SHEET_REGION
+  | typeof SHEET_REGION_EUROPE
+  | typeof SHEET_REGION_ALPHAA
+  | typeof SHEET_REGION_ASIA {
   if (region === "Alphaa") return SHEET_REGION_ALPHAA;
   if (region === "Europe" || region === "Balkan") return SHEET_REGION_EUROPE;
+  if (region === "Asia") return SHEET_REGION_ASIA;
   return SHEET_REGION;
 }
 

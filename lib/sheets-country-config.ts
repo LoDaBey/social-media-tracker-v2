@@ -43,6 +43,17 @@ export const COUNTRY_SHEET_LANGUAGE: Partial<
   Palestine: "Arabic",
   Turkey: "Turkish",
   Iran: "Persian",
+  "North Korea": "Korean",
+  "South Korea": "Korean",
+  Japan: "Japanese",
+  Mongolia: "Mongolian",
+  Azerbaijan: "Azerbaijani",
+  Armenia: "Armenian",
+  Iraq: "Arabic",
+  Bahrain: "Arabic",
+  Kuwait: "Arabic",
+  Oman: "Arabic",
+  Georgia: "Georgian",
 };
 
 /** Country labels as they appear on the strategy sheet dropdown. */

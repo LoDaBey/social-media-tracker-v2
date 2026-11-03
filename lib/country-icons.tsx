@@ -48,6 +48,17 @@ const COUNTRY_ISO: Record<(typeof ALL_SETUP_COUNTRIES)[number], string> = {
   Palestine: "PS",
   Turkey: "TR",
   Iran: "IR",
+  "North Korea": "KP",
+  "South Korea": "KR",
+  Japan: "JP",
+  Mongolia: "MN",
+  Azerbaijan: "AZ",
+  Armenia: "AM",
+  Iraq: "IQ",
+  Bahrain: "BH",
+  Kuwait: "KW",
+  Oman: "OM",
+  Georgia: "GE",
 };
 
 const FLAGS_BY_ISO = Flags as Record<string, FlagComponent | undefined>;

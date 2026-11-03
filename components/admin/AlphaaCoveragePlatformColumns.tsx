@@ -4,6 +4,10 @@ import {
   ALPHAA_EXTRA_PLATFORM_KEYS,
   ALPHAA_EXTRA_PLATFORM_LABELS,
 } from "@/lib/alphaa-coverage-platforms";
+import {
+  COVERAGE_BODY_CELL,
+  COVERAGE_HEAD_CELL,
+} from "@/lib/admin-coverage-table-layout";
 import type {
   AlphaaCoveragePlatformColumnsProps,
   AlphaaExtraPlatformCoverage,
@@ -19,7 +23,7 @@ export function AlphaaCoveragePlatformHeaderCells() {
       key={platform}
       platform={platform}
       label={ALPHAA_EXTRA_PLATFORM_LABELS[platform]}
-      className="min-w-[6.5rem] px-4 py-3 align-bottom"
+      className={COVERAGE_HEAD_CELL}
     />
   ));
 }
@@ -32,7 +36,7 @@ export function AlphaaCoveragePlatformBodyCells({
   labelPrefix: string;
 }) {
   return ALPHAA_EXTRA_PLATFORM_KEYS.map((platform) => (
-    <td key={platform} className="min-w-[6.5rem] whitespace-nowrap px-4 py-3">
+    <td key={platform} className={COVERAGE_BODY_CELL}>
       <AdminCoverageCountCell
         count={platforms?.[platform] ?? zeroCount()}
         label={`${labelPrefix} ${ALPHAA_EXTRA_PLATFORM_LABELS[platform]} accounts`}
@@ -45,7 +49,7 @@ export function AlphaaCoveragePlatformFooterCells({
   totals,
 }: Pick<AlphaaCoveragePlatformColumnsProps, "totals">) {
   return ALPHAA_EXTRA_PLATFORM_KEYS.map((platform) => (
-    <td key={platform} className="min-w-[6.5rem] whitespace-nowrap px-4 py-3">
+    <td key={platform} className={COVERAGE_BODY_CELL}>
       <AdminCoverageCountCell
         count={totals?.[platform] ?? zeroCount()}
         label={`Total ${ALPHAA_EXTRA_PLATFORM_LABELS[platform]} accounts`}

@@ -61,6 +61,8 @@ function getRegionSheetsTarget(region: SetupRegion): RegionSheetsTarget {
       "Europe";
   } else if (region === "Alphaa") {
     sheetTab = process.env.GOOGLE_SHEETS_TAB_ALPHAA?.trim() || "ALPHAA";
+  } else if (region === "Asia") {
+    sheetTab = process.env.GOOGLE_SHEETS_TAB_ASIA?.trim() || "Asia";
   }
 
   return { spreadsheetId, sheetTab };

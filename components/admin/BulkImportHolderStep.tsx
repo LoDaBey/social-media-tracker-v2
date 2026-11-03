@@ -16,7 +16,7 @@ import {
 } from "@/lib/setup-options";
 import type { BulkImportHolderStepProps } from "@/types/admin";
 
-const ALL_REGIONS: SetupRegion[] = ["Africa", "Europe", "Alphaa"];
+const ALL_REGIONS: SetupRegion[] = ["Africa", "Europe", "Alphaa", "Asia"];
 
 const fieldClass =
   "cursor-pointer rounded-lg outline-none border border-[var(--color-hairline)] bg-[var(--color-cream-tint)] px-3 py-2.5 text-[15px] font-medium text-[var(--color-ink)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]";

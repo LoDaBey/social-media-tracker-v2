@@ -97,7 +97,7 @@ export async function fetchAdminEmployeesList(
     params.push(role);
     where.push(`u.role = $${params.length}`);
   }
-  if (region === "Africa" || region === "Europe") {
+  if (region === "Africa" || region === "Europe" || region === "Asia") {
     const regionAliases =
       region === "Europe" ? ["Europe", "Balkan"] : [region];
     params.push(regionAliases);
