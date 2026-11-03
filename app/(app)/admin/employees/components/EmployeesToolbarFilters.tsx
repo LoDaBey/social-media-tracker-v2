@@ -23,6 +23,7 @@ const REGION_OPTIONS = [
   { value: "africa", label: "Africa" },
   { value: "europe", label: "Europe" },
   { value: "alphaa", label: MAIN_PROJECT_LABEL },
+  { value: "asia", label: "Asia" },
 ];
 
 export function EmployeesToolbarFilters() {

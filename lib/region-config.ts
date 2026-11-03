@@ -35,7 +35,21 @@ export const AFRICA_PLAN_COUNTRIES = ADMIN_COUNTRY_PLANS.map(
   (plan) => plan.country
 );
 
-export type CountryRegion = "Africa" | "Europe" | "Alphaa";
+export const ASIA_COUNTRIES = [
+  "North Korea",
+  "South Korea",
+  "Japan",
+  "Mongolia",
+  "Azerbaijan",
+  "Armenia",
+  "Iraq",
+  "Bahrain",
+  "Kuwait",
+  "Oman",
+  "Georgia",
+] as const;
+
+export type CountryRegion = "Africa" | "Europe" | "Alphaa" | "Asia";
 
 export function isLegacyAdminRegion(
   region: string
@@ -90,7 +104,15 @@ export function regionForCountry(country: string): CountryRegion | null {
     return "Alphaa";
   }
 
+  if ((ASIA_COUNTRIES as readonly string[]).includes(country)) {
+    return "Asia";
+  }
+
   return null;
+}
+
+export function isAsiaCountry(value: string) {
+  return (ASIA_COUNTRIES as readonly string[]).includes(value);
 }
 
 function isAfricaSetupCountry(country: string) {

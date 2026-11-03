@@ -1,6 +1,8 @@
 import {
   ALPHAA_EXCLUSIVE_SETUP_COUNTRIES,
   ALPHAA_SETUP_COUNTRIES,
+  ASIA_EXCLUSIVE_SETUP_COUNTRIES,
+  ASIA_SETUP_COUNTRIES,
   EUROPE_SETUP_COUNTRIES,
   SETUP_COUNTRIES,
   isSetupCountry,
@@ -41,6 +43,7 @@ export function extractCountryOptions(
       overviewDisplayCountry(country, "Alphaa")
     );
   }
+  if (region === "Asia") return [...ASIA_SETUP_COUNTRIES];
 
   const options: string[] = [];
   for (const country of SETUP_COUNTRIES) {
@@ -51,6 +54,7 @@ export function extractCountryOptions(
   }
   options.push(...EUROPE_SETUP_COUNTRIES);
   options.push(...ALPHAA_EXCLUSIVE_SETUP_COUNTRIES);
+  options.push(...ASIA_EXCLUSIVE_SETUP_COUNTRIES);
   return options;
 }
 

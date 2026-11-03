@@ -10,7 +10,7 @@ export type AdminEmployeeListFilters = {
   q?: string;
   status?: EmployeeListStatusFilter;
   role?: "all" | "employee" | "manager" | "team_lead" | "op";
-  region?: "Africa" | "Europe" | "Alphaa";
+  region?: "Africa" | "Europe" | "Alphaa" | "Asia";
   country?: string;
   teamLeadId?: number | null;
 };
@@ -506,13 +506,6 @@ export type AdminCountryCoverageRowProps = {
 export type AdminCountryHolderGapRowProps = {
   holder: AdminCountryCoverageHolder;
   country: string;
-  showAlphaaPlatforms?: boolean;
-};
-
-export type AdminCountryHolderGapsTableProps = {
-  country: string;
-  holders: AdminCountryCoverageHolder[];
-  missingEmployees: number;
   showAlphaaPlatforms?: boolean;
 };
 
@@ -1151,7 +1144,12 @@ export type SyncSheetsButtonProps = {
 };
 
 /** Admin data extract tool — filter Africa/Europe temp + ALPHAA legacy accounts. */
-export type AdminExtractRegionFilter = "all" | "Africa" | "Europe" | "Alphaa";
+export type AdminExtractRegionFilter =
+  | "all"
+  | "Africa"
+  | "Europe"
+  | "Alphaa"
+  | "Asia";
 
 export type AdminExtractSpareFilter = "exclude" | "include" | "only";
 

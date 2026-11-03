@@ -2,6 +2,7 @@ import { CountryFlag } from "@/lib/country-icons";
 import { regionDisplayLabel } from "@/lib/project-labels";
 import {
   ALPHAA_SETUP_COUNTRIES,
+  ASIA_SETUP_COUNTRIES,
   EUROPE_SETUP_COUNTRIES,
   SETUP_COUNTRIES,
   type SetupRegion,
@@ -13,6 +14,7 @@ const REGION_GROUPS: { region: SetupRegion; countries: readonly string[] }[] = [
   { region: "Africa", countries: SETUP_COUNTRIES },
   { region: "Europe", countries: EUROPE_SETUP_COUNTRIES },
   { region: "Alphaa", countries: ALPHAA_SETUP_COUNTRIES },
+  { region: "Asia", countries: ASIA_SETUP_COUNTRIES },
 ];
 
 function CountryCheckbox({

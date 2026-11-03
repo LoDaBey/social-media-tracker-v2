@@ -97,6 +97,7 @@ export function ExtractFilters({
             <option value="Africa">Africa</option>
             <option value="Europe">Europe</option>
             <option value="Alphaa">{MAIN_PROJECT_LABEL}</option>
+            <option value="Asia">Asia</option>
           </select>
         </label>
 

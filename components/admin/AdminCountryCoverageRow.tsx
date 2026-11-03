@@ -1,13 +1,18 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { CountryFlag } from "@/lib/country-icons";
 import { AdminCoverageCountCell } from "@/components/admin/AdminCoverageCountCell";
+import { AdminCountryHolderGapRow } from "@/components/admin/AdminCountryHolderGapRow";
 import { AlphaaCoveragePlatformBodyCells } from "@/components/admin/AlphaaCoveragePlatformColumns";
-import { AdminCountryHolderGapsTable } from "@/components/admin/AdminCountryHolderGapsTable";
-import { ALPHAA_EXTRA_PLATFORM_KEYS } from "@/lib/alphaa-coverage-platforms";
+import {
+  COVERAGE_BODY_CELL,
+  COVERAGE_COUNTRY_CELL,
+  COVERAGE_LANGUAGE_CELL,
+  coverageColumnCount,
+} from "@/lib/admin-coverage-table-layout";
 import type { AdminCountryCoverageRowProps } from "@/types/admin";
 
 export function AdminCountryCoverageRow({
@@ -15,8 +20,6 @@ export function AdminCountryCoverageRow({
   showAlphaaPlatforms = false,
 }: AdminCountryCoverageRowProps) {
   const [expanded, setExpanded] = useState(false);
-  const panelId = useId();
-  const missingEmployees = Math.max(0, row.resources.target - row.resources.actual);
 
   return (
     <>
@@ -26,16 +29,15 @@ export function AdminCountryCoverageRow({
       >
         <th
           scope="row"
-          className="sticky left-0 z-[1] bg-[var(--color-surface)] px-4 py-3 group-hover:bg-[var(--color-cream-tint)]"
+          className={`sticky left-0 z-[1] bg-[var(--color-surface)] group-hover:bg-[var(--color-cream-tint)] ${COVERAGE_COUNTRY_CELL}`}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <motion.button
               type="button"
               layout
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               aria-expanded={expanded}
-              aria-controls={panelId}
               aria-label={
                 expanded
                   ? `Hide account holders for ${row.country}`
@@ -52,43 +54,45 @@ export function AdminCountryCoverageRow({
                 aria-hidden="true"
               />
             </motion.button>
-            <CountryFlag country={row.country} title={row.country} className="h-4 w-6" />
-            <span className="text-[13px] font-semibold text-[var(--color-ink)]">
+            <CountryFlag country={row.country} title={row.country} className="h-4 w-6 shrink-0" />
+            <span className="min-w-0 truncate text-[13px] font-semibold text-[var(--color-ink)]">
               {row.country}
             </span>
             {row.onPlan ? null : (
-              <span className="text-[11px] font-medium text-[var(--color-amber)]">Off plan</span>
+              <span className="shrink-0 text-[11px] font-medium text-[var(--color-amber)]">
+                Off plan
+              </span>
             )}
           </div>
         </th>
-        <td className="whitespace-nowrap px-4 py-3 text-[13px] text-[var(--color-muted)]">
+        <td className={`text-[13px] text-[var(--color-muted)] ${COVERAGE_LANGUAGE_CELL}`}>
           {row.language}
         </td>
-        <td className="whitespace-nowrap px-4 py-3">
+        <td className={COVERAGE_BODY_CELL}>
           <AdminCoverageCountCell count={row.resources} label={`${row.country} employees`} />
         </td>
-        <td className="whitespace-nowrap px-4 py-3">
+        <td className={COVERAGE_BODY_CELL}>
           <AdminCoverageCountCell count={row.x} label={`${row.country} X accounts`} />
         </td>
-        <td className="whitespace-nowrap px-4 py-3">
+        <td className={COVERAGE_BODY_CELL}>
           <AdminCoverageCountCell
             count={row.facebookPersonal}
             label={`${row.country} Facebook personal accounts`}
           />
         </td>
-        <td className="whitespace-nowrap px-4 py-3">
+        <td className={COVERAGE_BODY_CELL}>
           <AdminCoverageCountCell
             count={row.facebookUmbrella}
             label={`${row.country} Facebook umbrella accounts`}
           />
         </td>
-        <td className="whitespace-nowrap px-4 py-3">
+        <td className={COVERAGE_BODY_CELL}>
           <AdminCoverageCountCell
             count={row.instagram}
             label={`${row.country} Instagram accounts`}
           />
         </td>
-        <td className="whitespace-nowrap px-4 py-3">
+        <td className={COVERAGE_BODY_CELL}>
           <AdminCoverageCountCell
             count={row.tiktok}
             label={`${row.country} TikTok accounts`}
@@ -100,30 +104,34 @@ export function AdminCountryCoverageRow({
             labelPrefix={row.country}
           />
         ) : null}
-        <td className="whitespace-nowrap px-4 py-3">
+        <td className={COVERAGE_BODY_CELL}>
           <AdminCoverageCountCell
             count={row.totalAccounts}
             label={`${row.country} total accounts`}
           />
         </td>
       </tr>
-      {expanded ? (
-        <tr className="border-t border-[var(--color-hairline)] bg-[var(--color-cream-tint)]/40">
-          <td
-            colSpan={showAlphaaPlatforms ? 9 + ALPHAA_EXTRA_PLATFORM_KEYS.length : 9}
-            className="px-3 py-3"
-            id={panelId}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <AdminCountryHolderGapsTable
-              country={row.country}
-              holders={row.holders}
-              missingEmployees={missingEmployees}
-              showAlphaaPlatforms={showAlphaaPlatforms}
-            />
-          </td>
-        </tr>
-      ) : null}
+      {expanded
+        ? row.holders.length > 0
+          ? row.holders.map((holder, index) => (
+              <AdminCountryHolderGapRow
+                key={holder.id ?? `vacant-${row.country}-${index}`}
+                holder={holder}
+                country={row.country}
+                showAlphaaPlatforms={showAlphaaPlatforms}
+              />
+            ))
+          : (
+              <tr className="border-t border-[var(--color-hairline)] bg-[var(--color-cream-tint)]/40">
+                <td
+                  colSpan={coverageColumnCount(showAlphaaPlatforms)}
+                  className="px-4 py-4 pl-14 text-[13px] text-[var(--color-muted)]"
+                >
+                  No account holders in {row.country} yet.
+                </td>
+              </tr>
+            )
+        : null}
     </>
   );
 }
