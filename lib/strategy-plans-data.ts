@@ -152,11 +152,18 @@ function staticPlansForRegion(region: AdminRegion): AdminCountryPlan[] {
 export async function fetchAdminCountryPlansForRegion(
   region: AdminRegion
 ): Promise<AdminCountryPlan[]> {
+  const isCustomStrategyProject =
+    region !== "Overview" &&
+    region !== "Africa" &&
+    region !== "Europe" &&
+    region !== "Alphaa";
+
   try {
     const fromDb = await fetchAdminCountryPlansFromDb(region);
-    if (fromDb.length > 0) return fromDb;
+    if (fromDb.length > 0 || isCustomStrategyProject) return fromDb;
   } catch (error) {
     console.error("Strategy tables unavailable, using static plans.", error);
+    if (isCustomStrategyProject) return [];
   }
   return staticPlansForRegion(region);
 }
@@ -193,6 +200,34 @@ export async function europeSeatTargetsForIndexFromDb(
   return seatQuotaForIndex(plan, seatIndex);
 }
 
+async function plansFromStrategyProjectSlug(
+  slug: string
+): Promise<AdminCountryPlan[]> {
+  const { fetchStrategyProjectBySlug } = await import(
+    "@/lib/strategy-projects-data"
+  );
+  const { adminCountryPlanFromTargets, targetsGrandTotal } = await import(
+    "@/lib/strategy-platforms"
+  );
+  const project = await fetchStrategyProjectBySlug(slug);
+  if (!project) return [];
+  const children =
+    project.subProjects.length > 0 ? project.subProjects : [project];
+  return children.map((child) =>
+    adminCountryPlanFromTargets({
+      country: child.name,
+      language: child.language || "—",
+      resources: child.resources,
+      totalAccounts:
+        child.totalAccounts > 0
+          ? child.totalAccounts
+          : targetsGrandTotal(child.projectTargets),
+      projectTargets: child.projectTargets,
+      handlerTargets: child.handlerTargets,
+    })
+  );
+}
+
 async function fetchAdminCountryPlansFromDb(
   region: AdminRegion
 ): Promise<AdminCountryPlan[]> {
@@ -215,13 +250,27 @@ async function fetchAdminCountryPlansFromDb(
     return rows.map(strategyRowToAdminPlan);
   }
 
-  const [africaEurope, alphaa] = await Promise.all([
+  if (region !== "Overview") {
+    return plansFromStrategyProjectSlug(region);
+  }
+
+  const [africaEurope, alphaa, { fetchStrategyProjects }] = await Promise.all([
     fetchAfricaEuropeStrategyRows(),
     fetchAlphaaStrategyRows(),
+    import("@/lib/strategy-projects-data"),
   ]);
   const africa = africaEurope.filter((row) => row.region === "Africa");
   const europe = africaEurope.filter((row) => row.region === "Europe");
   const africaEuropeCountries = new Set(africaEurope.map((row) => row.country));
+  const legacySlugs = new Set(["africa", "europe", "alphaa"]);
+  const customProjects = (await fetchStrategyProjects()).filter(
+    (project) => !legacySlugs.has(project.slug)
+  );
+  const customPlans = (
+    await Promise.all(
+      customProjects.map((project) => plansFromStrategyProjectSlug(project.slug))
+    )
+  ).flat();
 
   return [
     ...africa.map((row) => {
@@ -242,6 +291,7 @@ async function fetchAdminCountryPlansFromDb(
           ? { ...plan, country: overviewDisplayCountry(plan.country, "Alphaa") }
           : plan;
       }),
+    ...customPlans,
   ];
 }
 
