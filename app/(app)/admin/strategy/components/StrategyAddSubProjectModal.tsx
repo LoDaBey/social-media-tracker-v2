@@ -17,6 +17,7 @@ function StrategyAddSubProjectModalFrame({
   const nameRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
   const [language, setLanguage] = useState("");
+  const [resources, setResources] = useState("0");
 
   useEffect(() => {
     nameRef.current?.focus();
@@ -36,7 +37,8 @@ function StrategyAddSubProjectModalFrame({
     event.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) return;
-    onCreate({ name: trimmed, language });
+    const parsedResources = Math.max(0, Math.floor(Number(resources) || 0));
+    onCreate({ name: trimmed, language, resources: parsedResources });
   }
 
   return (
@@ -114,6 +116,21 @@ function StrategyAddSubProjectModalFrame({
             onChange={setLanguage}
           />
         </div>
+
+        <label className="mt-4 flex flex-col gap-1.5 text-[12px] font-semibold text-[var(--color-muted)]">
+          Resources
+          <input
+            type="number"
+            min={0}
+            step={1}
+            inputMode="numeric"
+            value={resources}
+            aria-label="Resources"
+            placeholder="0"
+            onChange={(event) => setResources(event.target.value)}
+            className={`${fieldClass} tabular-nums`}
+          />
+        </label>
 
         {error ? (
           <p role="alert" className="mt-4 text-[13px] font-medium text-[var(--color-coral)]">

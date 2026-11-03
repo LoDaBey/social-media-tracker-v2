@@ -105,7 +105,11 @@ export function StrategyProjectPanel({
     );
   }
 
-  function handleAddSubProject(input: { name: string; language: string }) {
+  function handleAddSubProject(input: {
+    name: string;
+    language: string;
+    resources: number;
+  }) {
     const name = input.name.trim();
     if (
       subProjects.some(
@@ -119,7 +123,7 @@ export function StrategyProjectPanel({
       slug: null,
       name,
       language: input.language,
-      resources: 0,
+      resources: Math.max(0, Math.floor(input.resources) || 0),
       projectTargets: emptyStrategyScopeCounts(),
       handlerTargets: emptyStrategyScopeCounts(),
     };

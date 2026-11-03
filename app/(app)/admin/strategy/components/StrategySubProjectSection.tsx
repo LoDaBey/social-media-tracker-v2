@@ -14,6 +14,7 @@ import { StrategyPlatformGrid } from "./StrategyPlatformGrid";
 import { StrategySubProjectNav } from "./StrategySubProjectNav";
 import type {
   StrategyAccountScope,
+  StrategyAddSubProjectInput,
   StrategySubProjectDraft,
   StrategySubProjectSectionProps,
 } from "@/types/strategy";
@@ -57,7 +58,7 @@ export function StrategySubProjectSection({
     setAddOpen(true);
   }
 
-  function handleAdd(input: { name: string; language: string }) {
+  function handleAdd(input: StrategyAddSubProjectInput) {
     if (!editing) onStartEdit?.();
     const ok = onAdd(input);
     if (!ok) {

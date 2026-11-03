@@ -489,10 +489,12 @@ export type AdminCountryCoverageTableProps = {
   showAlphaaPlatforms?: boolean;
 };
 
+export type AdminCoveragePlatformScopeIcon = "personal" | "umbrella" | "native";
+
 export type AdminCoveragePlatformHeadCellProps = {
   platform: StrategyPlatformKey;
   label: string;
-  caption?: string;
+  scopeIcon?: AdminCoveragePlatformScopeIcon;
   className?: string;
 };
 
