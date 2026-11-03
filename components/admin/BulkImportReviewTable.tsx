@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
 import { CountryFlag } from "@/lib/country-icons";
 import { SETUP_LANGUAGES, isSetupLanguage } from "@/lib/setup-options";
+import { regionDisplayLabel } from "@/lib/project-labels";
 import { BulkImportReviewRow } from "@/components/admin/BulkImportReviewRow";
 import type { BulkImportReviewTableProps } from "@/types/admin";
 
@@ -36,7 +37,7 @@ export function BulkImportReviewTable({
               <span>{country}</span>
               {region ? (
                 <span className="rounded-full bg-[var(--color-cream-tint)] px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-muted)]">
-                  {region}
+                  {regionDisplayLabel(region)}
                 </span>
               ) : null}
             </p>

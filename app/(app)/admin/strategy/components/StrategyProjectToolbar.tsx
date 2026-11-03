@@ -17,6 +17,7 @@ export function StrategyProjectToolbar({
   resourcesLocked = false,
   editing,
   saving,
+  canEdit = false,
   onEdit,
   onCancel,
   onRegionChange,
@@ -103,8 +104,12 @@ export function StrategyProjectToolbar({
                 {resources}
               </span>
             </p>
-            <StrategyEditProjectButton name={name} onClick={onEdit} />
-            <StrategyDeleteProjectButton name={name} onClick={onDelete} />
+            {canEdit ? (
+              <>
+                <StrategyEditProjectButton name={name} onClick={onEdit} />
+                <StrategyDeleteProjectButton name={name} onClick={onDelete} />
+              </>
+            ) : null}
           </>
         )}
       </div>

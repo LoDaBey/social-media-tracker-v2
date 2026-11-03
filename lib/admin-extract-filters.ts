@@ -10,6 +10,7 @@ import {
   isDualRegionCountry,
   overviewDisplayCountry,
 } from "@/lib/overview-country-display";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import type {
   AdminExtractFilters,
   AdminExtractRegionFilter,
@@ -69,7 +70,7 @@ export function countriesForExtractSource(
     if (!base) continue;
     if (isDualRegionCountry(base)) {
       const wantsAfrica = country.endsWith("(Africa)");
-      const wantsAlphaa = country.endsWith("(ALPHAA)");
+      const wantsAlphaa = country.endsWith(`(${MAIN_PROJECT_LABEL})`);
       if (!wantsAfrica && !wantsAlphaa) {
         selected.push(base);
         continue;

@@ -6,7 +6,6 @@ import {
   PauseCircle,
   RefreshCw,
   Users,
-  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import type { AdminKpiTileProps } from "@/types/admin";
@@ -14,7 +13,6 @@ import type { AdminKpiTileProps } from "@/types/admin";
 const ICONS: Record<AdminKpiTileProps["icon"], LucideIcon> = {
   users: Users,
   clipboard: ClipboardCheck,
-  wallet: Wallet,
   refresh: RefreshCw,
   globe: Globe,
   layers: Layers,

@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { setAdminSocialAccountSpare } from "@/actions/admin-accounts";
 import { spareAccountKey } from "@/lib/admin-spare";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import { extractPlatformLabel } from "@/lib/admin-extract-platform";
 import { useEmployeeAccounts } from "@/hooks/useEmployeeAccounts";
 import { AccountStatusBadge } from "@/components/admin/AccountStatusBadge";
@@ -122,7 +123,7 @@ export function SpareAccountsMarkPanel({
             >
               {holder.full_name}
               {holder.country ? ` · ${holder.country}` : ""}
-              {holder.source === "alphaa" ? " · ALPHAA" : ""}
+              {holder.source === "alphaa" ? ` · ${MAIN_PROJECT_LABEL}` : ""}
             </option>
           ))}
         </select>

@@ -15,7 +15,6 @@ import { Search } from "lucide-react";
 import { HeaderSearchPaletteFooter } from "@/components/layout/HeaderSearchPaletteFooter";
 import { HeaderSearchPaletteItem } from "@/components/layout/HeaderSearchPaletteItem";
 import {
-  COMMAND_PALETTE_SPARE_EVENT,
   commandPaletteGroups,
   flattenCommandPaletteGroups,
   readCommandPaletteRecent,
@@ -41,6 +40,7 @@ export function HeaderSearchPalette({
   );
   const items = useMemo(() => flattenCommandPaletteGroups(groups), [groups]);
   const active = items[selected];
+  const trimmedQuery = query.trim();
 
   useEffect(() => {
     setSelected(0);
@@ -63,14 +63,10 @@ export function HeaderSearchPalette({
 
   function openItem(index: number) {
     const item = items[index];
-    if (!item) return;
+    if (!item?.href) return;
     rememberCommandPaletteItem(item.id);
     onClose();
-    if (item.action === "spare") {
-      window.dispatchEvent(new Event(COMMAND_PALETTE_SPARE_EVENT));
-      return;
-    }
-    if (item.href) router.push(item.href);
+    router.push(item.href);
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -127,8 +123,8 @@ export function HeaderSearchPalette({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Search people, accounts, pages..."
-            aria-label="Search people, accounts, and pages"
+            placeholder="Search people, accounts, usernames, links..."
+            aria-label="Search people, accounts, usernames, and links"
             role="combobox"
             aria-autocomplete="list"
             aria-expanded="true"
@@ -155,7 +151,9 @@ export function HeaderSearchPalette({
         >
           {items.length === 0 ? (
             <p className="px-2 py-8 text-center text-[13px] text-[var(--color-muted)]">
-              No people, accounts, or pages match.
+              {trimmedQuery
+                ? "No people or accounts match."
+                : "Type to search people, accounts, usernames, or links."}
             </p>
           ) : (
             groups.map((group, groupIndex) => {

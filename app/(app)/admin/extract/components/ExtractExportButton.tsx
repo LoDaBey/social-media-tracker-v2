@@ -5,14 +5,18 @@ import { motion } from "framer-motion";
 import * as XLSX from "xlsx";
 import { extractFilterPlatformLabel } from "@/lib/admin-extract-platform";
 import { accountScopeLabel } from "@/lib/account-scope";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import type { AdminExtractRow, ExtractExportButtonProps } from "@/types/admin";
 
 function rowsToSheetRows(rows: AdminExtractRow[]) {
   return rows.map((row) => {
+    const normalizedRegion = row.region?.trim().toLowerCase();
     const region =
-      row.region?.trim().toLowerCase() === "balkan"
+      normalizedRegion === "balkan"
         ? "Europe"
-        : (row.region ?? "");
+        : normalizedRegion === "alphaa"
+          ? MAIN_PROJECT_LABEL
+          : (row.region ?? "");
     return {
       Region: region,
       Country: row.country ?? "",
@@ -25,7 +29,7 @@ function rowsToSheetRows(rows: AdminExtractRow[]) {
       Category: row.category ?? "",
       Status: row.status,
       Spare: row.is_spare ? "Yes" : "No",
-      Source: row.source === "alphaa" ? "Alphaa" : "Temp",
+      Source: row.source === "alphaa" ? MAIN_PROJECT_LABEL : "Temp",
     };
   });
 }

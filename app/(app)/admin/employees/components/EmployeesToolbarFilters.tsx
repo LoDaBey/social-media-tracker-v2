@@ -10,18 +10,19 @@ import {
   isCountryInEmployeeListRegion,
   setupCountriesForRegion,
 } from "@/lib/setup-options";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 
 const ROLE_OPTIONS = [
   { value: "employee", label: "Employees" },
   { value: "team_lead", label: "Team leaders regional" },
-  { value: "manager", label: "Regional managers" },
-  { value: "op", label: "OP" },
+  { value: "manager", label: "Country managers" },
+  { value: "op", label: "Operation managers" },
 ];
 
 const REGION_OPTIONS = [
   { value: "africa", label: "Africa" },
   { value: "europe", label: "Europe" },
-  { value: "alphaa", label: "ALPHAA" },
+  { value: "alphaa", label: MAIN_PROJECT_LABEL },
 ];
 
 export function EmployeesToolbarFilters() {

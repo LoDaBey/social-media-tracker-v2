@@ -1,10 +1,12 @@
 import { AdminCountryCoverageRow } from "@/components/admin/AdminCountryCoverageRow";
 import { AdminCoverageCountCell } from "@/components/admin/AdminCoverageCountCell";
+import { AdminCoveragePlatformHeadCell } from "@/components/admin/AdminCoveragePlatformHeadCell";
 import {
   AlphaaCoveragePlatformFooterCells,
   AlphaaCoveragePlatformHeaderCells,
 } from "@/components/admin/AlphaaCoveragePlatformColumns";
 import { ALPHAA_EXTRA_PLATFORM_KEYS } from "@/lib/alphaa-coverage-platforms";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import type { AdminCountryCoverageTableProps } from "@/types/admin";
 
 export function AdminCountryCoverageTable({
@@ -15,8 +17,6 @@ export function AdminCountryCoverageTable({
   const colSpan = showAlphaaPlatforms ? 9 + ALPHAA_EXTRA_PLATFORM_KEYS.length : 9;
   const headCell =
     "px-4 py-3 align-bottom leading-tight min-w-[5.75rem]";
-  const wideHeadCell =
-    "min-w-[8rem] px-4 py-3 align-bottom leading-tight";
 
   return (
     <div className="overflow-x-auto rounded-[16px] border border-[var(--color-hairline)] bg-[var(--color-surface)]">
@@ -39,21 +39,24 @@ export function AdminCountryCoverageTable({
             <th scope="col" className={headCell}>
               Resources
             </th>
-            <th scope="col" className={headCell}>
-              X
-            </th>
-            <th scope="col" className={wideHeadCell}>
-              Facebook personal
-            </th>
-            <th scope="col" className={wideHeadCell}>
-              Facebook umbrella
-            </th>
-            <th scope="col" className={headCell}>
-              Instagram
-            </th>
-            <th scope="col" className={headCell}>
-              TikTok
-            </th>
+            <AdminCoveragePlatformHeadCell platform="twitter" label="X" />
+            <AdminCoveragePlatformHeadCell
+              platform="facebook"
+              label="Facebook personal"
+              caption="Personal"
+              className="min-w-[5.75rem] px-4 py-3 align-bottom"
+            />
+            <AdminCoveragePlatformHeadCell
+              platform="facebook"
+              label="Facebook umbrella"
+              caption="Umbrella"
+              className="min-w-[5.75rem] px-4 py-3 align-bottom"
+            />
+            <AdminCoveragePlatformHeadCell
+              platform="instagram"
+              label="Instagram"
+            />
+            <AdminCoveragePlatformHeadCell platform="tiktok" label="TikTok" />
             {showAlphaaPlatforms ? <AlphaaCoveragePlatformHeaderCells /> : null}
             <th scope="col" className={headCell}>
               Total
@@ -123,7 +126,7 @@ export function AdminCountryCoverageTable({
         </tfoot>
       </table>
       {showAlphaaPlatforms ? (
-        <p className="sr-only">Table has {colSpan} columns including ALPHAA platforms.</p>
+        <p className="sr-only">Table has {colSpan} columns including {MAIN_PROJECT_LABEL} platforms.</p>
       ) : null}
     </div>
   );

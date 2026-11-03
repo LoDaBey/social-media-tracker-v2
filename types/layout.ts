@@ -27,12 +27,6 @@ export type ThemeToggleProps = {
   className?: string;
 };
 
-export type DateBadgeVariant = "pill" | "plain";
-
-export type DateBadgeProps = {
-  variant?: DateBadgeVariant;
-};
-
 export type AppHeaderProps = {
   name: string;
   email: string;
@@ -73,6 +67,9 @@ export type AdminHeaderSpareButtonProps = {
 export type CommandPalettePersonAccount = {
   name: string;
   platform: string;
+  username: string | null;
+  handle: string | null;
+  url: string | null;
 };
 
 export type CommandPalettePerson = {
@@ -87,9 +84,7 @@ export type CommandPalettePerson = {
   accounts: CommandPalettePersonAccount[];
 };
 
-export type CommandPaletteItemKind = "person" | "account" | "action" | "page";
-
-export type CommandPaletteActionId = "spare";
+export type CommandPaletteItemKind = "person" | "account";
 
 export type CommandPaletteItem = {
   id: string;
@@ -98,7 +93,6 @@ export type CommandPaletteItem = {
   subtitle: string;
   keywords?: string;
   href?: string;
-  action?: CommandPaletteActionId;
 };
 
 export type CommandPaletteGroup = {
@@ -124,7 +118,6 @@ export type HeaderSearchPaletteItemProps = {
 };
 
 export type HeaderSearchPaletteItemIconProps = {
-  id: string;
   kind: CommandPaletteItemKind;
   title: string;
 };

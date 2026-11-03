@@ -26,6 +26,7 @@ export function StrategyTool({
   projects,
   activeProject,
   regionOptions,
+  canEdit = false,
 }: StrategyToolProps) {
   const router = useRouter();
   const { importExcel, pending: importing } = useImportStrategyExcel();
@@ -91,6 +92,7 @@ export function StrategyTool({
   }
 
   function openCreate() {
+    if (!canEdit) return;
     setCreateError(null);
     setCreateOpen(true);
   }
@@ -110,14 +112,16 @@ export function StrategyTool({
             </p>
           ) : null}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <StrategyNewProjectButton onClick={openCreate} />
-          <StrategyUploadButton pending={importing} onFile={handleUpload} />
-        </div>
+        {canEdit ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <StrategyNewProjectButton onClick={openCreate} />
+            <StrategyUploadButton pending={importing} onFile={handleUpload} />
+          </div>
+        ) : null}
       </div>
 
       {projects.length === 0 ? (
-        <StrategyEmptyState onCreate={openCreate} />
+        <StrategyEmptyState onCreate={canEdit ? openCreate : undefined} />
       ) : activeProject ? (
         <div className="min-w-0 rounded-[20px] border border-[var(--color-hairline)] bg-[var(--color-surface)] p-4 sm:p-5">
           <StrategyProjectPanel
@@ -125,6 +129,7 @@ export function StrategyTool({
             project={activeProject}
             saving={savingProject}
             regionOptions={regionOptions}
+            canEdit={canEdit}
             onSave={handleSaveProject}
             onDelete={() => {
               setDeleteError(null);
@@ -138,22 +143,26 @@ export function StrategyTool({
         </p>
       )}
 
-      <StrategyNewProjectModal
-        open={createOpen}
-        pending={creating}
-        error={createError}
-        regionOptions={regionOptions}
-        onClose={() => setCreateOpen(false)}
-        onCreate={handleCreateProject}
-      />
-      <StrategyDeleteProjectModal
-        open={deleteOpen}
-        pending={deleting}
-        error={deleteError}
-        name={activeProject?.name ?? "this project"}
-        onClose={() => setDeleteOpen(false)}
-        onConfirm={handleDeleteProject}
-      />
+      {canEdit ? (
+        <>
+          <StrategyNewProjectModal
+            open={createOpen}
+            pending={creating}
+            error={createError}
+            regionOptions={regionOptions}
+            onClose={() => setCreateOpen(false)}
+            onCreate={handleCreateProject}
+          />
+          <StrategyDeleteProjectModal
+            open={deleteOpen}
+            pending={deleting}
+            error={deleteError}
+            name={activeProject?.name ?? "this project"}
+            onClose={() => setDeleteOpen(false)}
+            onConfirm={handleDeleteProject}
+          />
+        </>
+      ) : null}
     </div>
   );
 }

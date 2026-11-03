@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import { fetchAlphaaEmployeeById } from "@/lib/admin-alphaa-employees-data";
 import { adminViewAlphaaEmployee } from "@/lib/admin-view";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import { AlphaaEmployeeProfile } from "./components/AlphaaEmployeeProfile";
 
 type PageProps = {
@@ -12,9 +13,9 @@ type PageProps = {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id: idRaw } = await params;
   const id = Number(idRaw);
-  if (!Number.isFinite(id)) return { title: "ALPHAA employee" };
+  if (!Number.isFinite(id)) return { title: `${MAIN_PROJECT_LABEL} employee` };
   const profile = await fetchAlphaaEmployeeById(id);
-  return { title: profile?.fullName ?? "ALPHAA employee" };
+  return { title: profile?.fullName ?? `${MAIN_PROJECT_LABEL} employee` };
 }
 
 export default async function AlphaaEmployeePage({ params }: PageProps) {

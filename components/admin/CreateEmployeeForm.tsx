@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { createEmployee } from "@/actions/admin";
 import { setupRegionForCountry } from "@/lib/setup-options";
+import { regionDisplayLabel } from "@/lib/project-labels";
 import { ROLE_LABELS, reportingFieldsFromSupervisor } from "@/lib/role-hierarchy";
 import { AdminCountrySelect } from "@/components/admin/AdminCountrySelect";
 import type { Role } from "@/types/db";
@@ -68,7 +69,6 @@ export function CreateEmployeeForm({
     null
   );
   const [manager_countries, setManagerCountries] = useState<string[]>([]);
-  const [base_salary, setBaseSalary] = useState("4500");
   const [country, setCountry] = useState("");
   const [fieldErrors, setFieldErrors] = useState<CreateEmployeeFieldErrors>({});
 
@@ -144,7 +144,6 @@ export function CreateEmployeeForm({
           manager_id: reporting.manager_id,
           op_id: reporting.op_id,
           manager_countries: role === "manager" ? manager_countries : undefined,
-          base_salary: Number(base_salary),
           country:
             role === "manager"
               ? manager_countries[0] ?? ""
@@ -170,9 +169,9 @@ export function CreateEmployeeForm({
 
   const assignedRegion = useMemo(() => {
     if (isManagerRole && manager_countries.length > 0) {
-      return setupRegionForCountry(manager_countries[0]);
+      return regionDisplayLabel(setupRegionForCountry(manager_countries[0]));
     }
-    if (country) return setupRegionForCountry(country);
+    if (country) return regionDisplayLabel(setupRegionForCountry(country));
     return "";
   }, [country, isManagerRole, manager_countries]);
 
@@ -191,7 +190,7 @@ export function CreateEmployeeForm({
       </h2>
       <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-[var(--color-muted)]">
         Create an account and assign their country. Reporting line: Employee →
-        Team Leader Regional (optional) → Regional Manager → OP → Admin.
+        Team Leader Regional (optional) → Country Manager → OP → Admin.
       </p>
       {error ? (
         <p className="mt-4 rounded-lg bg-[var(--color-coral-tint)] px-4 py-3 text-[14px] text-[var(--color-coral)]">
@@ -203,7 +202,7 @@ export function CreateEmployeeForm({
           role="status"
           className="mt-4 rounded-lg bg-[var(--color-gold)]/15 px-4 py-3 text-[14px] text-[var(--color-ink)]"
         >
-          Warning: {country} is not in the regional manager&apos;s countries (
+          Warning: {country} is not in the country manager&apos;s countries (
           {regionalManagerCountries.join(", ")}). The employee may stay hidden
           from that manager until countries overlap.
         </p>
@@ -390,23 +389,6 @@ export function CreateEmployeeForm({
             }}
           />
         ) : null}
-        <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
-          Base salary (EGP / cycle)
-          <span className="flex items-center gap-2 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-cream-tint)] px-3 py-2.5">
-            <span className="text-[13px] font-semibold text-[var(--color-muted)]">
-              EGP
-            </span>
-            <input
-              type="number"
-              min={0}
-              step={100}
-              value={base_salary}
-              onChange={(e) => setBaseSalary(e.target.value)}
-              aria-label="Base salary in EGP per cycle"
-              className="min-w-0 flex-1 border-0 bg-transparent text-[15px] font-medium text-[var(--color-ink)] outline-none"
-            />
-          </span>
-        </label>
       </div>
 
       <motion.button

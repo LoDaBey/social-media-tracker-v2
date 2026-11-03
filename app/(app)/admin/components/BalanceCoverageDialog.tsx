@@ -7,6 +7,7 @@ import { X } from "lucide-react";
 import toast from "react-hot-toast";
 import { balanceAdminCoverageSpare } from "@/actions/admin-balance-spare";
 import { BalanceCoverageResult } from "@/app/(app)/admin/components/BalanceCoverageResult";
+import { regionDisplayLabel } from "@/lib/project-labels";
 import type {
   BalanceCoverageDialogProps,
   BalanceCoverageSpareResult,
@@ -114,7 +115,7 @@ export function BalanceCoverageDialog({
             </h2>
             <p className="mt-1 text-[14px] text-[var(--color-muted)]">
               Extra live accounts are marked spare until each platform matches
-              the {region} plan. Spare accounts are unmarked where a platform is
+              the {regionDisplayLabel(region)} plan. Spare accounts are unmarked where a platform is
               short. If a country still cannot reach its goal, the missing slots
               are listed and no spare is left to use.
             </p>

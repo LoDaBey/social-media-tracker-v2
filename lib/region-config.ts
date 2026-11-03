@@ -37,18 +37,37 @@ export const AFRICA_PLAN_COUNTRIES = ADMIN_COUNTRY_PLANS.map(
 
 export type CountryRegion = "Africa" | "Europe" | "Alphaa";
 
+export function isLegacyAdminRegion(
+  region: string
+): region is "Overview" | "Africa" | "Europe" | "Alphaa" {
+  return (
+    region === "Overview" ||
+    region === "Africa" ||
+    region === "Europe" ||
+    region === "Alphaa"
+  );
+}
+
 export function adminRegionFromSlug(value: string | undefined): AdminRegion {
-  if (value === "europe" || value === "balkan") return "Europe";
-  if (value === "africa") return "Africa";
-  if (value === "alphaa") return "Alphaa";
-  return "Overview";
+  const slug = value?.trim().toLowerCase();
+  if (!slug || slug === "overview") return "Overview";
+  if (slug === "europe" || slug === "balkan") return "Europe";
+  if (slug === "africa") return "Africa";
+  if (slug === "alphaa") return "Alphaa";
+  return slug;
 }
 
 export function adminRegionSlug(region: AdminRegion): AdminRegionSlug {
   if (region === "Europe") return "europe";
   if (region === "Africa") return "africa";
   if (region === "Alphaa") return "alphaa";
-  return "overview";
+  if (region === "Overview") return "overview";
+  return region;
+}
+
+/** Strategy book slug → Overview region key used in coverage filters. */
+export function adminRegionFromStrategySlug(slug: string): AdminRegion {
+  return adminRegionFromSlug(slug);
 }
 
 /** Countries tracked via temp_users + temp_social_media_accounts (Africa/Europe tabs). */

@@ -12,6 +12,7 @@ import {
 } from "@/lib/bulk-import-parse";
 import { uniqueAccountUrlError } from "@/lib/social-account-validation";
 import { isAlphaaCountry } from "@/lib/region-config";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import { fetchStrategyProjectRegionForAlphaaUser } from "@/lib/strategy-projects-data";
 import { strategyAccountRegionValue } from "@/lib/strategy-regions";
 import {
@@ -235,7 +236,7 @@ async function importAlphaaHolderAccounts(input: {
   rows: BulkImportAccountDraft[];
 }): Promise<{ error?: string; imported?: number }> {
   if (!isAlphaaCountry(input.country)) {
-    return { error: "Select an ALPHAA country." };
+    return { error: `Select a ${MAIN_PROJECT_LABEL} country.` };
   }
 
   const employee = await queryOne<{ id: number }>(
@@ -333,7 +334,7 @@ async function importAlphaaHolderAccounts(input: {
     if (error instanceof Error && error.message.trim()) {
       return { error: error.message.trim().slice(0, 180) };
     }
-    return { error: "Could not save these ALPHAA accounts. Please try again." };
+    return { error: `Could not save these ${MAIN_PROJECT_LABEL} accounts. Please try again.` };
   } finally {
     client.release();
   }
@@ -342,7 +343,7 @@ async function importAlphaaHolderAccounts(input: {
   await logOrbitAction({
     action: "import",
     resource: "account",
-    summary: `Imported ${input.rows.length} ALPHAA accounts for employee #${input.holderId}`,
+    summary: `Imported ${input.rows.length} ${MAIN_PROJECT_LABEL} accounts for employee #${input.holderId}`,
     details: {
       holderId: input.holderId,
       country: input.country,

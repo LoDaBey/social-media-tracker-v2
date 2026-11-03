@@ -14,11 +14,11 @@ export function StrategyAddSubProjectButton({
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
-      aria-label="Add a sub-project"
+      aria-label="Add a country"
       className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-lg px-2.5 text-[13px] font-semibold text-[var(--color-emerald)] outline-none hover:bg-[var(--color-surface)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
     >
       <Plus className="h-4 w-4" aria-hidden="true" strokeWidth={2} />
-      Add
+      Add country
     </motion.button>
   );
 }

@@ -13,6 +13,7 @@ import {
   spareAccountFiltersActive,
   spareAccountKey,
 } from "@/lib/admin-spare";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import { SpareAccountsFilters } from "@/components/admin/SpareAccountsFilters";
 import { SpareAccountsList } from "@/components/admin/SpareAccountsList";
 import { SpareAccountsMarkPanel } from "@/components/admin/SpareAccountsMarkPanel";
@@ -28,7 +29,7 @@ export function SpareAccountsDialog({
   accounts: initialAccounts,
   holders,
   setSpare = setAdminSocialAccountSpare,
-  subtitle = "Mark or unmark spare accounts for Africa, Europe, and ALPHAA handlers. They stay on handlers but count as extras in KPIs.",
+  subtitle = `Mark or unmark spare accounts for Africa, Europe, and ${MAIN_PROJECT_LABEL} handlers. They stay on handlers but count as extras in KPIs.`,
 }: SpareAccountsDialogProps) {
   const router = useRouter();
   const [tab, setTab] = useState<SpareModalTab>("spare");

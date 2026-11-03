@@ -1,39 +1,25 @@
 import { AdminCountryCoverageTable } from "@/components/admin/AdminCountryCoverageTable";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import type { AdminCountryCoverageSectionProps } from "@/types/admin";
 
 export function AdminCountryCoverageSection({
   coverage,
   region,
+  projectName,
 }: AdminCountryCoverageSectionProps) {
   const planLabel =
     region === "Overview"
-      ? "Africa, Europe, and ALPHAA"
+      ? "all strategy projects"
       : region === "Alphaa"
-        ? "ALPHAA"
-        : region;
+        ? MAIN_PROJECT_LABEL
+        : projectName ?? region;
 
   return (
     <section
       className="flex flex-col gap-3 rounded-[16px] bg-[var(--color-surface)] p-4 sm:p-6"
       style={{ boxShadow: "0 4px 24px rgba(20,20,20,.06)" }}
-      aria-label={`Planned ${planLabel} coverage`}
+      aria-label={`${planLabel} coverage`}
     >
-      <div>
-        <h2 className="text-[18px] font-bold text-[var(--color-ink)]">
-          Planned coverage
-        </h2>
-        <p className="mt-1 text-[13px] text-[var(--color-muted)] sm:text-[14px]">
-          How many employees and accounts each country should have. Each cell is
-          current / planned. Open a country to see which account holders still
-          have gaps. X combines Twitter personal and umbrella slots from the{" "}
-          {planLabel} plan{region === "Overview" ? "s" : ""}.
-          {region === "Overview"
-            ? " Sudan appears twice: Africa (temp) and ALPHAA (legacy)."
-            : region === "Alphaa"
-              ? " Extended platforms (Reddit, Threads, YouTube, etc.) apply to ALPHAA only. TOTAL is every live non-spare account. Spare accounts are excluded."
-              : ""}
-        </p>
-      </div>
       <AdminCountryCoverageTable
         rows={coverage.rows}
         totals={coverage.totals}

@@ -1,4 +1,5 @@
 import { AdminCountryHolderGapRow } from "@/components/admin/AdminCountryHolderGapRow";
+import { AdminCoveragePlatformHeadCell } from "@/components/admin/AdminCoveragePlatformHeadCell";
 import { AlphaaCoveragePlatformHeaderCells } from "@/components/admin/AlphaaCoveragePlatformColumns";
 import { holderHasCoverageGap } from "@/lib/admin-coverage-gaps";
 import { ALPHAA_EXTRA_PLATFORM_KEYS } from "@/lib/alphaa-coverage-platforms";
@@ -42,21 +43,22 @@ export function AdminCountryHolderGapsTable({
               <th scope="col" className="min-w-[12rem] px-4 py-3">
                 Account holder
               </th>
-              <th scope="col" className="min-w-[5.75rem] px-4 py-3">
-                X
-              </th>
-              <th scope="col" className="min-w-[8rem] px-4 py-3">
-                Facebook personal
-              </th>
-              <th scope="col" className="min-w-[8rem] px-4 py-3">
-                Facebook umbrella
-              </th>
-              <th scope="col" className="min-w-[5.75rem] px-4 py-3">
-                Instagram
-              </th>
-              <th scope="col" className="min-w-[5.75rem] px-4 py-3">
-                TikTok
-              </th>
+              <AdminCoveragePlatformHeadCell platform="twitter" label="X" />
+              <AdminCoveragePlatformHeadCell
+                platform="facebook"
+                label="Facebook personal"
+                caption="Personal"
+              />
+              <AdminCoveragePlatformHeadCell
+                platform="facebook"
+                label="Facebook umbrella"
+                caption="Umbrella"
+              />
+              <AdminCoveragePlatformHeadCell
+                platform="instagram"
+                label="Instagram"
+              />
+              <AdminCoveragePlatformHeadCell platform="tiktok" label="TikTok" />
               {showAlphaaPlatforms ? (
                 <AlphaaCoveragePlatformHeaderCells />
               ) : null}

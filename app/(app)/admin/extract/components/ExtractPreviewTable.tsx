@@ -1,11 +1,14 @@
 import { extractFilterPlatformLabel } from "@/lib/admin-extract-platform";
 import { accountScopeLabel } from "@/lib/account-scope";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import { AccountUrlCell } from "@/components/admin/AccountUrlCell";
 import type { ExtractPreviewTableProps } from "@/types/admin";
 
 function displayRegion(region: string | null) {
   if (!region?.trim()) return "—";
-  if (region.trim().toLowerCase() === "balkan") return "Europe";
+  const normalized = region.trim().toLowerCase();
+  if (normalized === "balkan") return "Europe";
+  if (normalized === "alphaa") return MAIN_PROJECT_LABEL;
   return region;
 }
 

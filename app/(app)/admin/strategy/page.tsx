@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { auth } from "@/auth";
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import { adminViewStrategy } from "@/lib/admin-view";
 import {
@@ -27,6 +28,8 @@ export async function generateMetadata({
 
 export default async function AdminStrategyPage({ searchParams }: StrategyPageProps) {
   const params = await searchParams;
+  const session = await auth();
+  const canEdit = session?.user?.role === "admin";
   const [projects, regionOptions] = await Promise.all([
     fetchStrategyProjects(),
     fetchStrategyProjectRegionOptions(),
@@ -43,6 +46,7 @@ export default async function AdminStrategyPage({ searchParams }: StrategyPagePr
         projects={projects}
         activeProject={activeProject}
         regionOptions={regionOptions}
+        canEdit={canEdit}
       />
     </AdminWorkspace>
   );

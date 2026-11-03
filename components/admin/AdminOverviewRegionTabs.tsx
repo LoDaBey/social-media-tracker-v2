@@ -2,30 +2,39 @@
 
 import { LayoutGroup, motion } from "framer-motion";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  adminRegionFromStrategySlug,
+  adminRegionSlug,
+} from "@/lib/region-config";
 import type {
   AdminOverviewRegionTabsProps,
   AdminRegion,
-  AdminRegionSlug,
 } from "@/types/admin";
-
-const TABS: { region: AdminRegion; slug: AdminRegionSlug; label: string }[] = [
-  { region: "Overview", slug: "overview", label: "All regions" },
-  { region: "Africa", slug: "africa", label: "Africa" },
-  { region: "Europe", slug: "europe", label: "Europe" },
-  { region: "Alphaa", slug: "alphaa", label: "ALPHAA" },
-];
 
 export function AdminOverviewRegionTabs({
   region,
+  projects,
   children,
 }: AdminOverviewRegionTabsProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
 
+  const tabs: { region: AdminRegion; slug: string; label: string }[] = [
+    { region: "Overview", slug: "overview", label: "All regions" },
+    ...projects.map((project) => {
+      const nextRegion = adminRegionFromStrategySlug(project.slug);
+      return {
+        region: nextRegion,
+        slug: adminRegionSlug(nextRegion),
+        label: project.name,
+      };
+    }),
+  ];
+
   function selectRegion(next: AdminRegion) {
     const params = new URLSearchParams(searchParams.toString());
-    const slug = TABS.find((tab) => tab.region === next)?.slug ?? "overview";
+    const slug = adminRegionSlug(next);
     if (slug === "overview") params.delete("region");
     else params.set("region", slug);
     const query = params.toString();
@@ -36,11 +45,11 @@ export function AdminOverviewRegionTabs({
     <div className="w-full">
       <LayoutGroup id="admin-region-tabs">
         <div
-          className="inline-flex rounded-full bg-[var(--color-cream-tint)] p-1"
+          className="inline-flex max-w-full flex-wrap rounded-full bg-[var(--color-cream-tint)] p-1"
           role="tablist"
           aria-label="Admin coverage regions"
         >
-          {TABS.map((tab) => {
+          {tabs.map((tab) => {
             const selected = region === tab.region;
 
             return (

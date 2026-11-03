@@ -94,9 +94,7 @@ export default async function AdminEmployeeDetailPage({
     manager_id: user.manager_id,
     op_id: user.op_id ?? null,
     manager_countries: managerCountries,
-    base_salary: user.base_salary,
     current_level: user.current_level,
-    pay_cycle_start_date: normalizePgDateColumn(user.pay_cycle_start_date),
     country: user.country ?? "",
     updated_at: user.updated_at,
   };

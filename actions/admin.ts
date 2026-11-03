@@ -7,7 +7,7 @@ import type { PoolClient } from "pg";
 import { auth } from "@/auth";
 import { pool, queryOne } from "@/lib/db";
 import { getTodayCairoDate, normalizePgDateColumn } from "@/lib/cairo-date";
-import { LEVEL_LABELS, LEVEL_SALARY_PERCENT } from "@/lib/level-labels";
+import { LEVEL_LABELS } from "@/lib/level-labels";
 import { createNotification } from "@/lib/notifications";
 import {
   AFRICA_SEAT_ACCOUNTS,
@@ -72,13 +72,7 @@ const createEmployeeSchema = z
     manager_id: z.number().int().positive().nullable().optional(),
     op_id: z.number().int().positive().nullable().optional(),
     manager_countries: z.array(z.string()).optional(),
-    base_salary: z.number().min(0).max(10_000_000).optional(),
     hire_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-    pay_cycle_start_date: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/)
-      .nullable()
-      .optional(),
     current_level: z.number().int().min(1).max(6).optional(),
     country: z.string().optional(),
   })
@@ -135,8 +129,6 @@ export async function createEmployee(
     const password_hash = await bcrypt.hash(p.password, 10);
     const role: Role = p.role ?? "employee";
     const hire = p.hire_date ?? today;
-    const cycleStart = p.pay_cycle_start_date ?? today;
-    const baseSalary = p.base_salary ?? 0;
     const level = p.current_level ?? 2;
     let managerCountries: string[] = [];
     if (role === "manager") {
@@ -213,15 +205,15 @@ export async function createEmployee(
     const ins = await client.query<{ id: number }>(
       `INSERT INTO temp_users (
          full_name, email, password_hash, role, phone, is_active,
-         team_lead_id, manager_id, op_id, base_salary, hire_date, pay_cycle_start_date, current_level,
+         team_lead_id, manager_id, op_id, hire_date, current_level,
          region, country,
          target_x_count, target_facebook_personal_count, target_facebook_umbrella_count,
          target_instagram_count, target_tiktok_count
        ) VALUES (
          $1, $2, $3, $4, $5, TRUE,
-         $6, $7, $8, $9, $10::date, $11::date, $12,
-         $13, $14,
-         $15, $16, $17, $18, $19
+         $6, $7, $8, $9::date, $10,
+         $11, $12,
+         $13, $14, $15, $16, $17
        ) RETURNING id`,
       [
         p.full_name,
@@ -232,9 +224,7 @@ export async function createEmployee(
         teamLeadId,
         managerId,
         opId,
-        baseSalary,
         hire,
-        cycleStart,
         level,
         setupRegionForCountry(primaryCountry),
         primaryCountry,
@@ -295,9 +285,7 @@ const updateProfileSchema = z.object({
   manager_id: z.number().int().positive().nullable(),
   op_id: z.number().int().positive().nullable(),
   manager_countries: z.array(z.string()).optional(),
-  base_salary: z.number().min(0).max(10_000_000),
   current_level: z.number().int().min(1).max(6),
-  pay_cycle_start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
   country: z.string().trim(),
 }).superRefine((data, ctx) => {
   if (data.role === "manager" || data.role === "admin" || data.role === "op") {
@@ -375,14 +363,12 @@ export async function updateEmployeeProfile(
          team_lead_id = $6,
          manager_id = $7,
          op_id = $8,
-         base_salary = $9,
-         current_level = $10,
-         pay_cycle_start_date = $11::date,
-         region = $12,
-         country = $13,
-         employee_code = $14,
-         employment_status = $15
-       WHERE id = $16`,
+         current_level = $9,
+         region = $10,
+         country = $11,
+         employee_code = $12,
+         employment_status = $13
+       WHERE id = $14`,
       [
         p.full_name,
         p.email,
@@ -392,9 +378,7 @@ export async function updateEmployeeProfile(
         teamLeadId,
         managerId,
         opId,
-        p.base_salary,
         p.current_level,
-        p.pay_cycle_start_date,
         setupRegionForCountry(primaryCountry),
         primaryCountry,
         p.employee_code,
@@ -416,13 +400,12 @@ export async function updateEmployeeProfile(
       previousLevel !== p.current_level
     ) {
       const label = LEVEL_LABELS[p.current_level] ?? String(p.current_level);
-      const pct = LEVEL_SALARY_PERCENT[p.current_level] ?? "0%";
       await createNotification(client, {
         user_id,
         type: "level_changed",
         category: "admin",
         title: "Your level was updated",
-        body: `You are now Level ${p.current_level} (${label}). Your salary adjustment is ${pct}.`,
+        body: `You are now Level ${p.current_level} (${label}).`,
         action_route: "/dashboard",
         metadata: { old_level: previousLevel, new_level: p.current_level },
         created_by: adminId,

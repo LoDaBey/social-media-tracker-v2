@@ -22,9 +22,6 @@ export type TempUser = {
   employee_code: string | null;
   employment_status: EmploymentStatus;
 
-  base_salary: string;
-  /** Postgres DATE — `pg` may return a string or a `Date`. */
-  pay_cycle_start_date: string | Date | null;
   hire_date: string;
 
   current_level: number;

@@ -10,6 +10,7 @@ import {
   updateAlphaaEmployeeRow,
 } from "@/lib/admin-alphaa-mutate";
 import { logOrbitAction } from "@/lib/orbit-log";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import type { UpdateAlphaaEmployeePayload } from "@/types/admin";
 
 async function requireAdmin() {
@@ -62,7 +63,7 @@ export async function updateAlphaaEmployeeProfile(
   await logOrbitAction({
     action: "update",
     resource: "employee",
-    summary: `Updated ALPHAA profile for ${parsed.fullName}`,
+    summary: `Updated ${MAIN_PROJECT_LABEL} profile for ${parsed.fullName}`,
     details: { userId, email: parsed.email, source: "alphaa" },
   });
 }
@@ -83,8 +84,8 @@ export async function setAlphaaEmployeeActive(
     action: "update",
     resource: "employee",
     summary: isActive
-      ? `Activated ALPHAA employee #${userId}`
-      : `Deactivated ALPHAA employee #${userId}`,
+      ? `Activated ${MAIN_PROJECT_LABEL} employee #${userId}`
+      : `Deactivated ${MAIN_PROJECT_LABEL} employee #${userId}`,
     details: { userId, isActive, source: "alphaa" },
   });
 }
@@ -115,7 +116,7 @@ export async function deleteAlphaaEmployee(userId: number): Promise<void> {
   await logOrbitAction({
     action: "delete",
     resource: "employee",
-    summary: `Deleted ALPHAA employee #${userId}`,
+    summary: `Deleted ${MAIN_PROJECT_LABEL} employee #${userId}`,
     details: { userId, source: "alphaa" },
   });
 }
