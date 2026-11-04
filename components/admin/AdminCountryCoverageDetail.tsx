@@ -21,15 +21,9 @@ export function AdminCountryCoverageDetail({
       </div>
 
       <section aria-label="Account holders" className="flex flex-col gap-3">
-        <div>
-          <h3 className="text-[13px] font-semibold text-[var(--color-ink)]">
-            Account holders
-          </h3>
-          <p className="mt-0.5 text-[12px] text-[var(--color-muted)]">
-            Each person&apos;s live accounts versus their seat plan. Missing
-            platforms are highlighted in red.
-          </p>
-        </div>
+        <h3 className="text-[13px] font-semibold text-[var(--color-ink)]">
+          Account holders
+        </h3>
 
         {row.holders.length > 0 ? (
           <div className="flex flex-col gap-3">

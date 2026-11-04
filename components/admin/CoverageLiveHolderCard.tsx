@@ -51,11 +51,7 @@ export function CoverageLiveHolderCard({
           <p className="max-w-full rounded-md bg-[var(--color-coral)] px-2.5 py-1.5 text-[11px] font-extrabold leading-snug text-white shadow-[0_0_0_1px_rgba(180,40,40,.35)]">
             {summary}
           </p>
-        ) : (
-          <p className="rounded-md bg-[var(--color-emerald)]/15 px-2.5 py-1.5 text-[11px] font-bold text-[var(--color-emerald)]">
-            On plan
-          </p>
-        )}
+        ) : null}
       </header>
 
       <CoverageLivePlatformGrid

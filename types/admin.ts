@@ -697,10 +697,11 @@ export type EmployeesTableProps = {
 export type EmployeesTableToolbarProps = {
   initialQ: string;
   counts: EmployeeListStatusCounts;
+  holders: BulkImportHolderOption[];
+  canCreateEmployees?: boolean;
 };
 
 export type EmployeesHeadingActionsProps = {
-  holders: BulkImportHolderOption[];
   canCreateEmployees?: boolean;
 };
 

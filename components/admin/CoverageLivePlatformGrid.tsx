@@ -11,7 +11,7 @@ const LEGEND = [
 export function CoverageLivePlatformGrid({
   metrics,
   label = "Live coverage per platform",
-  description = "Actual accounts versus the strategy plan. Red marks what is still missing.",
+  description,
   showHeader = true,
   embedded = false,
 }: CoverageLivePlatformGridProps) {
