@@ -121,18 +121,6 @@ export type StrategySaveCountryInput = {
   handlerTargets: StrategyScopeCounts;
 };
 
-export type StrategyImportResult = {
-  success: boolean;
-  message: string;
-  alphaaCount?: number;
-  africaEuropeCount?: number;
-};
-
-/** Alpha Assets "Region" is geography (Levant, Gulf), not Africa/Europe/ALPHAA books. */
-export type StrategyExcelParseOptions = {
-  ignoreExcelRegion?: boolean;
-};
-
 export type StrategyGapLine = {
   platform: StrategyPlatformKey;
   scope: StrategyAccountScope | "all";
@@ -247,12 +235,6 @@ export type StrategyProjectPanelProps = {
   canEdit?: boolean;
   onSave: (input: StrategySaveProjectInput) => Promise<boolean>;
   onDelete: () => void;
-};
-
-export type StrategyUploadButtonProps = {
-  pending: boolean;
-  onFile: (file: File) => void;
-  disabled?: boolean;
 };
 
 export type StrategyEmptyStateProps = {
@@ -388,6 +370,13 @@ export type StrategySubProjectNavProps = {
   projects: StrategySubProjectOption[];
   selectedKey: string | null;
   onSelect: (key: string) => void;
+  onOpenCoverage: (key: string) => void;
+};
+
+export type StrategyCountryCoverageModalProps = {
+  country: string | null;
+  open: boolean;
+  onClose: () => void;
 };
 
 export type StrategyAddSubProjectButtonProps = {

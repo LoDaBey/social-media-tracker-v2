@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useCreateStrategyProject } from "@/hooks/useCreateStrategyProject";
 import { useDeleteStrategyProject } from "@/hooks/useDeleteStrategyProject";
-import { useImportStrategyExcel } from "@/hooks/useImportStrategyExcel";
 import { useSaveStrategyProject } from "@/hooks/useSaveStrategyProject";
 import { strategyHrefForProject } from "@/lib/strategy-tabs";
 import { StrategyBookTabs } from "./StrategyBookTabs";
@@ -14,7 +13,6 @@ import { StrategyEmptyState } from "./StrategyEmptyState";
 import { StrategyNewProjectButton } from "./StrategyNewProjectButton";
 import { StrategyNewProjectModal } from "./StrategyNewProjectModal";
 import { StrategyProjectPanel } from "./StrategyProjectPanel";
-import { StrategyUploadButton } from "./StrategyUploadButton";
 import type {
   StrategyCreateProjectInput,
   StrategySaveProjectInput,
@@ -29,7 +27,6 @@ export function StrategyTool({
   canEdit = false,
 }: StrategyToolProps) {
   const router = useRouter();
-  const { importExcel, pending: importing } = useImportStrategyExcel();
   const { createProject, pending: creating } = useCreateStrategyProject();
   const { saveProject, pending: savingProject } = useSaveStrategyProject();
   const { deleteProject, pending: deleting } = useDeleteStrategyProject();
@@ -37,16 +34,6 @@ export function StrategyTool({
   const [createError, setCreateError] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-
-  async function handleUpload(file: File) {
-    const result = await importExcel(file);
-    if (!result.success) {
-      toast.error(result.message);
-      return;
-    }
-    toast.success(result.message);
-    router.refresh();
-  }
 
   async function handleCreateProject(input: StrategyCreateProjectInput) {
     setCreateError(null);
@@ -115,7 +102,6 @@ export function StrategyTool({
         {canEdit ? (
           <div className="flex flex-wrap items-center gap-2">
             <StrategyNewProjectButton onClick={openCreate} />
-            <StrategyUploadButton pending={importing} onFile={handleUpload} />
           </div>
         ) : null}
       </div>

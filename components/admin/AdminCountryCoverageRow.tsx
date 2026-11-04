@@ -118,6 +118,7 @@ export function AdminCountryCoverageRow({
                 key={holder.id ?? `vacant-${row.country}-${index}`}
                 holder={holder}
                 country={row.country}
+                language={row.language}
                 showAlphaaPlatforms={showAlphaaPlatforms}
               />
             ))

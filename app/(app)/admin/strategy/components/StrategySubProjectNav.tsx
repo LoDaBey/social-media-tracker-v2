@@ -7,12 +7,10 @@ export function StrategySubProjectNav({
   projects,
   selectedKey,
   onSelect,
+  onOpenCoverage,
 }: StrategySubProjectNavProps) {
   return (
-    <nav
-      className="flex flex-wrap gap-1.5"
-      aria-label="Sub-projects"
-    >
+    <nav className="flex flex-wrap gap-1.5" aria-label="Countries">
       {projects.map((item) => {
         const selected = item.key === selectedKey;
         return (
@@ -20,8 +18,14 @@ export function StrategySubProjectNav({
             key={item.key}
             type="button"
             aria-current={selected ? "true" : undefined}
-            aria-label={`Show ${item.name} sub-project`}
+            aria-label={`Show ${item.name}. Double-click for planned coverage.`}
+            title="Click to select · Double-click for planned coverage"
             onClick={() => onSelect(item.key)}
+            onDoubleClick={(event) => {
+              event.preventDefault();
+              onSelect(item.key);
+              onOpenCoverage(item.key);
+            }}
             className={[
               "inline-flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]",
               selected

@@ -15,6 +15,11 @@ import {
 } from "@/lib/admin-country-targets";
 import { europeSeatTargetsForIndexFromDb } from "@/lib/strategy-plans-data";
 import { fetchAdminEmployeeEditorBundle } from "@/lib/admin-data";
+import {
+  countriesForCreateProject,
+  regionFromStrategyProjectSlug,
+} from "@/lib/employee-create-projects";
+import { fetchEmployeeCreateProjectOptions } from "@/lib/employee-create-projects-data";
 import { isEuropeCountry } from "@/lib/region-config";
 import { isSetupCountry, setupRegionForCountry } from "@/lib/setup-options";
 import type {
@@ -75,24 +80,25 @@ const createEmployeeSchema = z
     hire_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
     current_level: z.number().int().min(1).max(6).optional(),
     country: z.string().optional(),
+    project_slug: z.string().trim().optional(),
   })
   .superRefine((data, ctx) => {
     const role = data.role ?? "employee";
     if (role === "manager" || role === "admin" || role === "op") return;
     const country = data.country?.trim() ?? "";
+    const projectSlug = data.project_slug?.trim() ?? "";
+    if (!projectSlug) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["project_slug"],
+        message: "Select a project.",
+      });
+    }
     if (!country) {
       ctx.addIssue({
         code: "custom",
         path: ["country"],
         message: "Select a country.",
-      });
-      return;
-    }
-    if (!isSetupCountry(country)) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["country"],
-        message: "Select a valid country.",
       });
     }
   });
@@ -145,6 +151,22 @@ export async function createEmployee(
       role === "manager"
         ? managerCountries[0]!
         : (p.country ?? "").trim();
+
+    const projectSlug = (p.project_slug ?? "").trim();
+    let assignedRegion = setupRegionForCountry(primaryCountry);
+
+    if (role !== "manager" && role !== "admin" && role !== "op") {
+      const projects = await fetchEmployeeCreateProjectOptions();
+      const project = projects.find((item) => item.slug === projectSlug);
+      if (!project) {
+        return { error: "Select a valid project." };
+      }
+      const projectCountries = countriesForCreateProject(projects, projectSlug);
+      if (!projectCountries.includes(primaryCountry)) {
+        return { error: "Select a country from this project." };
+      }
+      assignedRegion = regionFromStrategyProjectSlug(projectSlug);
+    }
 
     client = await pool.connect();
     await client.query("BEGIN");
@@ -226,7 +248,7 @@ export async function createEmployee(
         opId,
         hire,
         level,
-        setupRegionForCountry(primaryCountry),
+        assignedRegion,
         primaryCountry,
         defaultTargets.x,
         defaultTargets.facebook_personal,

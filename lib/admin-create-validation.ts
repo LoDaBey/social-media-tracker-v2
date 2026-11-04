@@ -1,4 +1,3 @@
-import { isSetupCountry } from "@/lib/setup-options";
 import {
   reportingFieldsFromSupervisor,
   reportingValidationMessage,
@@ -30,10 +29,23 @@ export function validateCreateEmployeeForm(
     }
   } else if (input.role === "admin" || input.role === "op") {
     // Regional country is optional for global roles.
-  } else if (!input.country.trim()) {
-    errors.country = "Select a country.";
-  } else if (!isSetupCountry(input.country.trim())) {
-    errors.country = "Select a valid country.";
+  } else {
+    if (!input.project_slug.trim()) {
+      errors.project_slug = "Select a project.";
+    }
+    if (!input.country.trim()) {
+      errors.country = "Select a country.";
+    } else if (
+      input.projectCountries.length > 0 &&
+      !input.projectCountries.includes(input.country.trim())
+    ) {
+      errors.country = "Select a country from this project.";
+    } else if (
+      input.projectCountries.length === 0 &&
+      input.project_slug.trim()
+    ) {
+      errors.country = "This project has no countries yet. Add them in Strategy.";
+    }
   }
 
   const reporting =
@@ -66,6 +78,7 @@ export function firstCreateEmployeeError(
     errors.full_name ??
     errors.email ??
     errors.password ??
+    errors.project_slug ??
     errors.country ??
     errors.manager_id ??
     errors.supervisor_id ??
