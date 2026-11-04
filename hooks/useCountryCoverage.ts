@@ -11,7 +11,7 @@ export type UseCountryCoverageResult = {
   showAlphaaPlatforms: boolean;
   loading: boolean;
   error: string | null;
-  load: (country: string) => Promise<void>;
+  load: (country: string, region?: string | null) => Promise<void>;
   reset: () => void;
 };
 
@@ -28,15 +28,16 @@ export function useCountryCoverage(): UseCountryCoverageResult {
     setError(null);
   }, []);
 
-  const load = useCallback(async (country: string) => {
+  const load = useCallback(async (country: string, region?: string | null) => {
     const trimmed = country.trim();
     if (!trimmed) return;
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(
-        `/api/admin/coverage?country=${encodeURIComponent(trimmed)}`
-      );
+      const params = new URLSearchParams({ country: trimmed });
+      const regionSlug = region?.trim();
+      if (regionSlug) params.set("region", regionSlug);
+      const response = await fetch(`/api/admin/coverage?${params.toString()}`);
       const data = (await response.json()) as AdminCountryCoverageResponse;
       if (!response.ok || !data.ok) {
         setCoverage(null);

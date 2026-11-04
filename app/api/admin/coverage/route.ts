@@ -3,7 +3,10 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { fetchAdminCountryCoverage } from "@/lib/admin-country-coverage";
-import { isAlphaaCountry } from "@/lib/region-config";
+import {
+  adminRegionFromSlug,
+  isAlphaaCountry,
+} from "@/lib/region-config";
 import type { AdminCountryCoverageResponse } from "@/types/admin";
 
 export async function GET(request: Request) {
@@ -20,7 +23,10 @@ export async function GET(request: Request) {
     );
   }
 
-  const country = new URL(request.url).searchParams.get("country")?.trim() ?? "";
+  const url = new URL(request.url);
+  const country = url.searchParams.get("country")?.trim() ?? "";
+  const regionRaw = url.searchParams.get("region")?.trim();
+  const region = regionRaw ? adminRegionFromSlug(regionRaw) : undefined;
   if (!country) {
     return NextResponse.json(
       {
@@ -32,7 +38,10 @@ export async function GET(request: Request) {
   }
 
   try {
-    const coverage = await fetchAdminCountryCoverage({ countries: [country] });
+    const coverage = await fetchAdminCountryCoverage({
+      countries: [country],
+      region,
+    });
     return NextResponse.json({
       ok: true,
       coverage,

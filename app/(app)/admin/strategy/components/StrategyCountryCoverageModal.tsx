@@ -10,18 +10,20 @@ import type { StrategyCountryCoverageModalProps } from "@/types/strategy";
 
 function StrategyCountryCoverageModalFrame({
   country,
+  projectSlug,
   onClose,
 }: {
   country: string;
+  projectSlug?: string | null;
   onClose: () => void;
 }) {
   const { coverage, showAlphaaPlatforms, loading, error, load, reset } =
     useCountryCoverage();
 
   useEffect(() => {
-    void load(country);
+    void load(country, projectSlug);
     return () => reset();
-  }, [country, load, reset]);
+  }, [country, projectSlug, load, reset]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -120,13 +122,15 @@ export function StrategyCountryCoverageModal({
   country,
   open,
   onClose,
+  projectSlug,
 }: StrategyCountryCoverageModalProps) {
   return (
     <AnimatePresence>
       {open && country ? (
         <StrategyCountryCoverageModalFrame
-          key={country}
+          key={`${projectSlug ?? "all"}:${country}`}
           country={country}
+          projectSlug={projectSlug}
           onClose={onClose}
         />
       ) : null}
