@@ -4,7 +4,7 @@ import {
   fetchOpOptions,
   fetchTeamLeadOptions,
 } from "@/lib/admin-data";
-import { fetchEmployeeCreateProjectOptions } from "@/lib/employee-create-projects";
+import { fetchEmployeeCreateProjectOptions } from "@/lib/employee-create-projects-data";
 import { fetchManagerOptions } from "@/lib/manager-data";
 import { CreateEmployeeForm } from "@/components/admin/CreateEmployeeForm";
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";

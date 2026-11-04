@@ -17,9 +17,9 @@ import { europeSeatTargetsForIndexFromDb } from "@/lib/strategy-plans-data";
 import { fetchAdminEmployeeEditorBundle } from "@/lib/admin-data";
 import {
   countriesForCreateProject,
-  fetchEmployeeCreateProjectOptions,
   regionFromStrategyProjectSlug,
 } from "@/lib/employee-create-projects";
+import { fetchEmployeeCreateProjectOptions } from "@/lib/employee-create-projects-data";
 import { isEuropeCountry } from "@/lib/region-config";
 import { isSetupCountry, setupRegionForCountry } from "@/lib/setup-options";
 import type {
