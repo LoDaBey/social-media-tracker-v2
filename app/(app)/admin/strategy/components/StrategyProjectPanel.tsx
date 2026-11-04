@@ -7,6 +7,7 @@ import {
   filterStrategyTargets,
   orderedStrategyPlatforms,
   strategyScopeTotal,
+  strategyVisibleScopes,
   targetsGrandTotal,
 } from "@/lib/strategy-platforms";
 import { StrategyCountryTotals } from "./StrategyCountryTotals";
@@ -78,6 +79,12 @@ export function StrategyProjectPanel({
     derivedProjectTargets,
     selected
   );
+  const visibleScopes = strategyVisibleScopes("custom", [
+    visibleProjectTargets,
+    ...subProjects.map((item) => item.projectTargets),
+    ...subProjects.map((item) => item.handlerTargets),
+  ]);
+  const showNative = visibleScopes.includes("native");
   const computedTotal = targetsGrandTotal(visibleProjectTargets);
   const computedResources = hasSubProjects
     ? subProjects.reduce((sum, item) => sum + item.resources, 0)
@@ -208,7 +215,7 @@ export function StrategyProjectPanel({
                 personal={strategyScopeTotal(visibleProjectTargets, "personal")}
                 umbrella={strategyScopeTotal(visibleProjectTargets, "umbrella")}
                 native={strategyScopeTotal(visibleProjectTargets, "native")}
-                showNative
+                showNative={showNative}
               />
             </aside>
             <StrategyPlatformGrid
@@ -217,6 +224,7 @@ export function StrategyProjectPanel({
               value={derivedProjectTargets}
               onChange={setProjectTargets}
               readOnly={!isEditing || hasSubProjects}
+              scopes={visibleScopes}
               description={
                 hasSubProjects
                   ? ""
@@ -230,6 +238,7 @@ export function StrategyProjectPanel({
             drafts={subProjects}
             selectedKey={selectedKey}
             platforms={selected}
+            scopes={visibleScopes}
             editing={isEditing}
             canEdit={canEdit}
             onStartEdit={() => setEditing(true)}

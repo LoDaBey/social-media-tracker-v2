@@ -27,8 +27,23 @@ export function validateCreateEmployeeForm(
       errors.manager_countries =
         "Select at least one country for this manager.";
     }
-  } else if (input.role === "admin" || input.role === "op") {
-    // Regional country is optional for global roles.
+  } else if (input.role === "admin") {
+    // Global role — no project/country assignment.
+  } else if (input.role === "op") {
+    if (!input.project_slug.trim()) {
+      errors.project_slug = "Select a project for this Operation Manager.";
+    }
+    if (input.op_countries.length === 0) {
+      errors.op_countries =
+        "Select at least one country this Operation Manager can access.";
+    } else if (
+      input.projectCountries.length > 0 &&
+      input.op_countries.some(
+        (country) => !input.projectCountries.includes(country)
+      )
+    ) {
+      errors.op_countries = "Select countries from the chosen project only.";
+    }
   } else {
     if (!input.project_slug.trim()) {
       errors.project_slug = "Select a project.";
@@ -83,6 +98,7 @@ export function firstCreateEmployeeError(
     errors.manager_id ??
     errors.supervisor_id ??
     errors.manager_countries ??
+    errors.op_countries ??
     null
   );
 }

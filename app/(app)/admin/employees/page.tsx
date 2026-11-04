@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { getAdminViewerOrNull } from "@/lib/admin-access";
 import { fetchAdminEmployeesList } from "@/lib/admin-data";
 import {
   employeeListStatusCounts,
@@ -10,9 +12,11 @@ import { EmployeesHeadingActions } from "@/app/(app)/admin/employees/components/
 import { EmployeesTableToolbar } from "@/app/(app)/admin/employees/components/EmployeesTableToolbar";
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import { adminViewEmployees } from "@/lib/admin-view";
+import { baseCountryFromDisplay } from "@/lib/overview-country-display";
 import {
   employeeListRegionFromSlug,
   isCountryInEmployeeListRegion,
+  type SetupRegion,
 } from "@/lib/setup-options";
 
 export const metadata: Metadata = {
@@ -26,6 +30,9 @@ export default async function AdminEmployeesPage({
 }: {
   searchParams?: Promise<SearchParams>;
 }) {
+  const viewer = await getAdminViewerOrNull();
+  if (!viewer) redirect("/login");
+
   const sp = (await searchParams) ?? {};
   const q = typeof sp.q === "string" ? sp.q : "";
   const status = parseEmployeeListStatus(
@@ -43,18 +50,41 @@ export default async function AdminEmployeesPage({
   const regionFilter = employeeListRegionFromSlug(
     typeof sp.region === "string" ? sp.region : undefined
   );
-  const region = regionFilter === "all" ? undefined : regionFilter;
+  let region = regionFilter === "all" ? undefined : regionFilter;
   const countryRaw = typeof sp.country === "string" ? sp.country : "";
-  const country = isCountryInEmployeeListRegion(countryRaw, regionFilter)
+  let country = isCountryInEmployeeListRegion(countryRaw, regionFilter)
     ? countryRaw
     : "";
 
-  const listed = await fetchAdminEmployeesList({
+  if (viewer.role === "op" && viewer.scope) {
+    region = viewer.scope.region as SetupRegion;
+    if (country && !viewer.scope.countries.includes(country)) {
+      country = "";
+    }
+  }
+
+  let listed = await fetchAdminEmployeesList({
     q,
     role: role === "all" ? undefined : role,
     region,
     country: country || undefined,
   });
+
+  if (viewer.role === "op" && viewer.scope) {
+    const allowed = new Set(viewer.scope.countries);
+    const regionName = viewer.scope.region.toLowerCase();
+    listed = listed.filter((row) => {
+      const base = baseCountryFromDisplay(row.country ?? "");
+      if (!allowed.has(base) && !(row.country && allowed.has(row.country))) {
+        return false;
+      }
+      if (row.role === "employee") {
+        return (row.region ?? "").trim().toLowerCase() === regionName;
+      }
+      return true;
+    });
+  }
+
   const counts = employeeListStatusCounts(listed);
   const rows = filterEmployeesByListStatus(listed, status);
   const holders = listed
@@ -75,7 +105,12 @@ export default async function AdminEmployeesPage({
   return (
     <AdminWorkspace
       view={adminViewEmployees()}
-      actions={<EmployeesHeadingActions holders={holders} />}
+      actions={
+        <EmployeesHeadingActions
+          holders={holders}
+          canCreateEmployees={viewer.canEdit}
+        />
+      }
     >
       <EmployeesTable
         rows={rows}

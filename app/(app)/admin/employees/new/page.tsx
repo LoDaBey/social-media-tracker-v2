@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { getAdminViewerOrNull } from "@/lib/admin-access";
 import {
   fetchAdminSupervisorOptions,
   fetchOpOptions,
@@ -15,6 +17,10 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminNewEmployeePage() {
+  const viewer = await getAdminViewerOrNull();
+  if (!viewer) redirect("/login");
+  if (!viewer.canEdit) redirect("/admin/employees");
+
   const [teamLeads, managers, ops, admins, projects] = await Promise.all([
     fetchTeamLeadOptions(),
     fetchManagerOptions(),

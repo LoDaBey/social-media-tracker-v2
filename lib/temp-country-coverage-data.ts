@@ -57,17 +57,34 @@ function tempRegionClause(scope: TempCoverageRegionScope | undefined) {
 }
 
 /**
- * Africa / Europe / Overview (temp side) — temp_users + temp_social_media_accounts only.
+ * Africa / Europe / Overview / custom project tabs — temp_users + temp_social_media_accounts only.
  * Never reads legacy users or social_media_accounts.
  */
 export async function fetchTempCountryCoverage(
   countries: string[] | null,
-  options?: { regionScope?: TempCoverageRegionScope }
+  options?: {
+    regionScope?: TempCoverageRegionScope;
+    /** Exact temp_users.region for a strategy project tab (e.g. Asia). */
+    projectRegion?: string;
+  }
 ) {
-  const sqlCountryClause =
-    countries === null ? "" : ` AND ${tempUserCountryInList(1)}`;
-  const sqlParams = countries === null ? [] : [countries];
-  const regionClause = tempRegionClause(options?.regionScope);
+  const sqlParams: unknown[] = [];
+  let regionClause = "";
+  const projectRegion = options?.projectRegion?.trim();
+  if (projectRegion) {
+    sqlParams.push(projectRegion.toLowerCase());
+    regionClause = ` AND LOWER(TRIM(u.region)) = $${sqlParams.length}`;
+  } else {
+    regionClause = tempRegionClause(options?.regionScope);
+  }
+
+  let sqlCountryClause = "";
+  let countryParamIndex: number | null = null;
+  if (countries !== null) {
+    sqlParams.push(countries);
+    countryParamIndex = sqlParams.length;
+    sqlCountryClause = ` AND ${tempUserCountryInList(countryParamIndex)}`;
+  }
 
   const [countryRows, holderRows, onHoldRow, spareRow] = await Promise.all([
     query<{
@@ -143,7 +160,7 @@ export async function fetchTempCountryCoverage(
       sqlParams
     ),
     query<{ on_hold: string }>(
-      countries === null
+      countryParamIndex === null
         ? `SELECT COUNT(*)::text AS on_hold
              FROM temp_users u
             WHERE employment_status = 'on_hold'
@@ -152,11 +169,11 @@ export async function fetchTempCountryCoverage(
              FROM temp_users u
             WHERE employment_status = 'on_hold'
               AND LOWER(u.role) = 'employee'${regionClause}
-              AND ${tempUserCountryInList(1)}`,
+              AND ${tempUserCountryInList(countryParamIndex)}`,
       sqlParams
     ),
     query<{ spare: string }>(
-      countries === null
+      countryParamIndex === null
         ? `SELECT COUNT(a.id)::text AS spare
              FROM temp_social_media_accounts a
              INNER JOIN temp_users u ON u.id = a.user_id
@@ -171,7 +188,7 @@ export async function fetchTempCountryCoverage(
               AND a.status = 'active'
               AND LOWER(u.role) = 'employee'
               AND u.is_active = TRUE${regionClause}
-              AND ${tempUserCountryInList(1)}`,
+              AND ${tempUserCountryInList(countryParamIndex)}`,
       sqlParams
     ),
   ]);

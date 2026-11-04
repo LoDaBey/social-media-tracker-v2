@@ -12,8 +12,9 @@ import {
 } from "@/lib/strategy-platforms";
 import {
   isDualRegionCountry,
-  overviewDisplayCountry,
+  labelDuplicateOverviewPlans,
 } from "@/lib/overview-country-display";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import type {
   AdminCountryPlan,
   AdminCountrySeatQuota,
@@ -131,22 +132,27 @@ function staticPlansForRegion(region: AdminRegion): AdminCountryPlan[] {
     ...EUROPE_COUNTRY_PLANS.map((plan) => plan.country),
   ]);
 
-  return [
-    ...ADMIN_COUNTRY_PLANS.map((plan) =>
-      isDualRegionCountry(plan.country)
-        ? { ...plan, country: overviewDisplayCountry(plan.country, "Africa") }
-        : plan
-    ),
-    ...EUROPE_COUNTRY_PLANS,
+  return labelDuplicateOverviewPlans([
+    ...ADMIN_COUNTRY_PLANS.map((plan) => ({
+      plan,
+      baseCountry: plan.country,
+      projectLabel: "Africa",
+    })),
+    ...EUROPE_COUNTRY_PLANS.map((plan) => ({
+      plan,
+      baseCountry: plan.country,
+      projectLabel: "Europe",
+    })),
     ...ALPHAA_COUNTRY_PLANS.filter(
       (plan) =>
-        !africaAndEuropeCountries.has(plan.country) || isDualRegionCountry(plan.country)
-    ).map((plan) =>
-      isDualRegionCountry(plan.country)
-        ? { ...plan, country: overviewDisplayCountry(plan.country, "Alphaa") }
-        : plan
-    ),
-  ];
+        !africaAndEuropeCountries.has(plan.country) ||
+        isDualRegionCountry(plan.country)
+    ).map((plan) => ({
+      plan,
+      baseCountry: plan.country,
+      projectLabel: MAIN_PROJECT_LABEL,
+    })),
+  ]);
 }
 
 export async function fetchAdminCountryPlansForRegion(
@@ -213,19 +219,29 @@ async function plansFromStrategyProjectSlug(
   if (!project) return [];
   const children =
     project.subProjects.length > 0 ? project.subProjects : [project];
-  return children.map((child) =>
-    adminCountryPlanFromTargets({
-      country: child.name,
-      language: child.language || "—",
-      resources: child.resources,
-      totalAccounts:
-        child.totalAccounts > 0
-          ? child.totalAccounts
-          : targetsGrandTotal(child.projectTargets),
-      projectTargets: child.projectTargets,
-      handlerTargets: child.handlerTargets,
-    })
-  );
+  const seenCountries = new Set<string>();
+  const plans: AdminCountryPlan[] = [];
+  for (const child of children) {
+    const country = child.name.trim();
+    if (!country) continue;
+    const key = country.toLowerCase();
+    if (seenCountries.has(key)) continue;
+    seenCountries.add(key);
+    plans.push(
+      adminCountryPlanFromTargets({
+        country,
+        language: child.language || "—",
+        resources: child.resources,
+        totalAccounts:
+          child.totalAccounts > 0
+            ? child.totalAccounts
+            : targetsGrandTotal(child.projectTargets),
+        projectTargets: child.projectTargets,
+        handlerTargets: child.handlerTargets,
+      })
+    );
+  }
+  return plans;
 }
 
 async function fetchAdminCountryPlansFromDb(
@@ -266,33 +282,52 @@ async function fetchAdminCountryPlansFromDb(
   const customProjects = (await fetchStrategyProjects()).filter(
     (project) => !legacySlugs.has(project.slug)
   );
-  const customPlans = (
+  const customEntries = (
     await Promise.all(
-      customProjects.map((project) => plansFromStrategyProjectSlug(project.slug))
+      customProjects.map(async (project) => {
+        const plans = await plansFromStrategyProjectSlug(project.slug);
+        return plans.map((plan) => ({
+          plan,
+          baseCountry: plan.country,
+          projectLabel: project.name,
+        }));
+      })
     )
   ).flat();
 
-  return [
+  return labelDuplicateOverviewPlans([
     ...africa.map((row) => {
       const plan = strategyRowToAdminPlan(row);
-      return isDualRegionCountry(plan.country)
-        ? { ...plan, country: overviewDisplayCountry(plan.country, "Africa") }
-        : plan;
+      return {
+        plan,
+        baseCountry: plan.country,
+        projectLabel: "Africa",
+      };
     }),
-    ...europe.map(strategyRowToAdminPlan),
+    ...europe.map((row) => {
+      const plan = strategyRowToAdminPlan(row);
+      return {
+        plan,
+        baseCountry: plan.country,
+        projectLabel: "Europe",
+      };
+    }),
     ...alphaa
       .filter(
         (row) =>
-          !africaEuropeCountries.has(row.country) || isDualRegionCountry(row.country)
+          !africaEuropeCountries.has(row.country) ||
+          isDualRegionCountry(row.country)
       )
       .map((row) => {
         const plan = strategyRowToAdminPlan(row);
-        return isDualRegionCountry(plan.country)
-          ? { ...plan, country: overviewDisplayCountry(plan.country, "Alphaa") }
-          : plan;
+        return {
+          plan,
+          baseCountry: plan.country,
+          projectLabel: MAIN_PROJECT_LABEL,
+        };
       }),
-    ...customPlans,
-  ];
+    ...customEntries,
+  ]);
 }
 
 export async function fetchAfricaEuropeAdminPlan(

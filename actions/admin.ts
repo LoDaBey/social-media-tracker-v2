@@ -77,6 +77,7 @@ const createEmployeeSchema = z
     manager_id: z.number().int().positive().nullable().optional(),
     op_id: z.number().int().positive().nullable().optional(),
     manager_countries: z.array(z.string()).optional(),
+    op_countries: z.array(z.string()).optional(),
     hire_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
     current_level: z.number().int().min(1).max(6).optional(),
     country: z.string().optional(),
@@ -84,7 +85,24 @@ const createEmployeeSchema = z
   })
   .superRefine((data, ctx) => {
     const role = data.role ?? "employee";
-    if (role === "manager" || role === "admin" || role === "op") return;
+    if (role === "manager" || role === "admin") return;
+    if (role === "op") {
+      if (!(data.project_slug ?? "").trim()) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["project_slug"],
+          message: "Select a project for this Operation Manager.",
+        });
+      }
+      if (!(data.op_countries ?? []).some((country) => country.trim())) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["op_countries"],
+          message: "Select at least one country this Operation Manager can access.",
+        });
+      }
+      return;
+    }
     const country = data.country?.trim() ?? "";
     const projectSlug = data.project_slug?.trim() ?? "";
     if (!projectSlug) {
@@ -120,6 +138,25 @@ async function replaceManagerCountries(
   }
 }
 
+async function replaceOpCountries(
+  client: PoolClient,
+  userId: number,
+  countries: string[]
+) {
+  await client.query(`DELETE FROM temp_op_countries WHERE user_id = $1`, [
+    userId,
+  ]);
+  for (const country of countries) {
+    const trimmed = country.trim();
+    if (!trimmed) continue;
+    await client.query(
+      `INSERT INTO temp_op_countries (user_id, country) VALUES ($1, $2)
+       ON CONFLICT DO NOTHING`,
+      [userId, trimmed]
+    );
+  }
+}
+
 export async function createEmployee(
   payload: CreateEmployeePayload
 ): Promise<CreateEmployeeResult> {
@@ -137,6 +174,7 @@ export async function createEmployee(
     const hire = p.hire_date ?? today;
     const level = p.current_level ?? 2;
     let managerCountries: string[] = [];
+    let opCountries: string[] = [];
     if (role === "manager") {
       const countriesParsed = managerCountriesSchema.safeParse(
         p.manager_countries ?? []
@@ -146,16 +184,43 @@ export async function createEmployee(
       }
       managerCountries = countriesParsed.data;
     }
+    if (role === "op") {
+      const countriesParsed = managerCountriesSchema.safeParse(
+        p.op_countries ?? []
+      );
+      if (!countriesParsed.success) {
+        return { error: publicAdminMutationError(countriesParsed.error) };
+      }
+      opCountries = countriesParsed.data;
+    }
 
+    const projectSlug = (p.project_slug ?? "").trim();
     const primaryCountry =
       role === "manager"
         ? managerCountries[0]!
-        : (p.country ?? "").trim();
+        : role === "op"
+          ? opCountries[0]!
+          : (p.country ?? "").trim();
 
-    const projectSlug = (p.project_slug ?? "").trim();
     let assignedRegion = setupRegionForCountry(primaryCountry);
+    let opProjectSlug: string | null = null;
 
-    if (role !== "manager" && role !== "admin" && role !== "op") {
+    if (role === "op") {
+      const projects = await fetchEmployeeCreateProjectOptions();
+      const project = projects.find((item) => item.slug === projectSlug);
+      if (!project) {
+        return { error: "Select a valid project." };
+      }
+      const projectCountries = countriesForCreateProject(projects, projectSlug);
+      if (
+        opCountries.length === 0 ||
+        opCountries.some((country) => !projectCountries.includes(country))
+      ) {
+        return { error: "Select countries from this project only." };
+      }
+      assignedRegion = regionFromStrategyProjectSlug(projectSlug);
+      opProjectSlug = projectSlug;
+    } else if (role !== "manager" && role !== "admin") {
       const projects = await fetchEmployeeCreateProjectOptions();
       const project = projects.find((item) => item.slug === projectSlug);
       if (!project) {
@@ -228,14 +293,14 @@ export async function createEmployee(
       `INSERT INTO temp_users (
          full_name, email, password_hash, role, phone, is_active,
          team_lead_id, manager_id, op_id, hire_date, current_level,
-         region, country,
+         region, country, op_project_slug,
          target_x_count, target_facebook_personal_count, target_facebook_umbrella_count,
          target_instagram_count, target_tiktok_count
        ) VALUES (
          $1, $2, $3, $4, $5, TRUE,
          $6, $7, $8, $9::date, $10,
-         $11, $12,
-         $13, $14, $15, $16, $17
+         $11, $12, $13,
+         $14, $15, $16, $17, $18
        ) RETURNING id`,
       [
         p.full_name,
@@ -249,7 +314,8 @@ export async function createEmployee(
         hire,
         level,
         assignedRegion,
-        primaryCountry,
+        primaryCountry || null,
+        opProjectSlug,
         defaultTargets.x,
         defaultTargets.facebook_personal,
         defaultTargets.facebook_umbrella,
@@ -265,6 +331,9 @@ export async function createEmployee(
 
     if (role === "manager") {
       await replaceManagerCountries(client, id, managerCountries);
+    }
+    if (role === "op") {
+      await replaceOpCountries(client, id, opCountries);
     }
 
     await client.query("COMMIT");

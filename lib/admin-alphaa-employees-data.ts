@@ -299,6 +299,7 @@ export async function fetchAlphaaEmployeesList(
       manager_name: null,
       op_id: null,
       op_name: null,
+      region: "Alphaa",
       country: countries[0] ?? null,
       language: row.language,
       countries,

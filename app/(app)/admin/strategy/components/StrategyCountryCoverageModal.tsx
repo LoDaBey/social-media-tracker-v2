@@ -73,7 +73,8 @@ function StrategyCountryCoverageModalFrame({
               </h2>
             </div>
             <p className="mt-1 text-[13px] text-[var(--color-muted)]">
-              Planned coverage vs live accounts. Holders below target show in red.
+              Strategy-style live coverage. Platforms and holders below target are
+              highlighted in red.
             </p>
           </div>
           <motion.button
@@ -91,7 +92,7 @@ function StrategyCountryCoverageModalFrame({
 
         {loading ? (
           <p className="rounded-[16px] bg-[var(--color-cream-tint)] px-4 py-10 text-center text-[13px] text-[var(--color-muted)]">
-            Loading planned coverage…
+            Loading live coverage…
           </p>
         ) : error ? (
           <p
@@ -107,7 +108,7 @@ function StrategyCountryCoverageModalFrame({
           />
         ) : (
           <p className="rounded-[16px] bg-[var(--color-cream-tint)] px-4 py-10 text-center text-[13px] text-[var(--color-muted)]">
-            No planned coverage found for {country}.
+            No live coverage found for {country}.
           </p>
         )}
       </motion.div>

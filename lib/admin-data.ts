@@ -177,6 +177,7 @@ export async function fetchAdminEmployeesList(
       ${TEMP_MANAGER_NAME_SQL} AS manager_name,
       u.op_id,
       op_u.full_name AS op_name,
+      u.region,
       u.country,
       u.language,
       COALESCE(
@@ -214,6 +215,7 @@ export async function fetchAdminEmployeesList(
       manager_name: string | null;
       op_id: number | null;
       op_name: string | null;
+      region: string | null;
       country: string | null;
       language: string | null;
       manager_countries: string[] | null;
@@ -252,6 +254,7 @@ export async function fetchAdminEmployeesList(
       manager_name: r.manager_name,
       op_id: r.op_id,
       op_name: r.op_name,
+      region: r.region?.trim() || null,
       country,
       language: r.language,
       countries,

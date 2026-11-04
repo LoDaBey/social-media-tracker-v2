@@ -38,6 +38,8 @@ export type TempUser = {
 
   region: string;
   country: string | null;
+  /** Strategy project slug for Operation Managers (scoped admin views). */
+  op_project_slug?: string | null;
   language: string | null;
   setup_needs_review: boolean;
 

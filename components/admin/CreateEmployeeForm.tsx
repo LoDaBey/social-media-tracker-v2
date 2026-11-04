@@ -20,6 +20,7 @@ import { AdminFieldError } from "@/components/admin/AdminFieldError";
 import { CreateEmployeeProjectFields } from "@/components/admin/CreateEmployeeProjectFields";
 import { EmployeeReportingFields } from "@/components/admin/EmployeeReportingFields";
 import { ManagerCountriesField } from "@/components/admin/ManagerCountriesField";
+import { OpAccessFields } from "@/components/admin/OpAccessFields";
 import { SupervisorAssignField } from "@/components/admin/SupervisorAssignField";
 import {
   firstCreateEmployeeError,
@@ -64,13 +65,15 @@ export function CreateEmployeeForm({
     null
   );
   const [manager_countries, setManagerCountries] = useState<string[]>([]);
+  const [op_countries, setOpCountries] = useState<string[]>([]);
   const [project_slug, setProjectSlug] = useState("");
   const [country, setCountry] = useState("");
   const [fieldErrors, setFieldErrors] = useState<CreateEmployeeFieldErrors>({});
 
   const isManagerRole = role === "manager";
-  const isGlobalRole = role === "admin" || role === "op";
-  const showCountryFields = !isManagerRole && !isGlobalRole;
+  const isOpRole = role === "op";
+  const isGlobalRole = role === "admin";
+  const showCountryFields = !isManagerRole && !isGlobalRole && !isOpRole;
 
   const projectCountries = useMemo(
     () => countriesForCreateProject(projects, project_slug),
@@ -101,13 +104,23 @@ export function CreateEmployeeForm({
     );
   }
 
+  function toggleOpCountry(option: string) {
+    setOpCountries((prev) =>
+      prev.includes(option)
+        ? prev.filter((c) => c !== option)
+        : [...prev, option]
+    );
+  }
+
   function handleProjectChange(nextSlug: string) {
     setProjectSlug(nextSlug);
     setCountry("");
+    setOpCountries([]);
     setFieldErrors((prev) => ({
       ...prev,
       project_slug: undefined,
       country: undefined,
+      op_countries: undefined,
     }));
   }
 
@@ -125,6 +138,7 @@ export function CreateEmployeeForm({
       manager_id: employee_manager_id,
       team_lead_id: employee_team_lead_id,
       manager_countries,
+      op_countries,
     });
     setFieldErrors(nextFieldErrors);
     const firstError = firstCreateEmployeeError(nextFieldErrors);
@@ -157,11 +171,15 @@ export function CreateEmployeeForm({
           manager_id: reporting.manager_id,
           op_id: reporting.op_id,
           manager_countries: role === "manager" ? manager_countries : undefined,
-          project_slug: showCountryFields ? project_slug : undefined,
+          op_countries: role === "op" ? op_countries : undefined,
+          project_slug:
+            showCountryFields || role === "op" ? project_slug : undefined,
           country:
             role === "manager"
               ? manager_countries[0] ?? ""
-              : country,
+              : role === "op"
+                ? op_countries[0] ?? ""
+                : country,
         });
         if ("error" in result) {
           setError(result.error);
@@ -333,6 +351,8 @@ export function CreateEmployeeForm({
               setEmployeeTeamLeadId(null);
               setProjectSlug("");
               setCountry("");
+              setOpCountries([]);
+              setManagerCountries([]);
               setFieldErrors({});
             }}
             aria-label="Select role"
@@ -392,6 +412,25 @@ export function CreateEmployeeForm({
               setFieldErrors((prev) => ({
                 ...prev,
                 manager_countries: undefined,
+              }));
+            }}
+          />
+        ) : null}
+        {isOpRole ? (
+          <OpAccessFields
+            projects={projects}
+            projectSlug={project_slug}
+            selectedCountries={op_countries}
+            projectError={fieldErrors.project_slug}
+            countriesError={fieldErrors.op_countries}
+            fieldClass={fieldClass}
+            invalidFieldClass={invalidFieldClass}
+            onProjectChange={handleProjectChange}
+            onToggleCountry={(option) => {
+              toggleOpCountry(option);
+              setFieldErrors((prev) => ({
+                ...prev,
+                op_countries: undefined,
               }));
             }}
           />

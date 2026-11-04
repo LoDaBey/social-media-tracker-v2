@@ -14,6 +14,7 @@ import type {
 export function AdminOverviewRegionTabs({
   region,
   projects,
+  hideAllRegions = false,
   children,
 }: AdminOverviewRegionTabsProps) {
   const searchParams = useSearchParams();
@@ -21,7 +22,9 @@ export function AdminOverviewRegionTabs({
   const pathname = usePathname();
 
   const tabs: { region: AdminRegion; slug: string; label: string }[] = [
-    { region: "Overview", slug: "overview", label: "All regions" },
+    ...(hideAllRegions
+      ? []
+      : [{ region: "Overview" as const, slug: "overview", label: "All regions" }]),
     ...projects.map((project) => {
       const nextRegion = adminRegionFromStrategySlug(project.slug);
       return {

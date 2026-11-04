@@ -2,6 +2,7 @@ import {
   fetchAdminSpareAccounts,
   fetchAdminSpareMarkHolders,
 } from "@/lib/admin-accounts-data";
+import { getAdminViewerOrNull } from "@/lib/admin-access";
 import { fetchAdminCommandPalettePeople } from "@/lib/admin-data";
 import { AdminHeaderNav } from "@/components/layout/AdminHeaderNav";
 import { BrandLogo } from "@/components/layout/BrandLogo";
@@ -9,6 +10,7 @@ import { HeaderSearch } from "@/components/layout/HeaderSearch";
 import { HeaderUserMenu } from "@/components/layout/HeaderUserMenu";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { baseCountryFromDisplay } from "@/lib/overview-country-display";
 import type { AppHeaderProps } from "@/types/layout";
 import Link from "next/link";
 
@@ -26,9 +28,10 @@ export async function AppHeader({
   role,
   roleLabel,
 }: AppHeaderProps) {
-  const isAdmin = role === "admin";
+  const isAdminWorkspace = role === "admin" || role === "op";
   const initials = headerInitials(name);
-  const [spareAccounts, spareHolders, people] = isAdmin
+  const viewer = isAdminWorkspace ? await getAdminViewerOrNull() : null;
+  let [spareAccounts, spareHolders, people] = isAdminWorkspace
     ? await Promise.all([
         fetchAdminSpareAccounts(),
         fetchAdminSpareMarkHolders(),
@@ -36,12 +39,31 @@ export async function AppHeader({
       ])
     : [[], [], []];
 
+  if (viewer?.role === "op" && viewer.scope) {
+    const allowed = new Set(viewer.scope.countries);
+    const regionName = viewer.scope.region.toLowerCase();
+    const inScopeCountry = (country: string | null | undefined) => {
+      if (!country) return false;
+      const base = baseCountryFromDisplay(country);
+      return allowed.has(base) || allowed.has(country);
+    };
+    spareAccounts = spareAccounts.filter((account) =>
+      inScopeCountry(account.country)
+    );
+    spareHolders = spareHolders.filter(
+      (holder) =>
+        inScopeCountry(holder.country) &&
+        (holder.region ?? "").trim().toLowerCase() === regionName
+    );
+    people = people.filter((person) => inScopeCountry(person.country));
+  }
+
   return (
     <header className="relative isolate z-50 h-16 border-b border-[var(--color-hairline)] bg-[var(--color-surface)]">
       <div
         className={[
           "mx-auto flex h-full w-full items-center justify-between gap-3 px-4 sm:px-8",
-          role === "admin" || role === "manager"
+          role === "admin" || role === "op" || role === "manager"
             ? "max-w-[1600px]"
             : "max-w-7xl",
         ].join(" ")}
@@ -54,7 +76,7 @@ export async function AppHeader({
           >
             <BrandLogo size="header" priority />
           </Link>
-          {isAdmin ? (
+          {isAdminWorkspace ? (
             <AdminHeaderNav
               spareCount={spareAccounts.length}
               spareAccounts={spareAccounts}
@@ -64,7 +86,7 @@ export async function AppHeader({
         </div>
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-          {isAdmin ? (
+          {isAdminWorkspace ? (
             <HeaderSearch people={people} />
           ) : roleLabel ? (
             <span className="rounded-full bg-[var(--color-emerald)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-white">

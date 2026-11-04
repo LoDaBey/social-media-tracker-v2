@@ -12,11 +12,16 @@ import {
   splitCountryPlanSeats,
   xPlanTarget,
 } from "@/lib/admin-country-targets";
-import { baseCountryFromDisplay } from "@/lib/overview-country-display";
+import {
+  baseCountryFromDisplay,
+  resolveOverviewActualKey,
+} from "@/lib/overview-country-display";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
+import { regionFromStrategyProjectSlug } from "@/lib/employee-create-projects";
 import {
   baseCountriesFromDisplayFilter,
   isDualRegionCountry,
-  overviewDisplayCountry,
+  isLegacyAdminRegion,
 } from "@/lib/region-config";
 import {
   adminCountryPlansForRegion,
@@ -26,6 +31,7 @@ import { isAlphaaCountry, isTempPlanCountry } from "@/lib/setup-options";
 import {
   fetchTempCountryCoverage,
   type TempCountryActuals,
+  type TempCoverageRegionScope,
   type TempHolderActuals,
 } from "@/lib/temp-country-coverage-data";
 import type {
@@ -347,7 +353,8 @@ async function splitCoverageCountries(
         countryFilter,
         alphaaPlanCountries
       ),
-      tempRegionScope: undefined,
+      tempRegionScope: undefined as TempCoverageRegionScope | undefined,
+      projectRegion: undefined as string | undefined,
       fetchTemp: false,
       fetchAlphaa: true,
     };
@@ -362,6 +369,7 @@ async function splitCoverageCountries(
       ),
       alphaaCountries: [] as string[],
       tempRegionScope: "Africa" as const,
+      projectRegion: undefined as string | undefined,
       fetchTemp: true,
       fetchAlphaa: false,
     };
@@ -376,6 +384,7 @@ async function splitCoverageCountries(
       ),
       alphaaCountries: [] as string[],
       tempRegionScope: "Europe" as const,
+      projectRegion: undefined as string | undefined,
       fetchTemp: true,
       fetchAlphaa: false,
     };
@@ -394,18 +403,27 @@ async function splitCoverageCountries(
       tempCountries: tempFromFilter,
       alphaaCountries: alphaaFromFilter,
       tempRegionScope: "AfricaAndEurope" as const,
+      projectRegion: undefined,
       fetchTemp: tempFromFilter.length > 0,
       fetchAlphaa: alphaaFromFilter.length > 0,
     };
   }
 
-  if (countryFilter) {
+  /**
+   * Custom strategy project tabs (e.g. Asia) — only that project's temp_users.
+   * Never merge Main/Alphaa actuals into these rows.
+   */
+  if (region && !isLegacyAdminRegion(region)) {
+    const projectCountries = countryFilter
+      ? uniqueBaseCountries(countryFilter)
+      : [];
     return {
-      tempCountries: uniqueBaseCountries(countryFilter.filter(isTempPlanCountry)),
-      alphaaCountries: uniqueBaseCountries(countryFilter.filter(isAlphaaCountry)),
-      tempRegionScope: "AfricaAndEurope" as const,
-      fetchTemp: countryFilter.some(isTempPlanCountry),
-      fetchAlphaa: countryFilter.some(isAlphaaCountry),
+      tempCountries: projectCountries,
+      alphaaCountries: [] as string[],
+      tempRegionScope: undefined,
+      projectRegion: regionFromStrategyProjectSlug(region),
+      fetchTemp: projectCountries.length > 0,
+      fetchAlphaa: false,
     };
   }
 
@@ -413,6 +431,7 @@ async function splitCoverageCountries(
     tempCountries: [] as string[],
     alphaaCountries: [] as string[],
     tempRegionScope: undefined,
+    projectRegion: undefined,
     fetchTemp: false,
     fetchAlphaa: false,
   };
@@ -433,6 +452,7 @@ export async function fetchAdminCountryCoverage(
     tempCountries,
     alphaaCountries,
     tempRegionScope,
+    projectRegion,
     fetchTemp,
     fetchAlphaa,
   } = await splitCoverageCountries(countryFilter, filter?.region);
@@ -440,7 +460,10 @@ export async function fetchAdminCountryCoverage(
   const [tempCoverage, alphaaActualByCountry, alphaaHoldersByCountry, alphaaSpareCount] =
     await Promise.all([
       fetchTemp
-        ? fetchTempCountryCoverage(tempCountries, { regionScope: tempRegionScope })
+        ? fetchTempCountryCoverage(tempCountries, {
+            regionScope: tempRegionScope,
+            projectRegion,
+          })
         : Promise.resolve({
             actualByCountry: new Map<string, CountryActuals>(),
             holdersByCountry: new Map<string, HolderActuals[]>(),
@@ -476,52 +499,64 @@ export async function fetchAdminCountryCoverage(
       holdersByCountry.set(country, holders);
     }
   } else if (filter?.region === "Overview") {
+    const overviewDisplayNames =
+      regionPlans?.map((plan) => plan.country) ??
+      countryFilter ??
+      [];
+
     for (const [country, actuals] of tempCoverage.actualByCountry) {
       actualByCountry.set(
-        isDualRegionCountry(country)
-          ? overviewDisplayCountry(country, "Africa")
-          : country,
+        resolveOverviewActualKey(overviewDisplayNames, country, "Africa"),
         actuals
       );
     }
     for (const [country, holders] of tempCoverage.holdersByCountry) {
       holdersByCountry.set(
-        isDualRegionCountry(country)
-          ? overviewDisplayCountry(country, "Africa")
-          : country,
+        resolveOverviewActualKey(overviewDisplayNames, country, "Africa"),
         holders
       );
     }
     for (const [country, actuals] of alphaaActualByCountry) {
-      if (isDualRegionCountry(country)) {
-        actualByCountry.set(overviewDisplayCountry(country, "Alphaa"), actuals);
-      } else if (!isTempPlanCountry(country)) {
-        actualByCountry.set(country, actuals);
+      const key = resolveOverviewActualKey(
+        overviewDisplayNames,
+        country,
+        MAIN_PROJECT_LABEL
+      );
+      const isMainLabeled = key.endsWith(`(${MAIN_PROJECT_LABEL})`);
+      const isUnlabeledExclusive =
+        key === country && !isTempPlanCountry(country);
+      if (
+        isMainLabeled ||
+        isUnlabeledExclusive ||
+        isDualRegionCountry(country)
+      ) {
+        actualByCountry.set(key, actuals);
       }
     }
     for (const [country, holders] of alphaaHoldersByCountry) {
-      if (isDualRegionCountry(country)) {
-        holdersByCountry.set(overviewDisplayCountry(country, "Alphaa"), holders);
-      } else if (!isTempPlanCountry(country)) {
-        holdersByCountry.set(country, holders);
+      const key = resolveOverviewActualKey(
+        overviewDisplayNames,
+        country,
+        MAIN_PROJECT_LABEL
+      );
+      const isMainLabeled = key.endsWith(`(${MAIN_PROJECT_LABEL})`);
+      const isUnlabeledExclusive =
+        key === country && !isTempPlanCountry(country);
+      if (
+        isMainLabeled ||
+        isUnlabeledExclusive ||
+        isDualRegionCountry(country)
+      ) {
+        holdersByCountry.set(key, holders);
       }
     }
   } else {
+    // Custom strategy project tabs — temp actuals for that project region only.
     for (const [country, actuals] of tempCoverage.actualByCountry) {
       actualByCountry.set(country, actuals);
     }
     for (const [country, holders] of tempCoverage.holdersByCountry) {
       holdersByCountry.set(country, holders);
-    }
-    for (const [country, actuals] of alphaaActualByCountry) {
-      if (!isTempPlanCountry(country)) {
-        actualByCountry.set(country, actuals);
-      }
-    }
-    for (const [country, holders] of alphaaHoldersByCountry) {
-      if (!isTempPlanCountry(country)) {
-        holdersByCountry.set(country, holders);
-      }
     }
   }
 
