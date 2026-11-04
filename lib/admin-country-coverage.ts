@@ -427,6 +427,27 @@ async function splitCoverageCountries(
     };
   }
 
+  /**
+   * Country-only lookup (Strategy coverage modal, etc.) — no region tab selected.
+   * Pull Africa/Europe temp users and ALPHAA legacy rows for the named countries.
+   */
+  if (countryFilter && countryFilter.length > 0) {
+    const tempFromFilter = uniqueBaseCountries(
+      countryFilter.filter(isTempPlanCountry)
+    );
+    const alphaaFromFilter = uniqueBaseCountries(
+      countryFilter.filter(isAlphaaCountry)
+    );
+    return {
+      tempCountries: tempFromFilter,
+      alphaaCountries: alphaaFromFilter,
+      tempRegionScope: "AfricaAndEurope" as const,
+      projectRegion: undefined,
+      fetchTemp: tempFromFilter.length > 0,
+      fetchAlphaa: alphaaFromFilter.length > 0,
+    };
+  }
+
   return {
     tempCountries: [] as string[],
     alphaaCountries: [] as string[],
@@ -550,13 +571,31 @@ export async function fetchAdminCountryCoverage(
         holdersByCountry.set(key, holders);
       }
     }
-  } else {
+  } else if (filter?.region && !isLegacyAdminRegion(filter.region)) {
     // Custom strategy project tabs — temp actuals for that project region only.
     for (const [country, actuals] of tempCoverage.actualByCountry) {
       actualByCountry.set(country, actuals);
     }
     for (const [country, holders] of tempCoverage.holdersByCountry) {
       holdersByCountry.set(country, holders);
+    }
+  } else {
+    // Country-only lookup (no region) — temp + exclusive Alphaa actuals.
+    for (const [country, actuals] of tempCoverage.actualByCountry) {
+      actualByCountry.set(country, actuals);
+    }
+    for (const [country, holders] of tempCoverage.holdersByCountry) {
+      holdersByCountry.set(country, holders);
+    }
+    for (const [country, actuals] of alphaaActualByCountry) {
+      if (!isTempPlanCountry(country)) {
+        actualByCountry.set(country, actuals);
+      }
+    }
+    for (const [country, holders] of alphaaHoldersByCountry) {
+      if (!isTempPlanCountry(country)) {
+        holdersByCountry.set(country, holders);
+      }
     }
   }
 

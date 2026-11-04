@@ -239,6 +239,7 @@ export function StrategyProjectPanel({
             selectedKey={selectedKey}
             platforms={selected}
             scopes={visibleScopes}
+            projectSlug={project.slug}
             editing={isEditing}
             canEdit={canEdit}
             onStartEdit={() => setEditing(true)}

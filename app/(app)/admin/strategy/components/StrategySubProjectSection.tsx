@@ -35,6 +35,7 @@ export function StrategySubProjectSection({
   selectedKey,
   platforms,
   scopes: scopesOverride,
+  projectSlug,
   editing,
   canEdit = false,
   onStartEdit,
@@ -229,6 +230,7 @@ export function StrategySubProjectSection({
       <StrategyCountryCoverageModal
         open={Boolean(coverageCountry)}
         country={coverageCountry}
+        projectSlug={projectSlug}
         onClose={() => setCoverageKey(null)}
       />
     </section>

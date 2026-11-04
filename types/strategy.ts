@@ -380,6 +380,8 @@ export type StrategyCountryCoverageModalProps = {
   country: string | null;
   open: boolean;
   onClose: () => void;
+  /** Strategy project slug — scopes live actuals to that project region. */
+  projectSlug?: string | null;
 };
 
 export type StrategyAddSubProjectButtonProps = {
@@ -416,6 +418,7 @@ export type StrategySubProjectSectionProps = {
   selectedKey: string | null;
   platforms: StrategyPlatformKey[];
   scopes?: StrategyAccountScope[];
+  projectSlug?: string;
   editing: boolean;
   canEdit?: boolean;
   onStartEdit?: () => void;
