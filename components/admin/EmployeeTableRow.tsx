@@ -7,13 +7,18 @@ import { EmployeeCountryCell } from "@/components/admin/EmployeeCountryCell";
 import { EmployeeActiveToggle } from "@/components/admin/EmployeeActiveToggle";
 import { EmployeeDeleteButton } from "@/components/admin/EmployeeDeleteButton";
 import { EmployeeViewButton } from "@/components/admin/EmployeeViewButton";
-import { EmployeeCodeButton } from "@/components/admin/EmployeeCodeButton";
 import { EmployeeAccountsPanel } from "@/components/admin/EmployeeAccountsPanel";
 import { AccountTotalsCell } from "@/components/admin/AccountTotalsCell";
 import { EmployeeStatusSelect } from "@/components/admin/EmployeeStatusSelect";
 import { isTempPlanCountry } from "@/lib/region-config";
 import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import type { EmployeeTableRowProps } from "@/types/admin";
+
+function teamLeadColumnName(row: EmployeeTableRowProps["row"]): string | null {
+  if (row.role === "manager") return row.op_name;
+  if (row.role === "employee") return row.manager_name;
+  return null;
+}
 
 export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
   const [expanded, setExpanded] = useState(false);
@@ -24,6 +29,7 @@ export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
   const canMarkSpare =
     !isAlphaa && Boolean(row.country && isTempPlanCountry(row.country));
   const planAccounts = row.accounts.filter((account) => !account.is_spare).length;
+  const teamLeadName = teamLeadColumnName(row);
   const rowHolder = {
     id: row.id,
     source: row.source,
@@ -102,9 +108,6 @@ export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
             </div>
           </div>
         </td>
-        <td className="px-4 py-3 align-top text-[14px] font-semibold tabular-nums text-[var(--color-ink)]">
-          {row.employee_code || "—"}
-        </td>
         <td className="px-4 py-3 align-top">
           <EmployeeCountryCell countries={row.countries} />
         </td>
@@ -112,7 +115,7 @@ export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
           {adminRoleBadge(row.role)}
         </td>
         <td className="px-4 py-3 text-[14px] text-[var(--color-ink)]">
-          {row.team_lead_name ?? "—"}
+          {teamLeadName ?? "—"}
         </td>
         <td className="px-4 py-3 text-[14px] tabular-nums text-[var(--color-ink)]">
           {row.target_accounts_sum}
@@ -137,13 +140,6 @@ export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.stopPropagation()}
           >
-            {isAlphaa ? null : (
-              <EmployeeCodeButton
-                employeeId={row.id}
-                fullName={row.full_name}
-                employeeCode={row.employee_code}
-              />
-            )}
             <EmployeeViewButton
               employeeId={row.id}
               fullName={row.full_name}
@@ -168,7 +164,7 @@ export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
       {canExpand && expanded ? (
         <tr className="border-b border-[var(--color-hairline)] bg-[var(--color-cream-tint)]/70">
           <td
-            colSpan={9}
+            colSpan={8}
             className="px-4 py-4"
             id={panelId}
             onClick={(e) => e.stopPropagation()}

@@ -13,9 +13,6 @@ export function EmployeesTable({ rows, holders, toolbar }: EmployeesTableProps) 
                 Name
               </th>
               <th scope="col" className="px-4 py-3">
-                Employee code
-              </th>
-              <th scope="col" className="px-4 py-3">
                 Country
               </th>
               <th scope="col" className="px-4 py-3">
@@ -42,7 +39,7 @@ export function EmployeesTable({ rows, holders, toolbar }: EmployeesTableProps) 
             {rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={9}
+                  colSpan={8}
                   className="px-4 py-12 text-center text-[14px] text-[var(--color-muted)]"
                 >
                   No people match these filters.

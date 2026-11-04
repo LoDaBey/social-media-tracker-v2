@@ -106,17 +106,19 @@ export default async function AdminEmployeesPage({
     <AdminWorkspace
       view={adminViewEmployees()}
       actions={
-        <EmployeesHeadingActions
-          holders={holders}
-          canCreateEmployees={viewer.canEdit}
-        />
+        <EmployeesHeadingActions canCreateEmployees={viewer.canEdit} />
       }
     >
       <EmployeesTable
         rows={rows}
         holders={holders}
         toolbar={
-          <EmployeesTableToolbar initialQ={q} counts={counts} />
+          <EmployeesTableToolbar
+            initialQ={q}
+            counts={counts}
+            holders={holders}
+            canCreateEmployees={viewer.canEdit}
+          />
         }
       />
     </AdminWorkspace>

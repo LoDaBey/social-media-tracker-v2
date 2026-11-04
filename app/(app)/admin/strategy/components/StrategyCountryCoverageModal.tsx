@@ -74,10 +74,6 @@ function StrategyCountryCoverageModalFrame({
                 {country}
               </h2>
             </div>
-            <p className="mt-1 text-[13px] text-[var(--color-muted)]">
-              Strategy-style live coverage. Platforms and holders below target are
-              highlighted in red.
-            </p>
           </div>
           <motion.button
             type="button"

@@ -219,11 +219,6 @@ export function CreateEmployeeForm({
       <h2 className="text-[26px] font-extrabold tracking-tight text-[var(--color-ink)] md:text-[30px]">
         New employee
       </h2>
-      <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-[var(--color-muted)]">
-        Choose the project first, then pick a country from that project only.
-        Reporting line: Employee → Team Leader Regional (optional) → Country
-        Manager → OP → Admin.
-      </p>
       {error ? (
         <p className="mt-4 rounded-lg bg-[var(--color-coral-tint)] px-4 py-3 text-[14px] text-[var(--color-coral)]">
           {error}
