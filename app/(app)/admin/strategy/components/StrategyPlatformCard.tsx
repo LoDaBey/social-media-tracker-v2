@@ -25,9 +25,12 @@ export function StrategyPlatformCard({
   value,
   onChange,
   readOnly = false,
+  scopes: scopesOverride,
 }: StrategyPlatformCardProps) {
-  const scopes = strategyDisplayScopesForBook(book);
-  const editable = editableScopesForPlatform(book, platform);
+  const scopes = scopesOverride ?? strategyDisplayScopesForBook(book);
+  const editable = editableScopesForPlatform(book, platform).filter((scope) =>
+    scopes.includes(scope)
+  );
   const total = platformTotal(value, platform);
   const counts = Object.fromEntries(
     scopes.map((scope) => [scope, scopeCount(value, platform, scope)])

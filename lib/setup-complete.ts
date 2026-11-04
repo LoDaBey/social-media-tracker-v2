@@ -66,7 +66,7 @@ export function isEmployeeSetupComplete(input: {
 export function homePathForRole(
   role: string
 ): "/admin" | "/qc" | "/manager" | "/dashboard" {
-  if (role === "admin") return "/admin";
+  if (role === "admin" || role === "op") return "/admin";
   if (role === "team_lead") return "/qc";
   if (role === "manager") return "/manager";
   return "/dashboard";

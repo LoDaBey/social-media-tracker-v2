@@ -37,10 +37,10 @@ export default async function AppLayout({
       <div
         className={[
           "mx-auto w-full px-3 sm:px-8",
-          role === "admin" || role === "manager"
+          role === "admin" || role === "op" || role === "manager"
             ? "max-w-[1600px]"
             : "max-w-7xl",
-          role === "admin" ? "py-4 sm:py-6" : "py-8",
+          role === "admin" || role === "op" ? "py-4 sm:py-6" : "py-8",
         ].join(" ")}
       >
         {children}

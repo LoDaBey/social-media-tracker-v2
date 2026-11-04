@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         ok: false,
-        error: "Could not load planned coverage for this country.",
+        error: "Could not load live coverage for this country.",
       } satisfies AdminCountryCoverageResponse,
       { status: 500 }
     );

@@ -18,8 +18,8 @@ export function StrategySubProjectNav({
             key={item.key}
             type="button"
             aria-current={selected ? "true" : undefined}
-            aria-label={`Show ${item.name}. Double-click for planned coverage.`}
-            title="Click to select · Double-click for planned coverage"
+            aria-label={`Show ${item.name}. Double-click for live coverage gaps.`}
+            title="Click to select · Double-click for live coverage gaps"
             onClick={() => onSelect(item.key)}
             onDoubleClick={(event) => {
               event.preventDefault();

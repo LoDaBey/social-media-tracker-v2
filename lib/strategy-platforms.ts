@@ -251,6 +251,27 @@ export function strategyDisplayScopesForBook(
   return [...STRATEGY_SCOPES];
 }
 
+/** True when any target map has a native count greater than zero. */
+export function strategyHasNativeTargets(
+  targetsList: readonly StrategyScopeCounts[]
+): boolean {
+  return targetsList.some((item) => strategyScopeTotal(item, "native") > 0);
+}
+
+/**
+ * Scopes shown in Strategy UI. Hides Native when neither the parent project
+ * nor any provided country targets require native accounts.
+ */
+export function strategyVisibleScopes(
+  book: StrategyBook,
+  targetsList: readonly StrategyScopeCounts[]
+): StrategyAccountScope[] {
+  const base = strategyDisplayScopesForBook(book);
+  if (!base.includes("native")) return base;
+  if (strategyHasNativeTargets(targetsList)) return base;
+  return base.filter((scope) => scope !== "native");
+}
+
 export function strategyGridPlatformsForBook(
   book: StrategyBook
 ): StrategyPlatformKey[] {

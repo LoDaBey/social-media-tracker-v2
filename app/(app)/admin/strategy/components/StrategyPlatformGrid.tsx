@@ -22,9 +22,10 @@ export function StrategyPlatformGrid({
   readOnly = false,
   label = "Strategy requirement per platform",
   description = "How many accounts this country holds, by platform. Save country when done.",
+  scopes: scopesOverride,
 }: StrategyPlatformGridProps) {
   const platforms = platformsOverride ?? strategyGridPlatformsForBook(book);
-  const scopes = strategyDisplayScopesForBook(book);
+  const scopes = scopesOverride ?? strategyDisplayScopesForBook(book);
 
   return (
     <section
@@ -70,6 +71,7 @@ export function StrategyPlatformGrid({
             value={value}
             onChange={onChange}
             readOnly={readOnly}
+            scopes={scopes}
           />
         ))}
       </div>

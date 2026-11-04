@@ -3,7 +3,7 @@
 import {
   AFRICA_EUROPE_HANDLER_FIELDS,
   STRATEGY_SCOPE_LABELS,
-  strategyDisplayScopesForBook,
+  strategyVisibleScopes,
   targetsGrandTotal,
 } from "@/lib/strategy-platforms";
 import { StrategyHandlerFields } from "./StrategyHandlerFields";
@@ -23,9 +23,10 @@ export function StrategyHandlerEditor({
   platforms,
   description = "How many seats each resource on this country holds.",
   readOnly = false,
+  scopes: scopesOverride,
 }: StrategyHandlerEditorProps) {
   const total = targetsGrandTotal(value);
-  const scopes = strategyDisplayScopesForBook(book);
+  const scopes = scopesOverride ?? strategyVisibleScopes(book, [value]);
 
   return (
     <section
@@ -75,6 +76,7 @@ export function StrategyHandlerEditor({
           showHeader={false}
           embedded
           readOnly={readOnly}
+          scopes={scopes}
           label="Handler seats by platform"
         />
       )}

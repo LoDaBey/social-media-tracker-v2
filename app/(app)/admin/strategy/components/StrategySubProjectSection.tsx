@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   STRATEGY_SCOPE_LABELS,
+  strategyVisibleScopes,
   targetsGrandTotal,
 } from "@/lib/strategy-platforms";
 import { StrategyAddSubProjectButton } from "./StrategyAddSubProjectButton";
@@ -33,6 +34,7 @@ export function StrategySubProjectSection({
   drafts,
   selectedKey,
   platforms,
+  scopes: scopesOverride,
   editing,
   canEdit = false,
   onStartEdit,
@@ -47,6 +49,12 @@ export function StrategySubProjectSection({
   const [coverageKey, setCoverageKey] = useState<string | null>(null);
 
   const selected = drafts.find((item) => item.key === selectedKey) ?? null;
+  const scopes =
+    scopesOverride ??
+    strategyVisibleScopes("custom", [
+      ...drafts.map((item) => item.projectTargets),
+      ...drafts.map((item) => item.handlerTargets),
+    ]);
   const coverageCountry =
     drafts.find((item) => item.key === coverageKey)?.name ?? null;
   const total = drafts.reduce(
@@ -89,13 +97,13 @@ export function StrategySubProjectSection({
             Countries
           </h3>
           <p className="mt-0.5 text-[12px] text-[var(--color-muted)]">
-            Click a country to edit its plan. Double-click to open live coverage
-            and account-holder gaps.
+            Click a country to edit its plan. Double-click to open Strategy-style
+            live coverage with missing accounts highlighted per holder.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <ul className="flex flex-wrap items-center gap-3" aria-label="Category legend">
-            {(["personal", "umbrella", "native"] as const).map((scope) => (
+            {scopes.map((scope) => (
               <li
                 key={scope}
                 className="flex items-center gap-1.5 text-[12px] text-[var(--color-muted)]"
@@ -191,6 +199,7 @@ export function StrategySubProjectSection({
                 showHeader={false}
                 embedded
                 readOnly={!editing}
+                scopes={scopes}
                 label={`${selected.name} holdings`}
               />
             </div>

@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import {
-  strategyDisplayScopesForBook,
   strategyScopeTotal,
+  strategyVisibleScopes,
   targetsGrandTotal,
 } from "@/lib/strategy-platforms";
 import { StrategyCountryToolbar } from "./StrategyCountryToolbar";
@@ -31,7 +31,11 @@ export function StrategyCountryPanel({
   );
 
   const computedTotal = targetsGrandTotal(projectTargets);
-  const showNative = strategyDisplayScopesForBook(row.book).includes("native");
+  const visibleScopes = strategyVisibleScopes(row.book, [
+    projectTargets,
+    handlerTargets,
+  ]);
+  const showNative = visibleScopes.includes("native");
 
   function handleSave() {
     onSave({
@@ -77,6 +81,7 @@ export function StrategyCountryPanel({
           book={row.book}
           value={projectTargets}
           onChange={setProjectTargets}
+          scopes={visibleScopes}
         />
       </div>
 
@@ -84,6 +89,7 @@ export function StrategyCountryPanel({
         book={row.book}
         value={handlerTargets}
         onChange={setHandlerTargets}
+        scopes={visibleScopes}
       />
     </div>
   );

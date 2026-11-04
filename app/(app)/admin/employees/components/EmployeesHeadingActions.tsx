@@ -5,7 +5,10 @@ import type { EmployeesHeadingActionsProps } from "@/types/admin";
 
 export function EmployeesHeadingActions({
   holders,
+  canCreateEmployees = true,
 }: EmployeesHeadingActionsProps) {
+  if (!canCreateEmployees) return null;
+
   return (
     <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
       <EmployeesBulkImportButton holders={holders} variant="button" />

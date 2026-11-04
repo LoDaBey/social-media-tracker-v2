@@ -44,6 +44,7 @@ export type AdminEmployeeListRow = {
   manager_name: string | null;
   op_id: number | null;
   op_name: string | null;
+  region: string | null;
   country: string | null;
   language: string | null;
   countries: string[];
@@ -58,6 +59,13 @@ export type EmployeeCreateProjectOption = {
   countries: string[];
 };
 
+/** Assigned Strategy project + countries an Operation Manager may view. */
+export type OpAccessScope = {
+  projectSlug: string;
+  region: string;
+  countries: string[];
+};
+
 export type CreateEmployeePayload = {
   full_name: string;
   email: string;
@@ -69,6 +77,8 @@ export type CreateEmployeePayload = {
   op_id?: number | null;
   /** Required when role is manager — one or more countries this manager owns. */
   manager_countries?: string[];
+  /** Required when role is op — countries within project_slug. */
+  op_countries?: string[];
   hire_date?: string;
   current_level?: number;
   country: string;
@@ -86,7 +96,8 @@ export type CreateEmployeeFieldKey =
   | "project_slug"
   | "supervisor_id"
   | "manager_id"
-  | "manager_countries";
+  | "manager_countries"
+  | "op_countries";
 
 export type CreateEmployeeFieldErrors = Partial<
   Record<CreateEmployeeFieldKey, string>
@@ -104,6 +115,19 @@ export type ValidateCreateEmployeeInput = {
   manager_id: number | null;
   team_lead_id: number | null;
   manager_countries: string[];
+  op_countries: string[];
+};
+
+export type OpAccessFieldsProps = {
+  projects: EmployeeCreateProjectOption[];
+  projectSlug: string;
+  selectedCountries: string[];
+  projectError?: string;
+  countriesError?: string;
+  fieldClass: string;
+  invalidFieldClass: string;
+  onProjectChange: (slug: string) => void;
+  onToggleCountry: (country: string) => void;
 };
 
 export type CreateEmployeeFormProps = {
@@ -245,6 +269,7 @@ export type AdminWorkspaceProps = {
 
 export type AdminOverviewHeadingActionsProps = {
   region: AdminRegion;
+  canCreateEmployees?: boolean;
 };
 
 export type AdminPageLoaderProps = {
@@ -501,6 +526,8 @@ export type AdminOverviewRegionTabsProps = {
   region: AdminRegion;
   projects: AdminOverviewProjectTab[];
   children: ReactNode;
+  /** Hide the All regions tab (used for scoped Operation Manager views). */
+  hideAllRegions?: boolean;
 };
 
 export type AdminCountryCoverageTableProps = {
@@ -519,6 +546,44 @@ export type AdminCountryCoverageResponse =
 
 export type AdminCountryCoverageDetailProps = {
   row: AdminCountryCoverageRow;
+  showAlphaaPlatforms?: boolean;
+};
+
+export type CoverageLiveScopeMetric = {
+  id: string;
+  label: string;
+  count: AdminCoverageCount;
+  tone: "personal" | "umbrella" | "native" | "default";
+};
+
+export type CoverageLivePlatformMetric = {
+  key: string;
+  platform: StrategyPlatformKey;
+  label: string;
+  scopes: CoverageLiveScopeMetric[];
+};
+
+export type CoverageLivePlatformCardProps = {
+  metric: CoverageLivePlatformMetric;
+};
+
+export type CoverageLivePlatformGridProps = {
+  metrics: CoverageLivePlatformMetric[];
+  label?: string;
+  description?: string;
+  showHeader?: boolean;
+  embedded?: boolean;
+};
+
+export type CoverageLiveTotalsProps = {
+  resources: AdminCoverageCount;
+  totalAccounts: AdminCoverageCount;
+};
+
+export type CoverageLiveHolderCardProps = {
+  holder: AdminCountryCoverageHolder;
+  country: string;
+  language: string;
   showAlphaaPlatforms?: boolean;
 };
 
@@ -636,6 +701,7 @@ export type EmployeesTableToolbarProps = {
 
 export type EmployeesHeadingActionsProps = {
   holders: BulkImportHolderOption[];
+  canCreateEmployees?: boolean;
 };
 
 export type EmployeesToolbarSearchProps = {

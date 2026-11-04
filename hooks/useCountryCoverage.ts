@@ -41,7 +41,7 @@ export function useCountryCoverage(): UseCountryCoverageResult {
       if (!response.ok || !data.ok) {
         setCoverage(null);
         setShowAlphaaPlatforms(false);
-        setError(!data.ok ? data.error : "Could not load planned coverage.");
+        setError(!data.ok ? data.error : "Could not load live coverage.");
         return;
       }
       setCoverage(data.coverage);
@@ -49,7 +49,7 @@ export function useCountryCoverage(): UseCountryCoverageResult {
     } catch {
       setCoverage(null);
       setShowAlphaaPlatforms(false);
-      setError("Could not load planned coverage.");
+      setError("Could not load live coverage.");
     } finally {
       setLoading(false);
     }

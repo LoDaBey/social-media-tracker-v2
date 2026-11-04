@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { auth } from "@/auth";
+import { redirect } from "next/navigation";
+import { getAdminViewerOrNull } from "@/lib/admin-access";
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import { adminViewStrategy } from "@/lib/admin-view";
 import {
@@ -27,13 +28,20 @@ export async function generateMetadata({
 }
 
 export default async function AdminStrategyPage({ searchParams }: StrategyPageProps) {
+  const viewer = await getAdminViewerOrNull();
+  if (!viewer) redirect("/login");
+
   const params = await searchParams;
-  const session = await auth();
-  const canEdit = session?.user?.role === "admin";
-  const [projects, regionOptions] = await Promise.all([
+  const [allProjects, regionOptions] = await Promise.all([
     fetchStrategyProjects(),
     fetchStrategyProjectRegionOptions(),
   ]);
+
+  const projects =
+    viewer.role === "op" && viewer.scope?.projectSlug
+      ? allProjects.filter((project) => project.slug === viewer.scope!.projectSlug)
+      : allProjects;
+
   const selectedSlug = strategySelectedSlug(params, projects);
   const activeProject =
     projects.find((item) => item.slug === selectedSlug) ?? null;
@@ -46,7 +54,7 @@ export default async function AdminStrategyPage({ searchParams }: StrategyPagePr
         projects={projects}
         activeProject={activeProject}
         regionOptions={regionOptions}
-        canEdit={canEdit}
+        canEdit={viewer.canEdit}
       />
     </AdminWorkspace>
   );

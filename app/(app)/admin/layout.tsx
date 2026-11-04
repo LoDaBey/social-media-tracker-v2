@@ -8,7 +8,8 @@ export default async function AdminLayout({
 }) {
   const session = await auth();
   if (!session) redirect("/login");
-  if (session.user.role !== "admin") redirect("/dashboard");
+  const role = session.user.role;
+  if (role !== "admin" && role !== "op") redirect("/dashboard");
 
   return <div className="w-full">{children}</div>;
 }

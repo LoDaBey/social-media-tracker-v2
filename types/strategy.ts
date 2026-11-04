@@ -310,6 +310,7 @@ export type StrategyPlatformCardProps = {
   value: StrategyScopeCounts;
   onChange: (next: StrategyScopeCounts) => void;
   readOnly?: boolean;
+  scopes?: StrategyAccountScope[];
 };
 
 export type StrategyPlatformGridProps = {
@@ -322,6 +323,7 @@ export type StrategyPlatformGridProps = {
   readOnly?: boolean;
   label?: string;
   description?: string;
+  scopes?: StrategyAccountScope[];
 };
 
 export type StrategySheetGroup = {
@@ -343,6 +345,7 @@ export type StrategyHandlerEditorProps = {
   platforms?: StrategyPlatformKey[];
   description?: string;
   readOnly?: boolean;
+  scopes?: StrategyAccountScope[];
 };
 
 export type StrategyHandlerFieldsProps = {
@@ -412,6 +415,7 @@ export type StrategySubProjectSectionProps = {
   drafts: StrategySubProjectDraft[];
   selectedKey: string | null;
   platforms: StrategyPlatformKey[];
+  scopes?: StrategyAccountScope[];
   editing: boolean;
   canEdit?: boolean;
   onStartEdit?: () => void;
