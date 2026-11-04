@@ -7,6 +7,7 @@ import {
 } from "@/lib/strategy-platforms";
 import { StrategyAddSubProjectButton } from "./StrategyAddSubProjectButton";
 import { StrategyAddSubProjectModal } from "./StrategyAddSubProjectModal";
+import { StrategyCountryCoverageModal } from "./StrategyCountryCoverageModal";
 import { StrategyDeleteSubProjectButton } from "./StrategyDeleteSubProjectButton";
 import { StrategyDeleteSubProjectModal } from "./StrategyDeleteSubProjectModal";
 import { StrategyLanguageSelect } from "./StrategyLanguageSelect";
@@ -43,8 +44,11 @@ export function StrategySubProjectSection({
   const [addOpen, setAddOpen] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [deleteKey, setDeleteKey] = useState<string | null>(null);
+  const [coverageKey, setCoverageKey] = useState<string | null>(null);
 
   const selected = drafts.find((item) => item.key === selectedKey) ?? null;
+  const coverageCountry =
+    drafts.find((item) => item.key === coverageKey)?.name ?? null;
   const total = drafts.reduce(
     (sum, item) => sum + targetsGrandTotal(item.projectTargets),
     0
@@ -85,7 +89,8 @@ export function StrategySubProjectSection({
             Countries
           </h3>
           <p className="mt-0.5 text-[12px] text-[var(--color-muted)]">
-            Add each country, then set how many accounts it needs per platform.
+            Click a country to edit its plan. Double-click to open live coverage
+            and account-holder gaps.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -128,6 +133,7 @@ export function StrategySubProjectSection({
               }))}
               selectedKey={selectedKey}
               onSelect={onSelect}
+              onOpenCoverage={setCoverageKey}
             />
           </div>
 
@@ -210,6 +216,11 @@ export function StrategySubProjectSection({
           onDelete(deleteTarget.key);
           setDeleteKey(null);
         }}
+      />
+      <StrategyCountryCoverageModal
+        open={Boolean(coverageCountry)}
+        country={coverageCountry}
+        onClose={() => setCoverageKey(null)}
       />
     </section>
   );

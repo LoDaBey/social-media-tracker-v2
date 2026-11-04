@@ -7,16 +7,17 @@ import toast from "react-hot-toast";
 import { createEmployee } from "@/actions/admin";
 import { setupRegionForCountry } from "@/lib/setup-options";
 import { regionDisplayLabel } from "@/lib/project-labels";
+import {
+  countriesForCreateProject,
+} from "@/lib/employee-create-projects";
 import { ROLE_LABELS, reportingFieldsFromSupervisor } from "@/lib/role-hierarchy";
-import { AdminCountrySelect } from "@/components/admin/AdminCountrySelect";
 import type { Role } from "@/types/db";
 import type {
-  AdminManagerOption,
-  AdminSupervisorOption,
-  AdminTeamLeadOption,
   CreateEmployeeFieldErrors,
+  CreateEmployeeFormProps,
 } from "@/types/admin";
 import { AdminFieldError } from "@/components/admin/AdminFieldError";
+import { CreateEmployeeProjectFields } from "@/components/admin/CreateEmployeeProjectFields";
 import { EmployeeReportingFields } from "@/components/admin/EmployeeReportingFields";
 import { ManagerCountriesField } from "@/components/admin/ManagerCountriesField";
 import { SupervisorAssignField } from "@/components/admin/SupervisorAssignField";
@@ -25,18 +26,11 @@ import {
   validateCreateEmployeeForm,
 } from "@/lib/admin-create-validation";
 
-type Props = {
-  teamLeads: AdminTeamLeadOption[];
-  managers: AdminManagerOption[];
-  ops: AdminSupervisorOption[];
-  admins: AdminSupervisorOption[];
-};
-
 function managerCountriesForEmployee(
   managerId: number | null,
   teamLeadId: number | null,
-  teamLeads: AdminTeamLeadOption[],
-  managers: AdminManagerOption[]
+  teamLeads: CreateEmployeeFormProps["teamLeads"],
+  managers: CreateEmployeeFormProps["managers"]
 ): string[] {
   if (managerId) {
     return managers.find((manager) => manager.id === managerId)?.countries ?? [];
@@ -52,7 +46,8 @@ export function CreateEmployeeForm({
   managers,
   ops,
   admins,
-}: Props) {
+  projects,
+}: CreateEmployeeFormProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -69,12 +64,18 @@ export function CreateEmployeeForm({
     null
   );
   const [manager_countries, setManagerCountries] = useState<string[]>([]);
+  const [project_slug, setProjectSlug] = useState("");
   const [country, setCountry] = useState("");
   const [fieldErrors, setFieldErrors] = useState<CreateEmployeeFieldErrors>({});
 
   const isManagerRole = role === "manager";
   const isGlobalRole = role === "admin" || role === "op";
   const showCountryFields = !isManagerRole && !isGlobalRole;
+
+  const projectCountries = useMemo(
+    () => countriesForCreateProject(projects, project_slug),
+    [projects, project_slug]
+  );
 
   const regionalManagerCountries = useMemo(() => {
     if (role !== "employee") return [];
@@ -100,6 +101,16 @@ export function CreateEmployeeForm({
     );
   }
 
+  function handleProjectChange(nextSlug: string) {
+    setProjectSlug(nextSlug);
+    setCountry("");
+    setFieldErrors((prev) => ({
+      ...prev,
+      project_slug: undefined,
+      country: undefined,
+    }));
+  }
+
   function submit() {
     setError(null);
     const nextFieldErrors = validateCreateEmployeeForm({
@@ -108,6 +119,8 @@ export function CreateEmployeeForm({
       password,
       role,
       country,
+      project_slug,
+      projectCountries,
       supervisor_id,
       manager_id: employee_manager_id,
       team_lead_id: employee_team_lead_id,
@@ -144,6 +157,7 @@ export function CreateEmployeeForm({
           manager_id: reporting.manager_id,
           op_id: reporting.op_id,
           manager_countries: role === "manager" ? manager_countries : undefined,
+          project_slug: showCountryFields ? project_slug : undefined,
           country:
             role === "manager"
               ? manager_countries[0] ?? ""
@@ -167,13 +181,12 @@ export function CreateEmployeeForm({
     });
   }
 
-  const assignedRegion = useMemo(() => {
+  const managerAssignedRegion = useMemo(() => {
     if (isManagerRole && manager_countries.length > 0) {
       return regionDisplayLabel(setupRegionForCountry(manager_countries[0]));
     }
-    if (country) return regionDisplayLabel(setupRegionForCountry(country));
     return "";
-  }, [country, isManagerRole, manager_countries]);
+  }, [isManagerRole, manager_countries]);
 
   const fieldClass =
     "w-full rounded outline-none border border-[var(--color-hairline)] bg-[var(--color-cream-tint)] px-3 py-2.5 text-[15px] font-medium text-[var(--color-ink)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]";
@@ -189,8 +202,9 @@ export function CreateEmployeeForm({
         New employee
       </h2>
       <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-[var(--color-muted)]">
-        Create an account and assign their country. Reporting line: Employee →
-        Team Leader Regional (optional) → Country Manager → OP → Admin.
+        Choose the project first, then pick a country from that project only.
+        Reporting line: Employee → Team Leader Regional (optional) → Country
+        Manager → OP → Admin.
       </p>
       {error ? (
         <p className="mt-4 rounded-lg bg-[var(--color-coral-tint)] px-4 py-3 text-[14px] text-[var(--color-coral)]">
@@ -280,40 +294,30 @@ export function CreateEmployeeForm({
           />
         </label>
         {showCountryFields ? (
-          <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
-            Country
-            <AdminCountrySelect
-              value={country}
-              onChange={(next) => {
-                setCountry(next);
-                setFieldErrors((prev) => ({ ...prev, country: undefined }));
-              }}
-              ariaLabel="Assign employee country"
-              ariaInvalid={Boolean(fieldErrors.country)}
-              ariaDescribedBy={
-                fieldErrors.country ? "create-country-error" : undefined
-              }
-              invalid={Boolean(fieldErrors.country)}
-            />
-            <AdminFieldError
-              id="create-country-error"
-              message={fieldErrors.country}
-            />
-          </label>
+          <CreateEmployeeProjectFields
+            projects={projects}
+            projectSlug={project_slug}
+            country={country}
+            projectCountries={projectCountries}
+            projectError={fieldErrors.project_slug}
+            countryError={fieldErrors.country}
+            fieldClass={fieldClass}
+            invalidFieldClass={invalidFieldClass}
+            onProjectChange={handleProjectChange}
+            onCountryChange={(next) => {
+              setCountry(next);
+              setFieldErrors((prev) => ({ ...prev, country: undefined }));
+            }}
+          />
         ) : null}
-        {showCountryFields ? (
+        {isManagerRole && managerAssignedRegion ? (
           <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
-            Region
+            Primary region
             <input
-              value={assignedRegion}
+              value={managerAssignedRegion}
               disabled
               readOnly
-              placeholder="Select a country"
-              aria-label={
-                assignedRegion
-                  ? `Region is ${assignedRegion}`
-                  : "Region is set automatically from the selected country"
-              }
+              aria-label={`Primary region is ${managerAssignedRegion}`}
               className={`${fieldClass} cursor-not-allowed opacity-70`}
             />
           </label>
@@ -327,6 +331,8 @@ export function CreateEmployeeForm({
               setSupervisorId("");
               setEmployeeManagerId(null);
               setEmployeeTeamLeadId(null);
+              setProjectSlug("");
+              setCountry("");
               setFieldErrors({});
             }}
             aria-label="Select role"
@@ -380,6 +386,7 @@ export function CreateEmployeeForm({
           <ManagerCountriesField
             selected={manager_countries}
             error={fieldErrors.manager_countries}
+            projects={projects}
             onToggle={(option) => {
               toggleManagerCountry(option);
               setFieldErrors((prev) => ({

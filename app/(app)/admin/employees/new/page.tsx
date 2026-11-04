@@ -4,6 +4,7 @@ import {
   fetchOpOptions,
   fetchTeamLeadOptions,
 } from "@/lib/admin-data";
+import { fetchEmployeeCreateProjectOptions } from "@/lib/employee-create-projects";
 import { fetchManagerOptions } from "@/lib/manager-data";
 import { CreateEmployeeForm } from "@/components/admin/CreateEmployeeForm";
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
@@ -14,11 +15,12 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminNewEmployeePage() {
-  const [teamLeads, managers, ops, admins] = await Promise.all([
+  const [teamLeads, managers, ops, admins, projects] = await Promise.all([
     fetchTeamLeadOptions(),
     fetchManagerOptions(),
     fetchOpOptions(),
     fetchAdminSupervisorOptions(),
+    fetchEmployeeCreateProjectOptions(),
   ]);
 
   return (
@@ -28,6 +30,7 @@ export default async function AdminNewEmployeePage() {
         managers={managers}
         ops={ops}
         admins={admins}
+        projects={projects}
       />
     </AdminWorkspace>
   );

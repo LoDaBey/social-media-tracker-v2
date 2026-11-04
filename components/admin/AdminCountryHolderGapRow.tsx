@@ -13,20 +13,29 @@ import type { AdminCountryHolderGapRowProps } from "@/types/admin";
 export function AdminCountryHolderGapRow({
   holder,
   country,
+  language,
   showAlphaaPlatforms = false,
 }: AdminCountryHolderGapRowProps) {
   const hasGap = holderHasCoverageGap(holder);
-  const summary = holderGapSummary(holder);
+  const summary = hasGap ? holderGapSummary(holder) : null;
+  const rowBg = hasGap
+    ? "bg-[var(--color-coral)]/12"
+    : "bg-[var(--color-cream-tint)]/50";
+  const stickyBg = hasGap
+    ? "bg-[#FDE8E6]"
+    : "bg-[var(--color-cream-tint)]";
 
   return (
-    <tr className="border-t border-[var(--color-hairline)] bg-[var(--color-cream-tint)]/50">
+    <tr className={`border-t border-[var(--color-hairline)] ${rowBg}`}>
       <th
         scope="row"
-        className={`sticky left-0 z-[1] bg-[var(--color-cream-tint)] text-[13px] font-semibold text-[var(--color-ink)] ${COVERAGE_COUNTRY_CELL}`}
+        className={`sticky left-0 z-[1] text-[13px] font-semibold text-[var(--color-ink)] ${stickyBg} ${COVERAGE_COUNTRY_CELL}`}
       >
         <div className="min-w-0 pl-10">
           {holder.vacant ? (
-            <span className="text-[var(--color-amber)]">{holder.fullName}</span>
+            <span className="font-extrabold text-[var(--color-coral)]">
+              {holder.fullName}
+            </span>
           ) : holder.id ? (
             <Link
               href={adminEmployeeHref(holder.id, holder.source)}
@@ -38,22 +47,15 @@ export function AdminCountryHolderGapRow({
           ) : (
             holder.fullName
           )}
-          {holder.email ? (
-            <p className="mt-0.5 truncate text-[12px] font-medium text-[var(--color-muted)]">
-              {holder.email}
+          {summary ? (
+            <p className="mt-1.5 inline-flex max-w-full rounded-md bg-[var(--color-coral)] px-2 py-1 text-[11px] font-extrabold leading-snug text-white shadow-[0_0_0_1px_rgba(180,40,40,.35)]">
+              {summary}
             </p>
           ) : null}
-          <p
-            className={`mt-1 text-[12px] font-medium ${
-              hasGap ? "text-[var(--color-coral)]" : "text-[var(--color-emerald)]"
-            }`}
-          >
-            {summary}
-          </p>
         </div>
       </th>
       <td className={`text-[13px] text-[var(--color-muted)] ${COVERAGE_LANGUAGE_CELL}`}>
-        —
+        {language || "—"}
       </td>
       <td className={`text-[13px] text-[var(--color-muted)] ${COVERAGE_BODY_CELL}`}>
         —

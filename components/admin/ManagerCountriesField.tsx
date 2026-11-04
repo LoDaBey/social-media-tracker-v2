@@ -45,14 +45,30 @@ export function ManagerCountriesField({
   selected,
   error,
   onToggle,
+  projects,
 }: ManagerCountriesFieldProps) {
+  const groups =
+    projects && projects.length > 0
+      ? projects.map((project) => ({
+          key: project.slug,
+          label: project.name,
+          countries: project.countries,
+        }))
+      : REGION_GROUPS.map(({ region, countries }) => ({
+          key: region,
+          label: regionDisplayLabel(region),
+          countries: [...countries],
+        }));
+
   return (
     <fieldset className="sm:col-span-2">
       <legend className="text-[13px] font-semibold text-[var(--color-muted)]">
         Countries
       </legend>
       <p className="mt-1 text-[12px] font-medium text-[var(--color-muted)]">
-        Choose every country this manager can set up employees in, grouped by region.
+        {projects && projects.length > 0
+          ? "Choose every country this manager can set up employees in, grouped by strategy project."
+          : "Choose every country this manager can set up employees in, grouped by region."}
       </p>
       <div
         className={`mt-2 flex max-h-80 flex-col gap-4 overflow-y-auto rounded-lg border bg-[var(--color-cream-tint)] p-4 ${
@@ -61,25 +77,27 @@ export function ManagerCountriesField({
             : "border-[var(--color-hairline)]"
         }`}
       >
-        {REGION_GROUPS.map(({ region, countries }) => (
-          <section key={region} aria-label={`${regionDisplayLabel(region)} countries`}>
-            <h3 className="text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--color-muted)]">
-              {regionDisplayLabel(region)}
-            </h3>
-            <div className="mt-2.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-              {[...countries]
-                .sort((a, b) => a.localeCompare(b))
-                .map((option) => (
-                  <CountryCheckbox
-                    key={option}
-                    option={option}
-                    checked={selected.includes(option)}
-                    onToggle={onToggle}
-                  />
-                ))}
-            </div>
-          </section>
-        ))}
+        {groups.map(({ key, label, countries }) =>
+          countries.length === 0 ? null : (
+            <section key={key} aria-label={`${label} countries`}>
+              <h3 className="text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--color-muted)]">
+                {label}
+              </h3>
+              <div className="mt-2.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                {[...countries]
+                  .sort((a, b) => a.localeCompare(b))
+                  .map((option) => (
+                    <CountryCheckbox
+                      key={`${key}-${option}`}
+                      option={option}
+                      checked={selected.includes(option)}
+                      onToggle={onToggle}
+                    />
+                  ))}
+              </div>
+            </section>
+          )
+        )}
       </div>
       <AdminFieldError id="manager-countries-error" message={error} />
     </fieldset>

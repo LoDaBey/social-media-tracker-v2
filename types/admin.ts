@@ -52,6 +52,12 @@ export type AdminEmployeeListRow = {
   accounts: AdminSocialAccountListItem[];
 };
 
+export type EmployeeCreateProjectOption = {
+  slug: string;
+  name: string;
+  countries: string[];
+};
+
 export type CreateEmployeePayload = {
   full_name: string;
   email: string;
@@ -66,6 +72,8 @@ export type CreateEmployeePayload = {
   hire_date?: string;
   current_level?: number;
   country: string;
+  /** Strategy project slug — sets region and scopes the country list. */
+  project_slug?: string;
 };
 
 export type CreateEmployeeResult = { id: number } | { error: string };
@@ -75,6 +83,7 @@ export type CreateEmployeeFieldKey =
   | "email"
   | "password"
   | "country"
+  | "project_slug"
   | "supervisor_id"
   | "manager_id"
   | "manager_countries";
@@ -89,10 +98,20 @@ export type ValidateCreateEmployeeInput = {
   password: string;
   role: Role;
   country: string;
+  project_slug: string;
+  projectCountries: string[];
   supervisor_id: string;
   manager_id: number | null;
   team_lead_id: number | null;
   manager_countries: string[];
+};
+
+export type CreateEmployeeFormProps = {
+  teamLeads: AdminTeamLeadOption[];
+  managers: AdminManagerOption[];
+  ops: AdminSupervisorOption[];
+  admins: AdminSupervisorOption[];
+  projects: EmployeeCreateProjectOption[];
 };
 
 export type AdminFieldErrorProps = {
@@ -104,6 +123,7 @@ export type ManagerCountriesFieldProps = {
   selected: string[];
   error?: string;
   onToggle: (country: string) => void;
+  projects?: EmployeeCreateProjectOption[];
 };
 
 export type UpdateEmployeeProfilePayload = {
@@ -489,6 +509,19 @@ export type AdminCountryCoverageTableProps = {
   showAlphaaPlatforms?: boolean;
 };
 
+export type AdminCountryCoverageResponse =
+  | {
+      ok: true;
+      coverage: AdminCountryCoverage;
+      showAlphaaPlatforms: boolean;
+    }
+  | { ok: false; error: string };
+
+export type AdminCountryCoverageDetailProps = {
+  row: AdminCountryCoverageRow;
+  showAlphaaPlatforms?: boolean;
+};
+
 export type AdminCoveragePlatformScopeIcon = "personal" | "umbrella" | "native";
 
 export type AdminCoveragePlatformHeadCellProps = {
@@ -506,6 +539,7 @@ export type AdminCountryCoverageRowProps = {
 export type AdminCountryHolderGapRowProps = {
   holder: AdminCountryCoverageHolder;
   country: string;
+  language: string;
   showAlphaaPlatforms?: boolean;
 };
 
