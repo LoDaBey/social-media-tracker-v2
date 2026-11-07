@@ -8,7 +8,11 @@ import { updateEmployeeProfile } from "@/actions/admin";
 import { updateAlphaaEmployeeProfile } from "@/actions/admin-alphaa";
 import { alphaaRoleLabelFromRole } from "@/lib/admin-alphaa-roles";
 import { EMPLOYMENT_STATUSES, EMPLOYMENT_STATUS_LABELS } from "@/lib/employment-status";
-import { setupRegionForCountry } from "@/lib/setup-options";
+import {
+  setupRegionForCountry,
+  setupRegionsForCountry,
+} from "@/lib/setup-options";
+import { normalizeProjectRegion } from "@/lib/admin-view";
 import { regionDisplayLabel } from "@/lib/project-labels";
 import {
   ROLE_LABELS,
@@ -78,6 +82,9 @@ export function EmployeeForm({
       op_project_slug: initial.op_project_slug,
       op_countries: initial.op_countries,
       country: initial.country,
+      region:
+        normalizeProjectRegion(initial.region) ??
+        (initial.country ? setupRegionForCountry(initial.country) : ""),
     }),
     [initial]
   );
@@ -116,9 +123,25 @@ export function EmployeeForm({
     if (isManagerRole && form.manager_countries.length > 0) {
       return regionDisplayLabel(setupRegionForCountry(form.manager_countries[0]));
     }
-    if (form.country) return regionDisplayLabel(setupRegionForCountry(form.country));
+    if (form.country) return regionDisplayLabel(form.region || setupRegionForCountry(form.country));
     return "";
-  }, [form.country, form.manager_countries, isManagerRole]);
+  }, [form.country, form.region, form.manager_countries, isManagerRole]);
+
+  // A country can belong to two projects (e.g. Palestine: Main and Asia).
+  const countryRegions = useMemo(
+    () => (form.country ? setupRegionsForCountry(form.country) : []),
+    [form.country]
+  );
+
+  function changeCountry(country: string) {
+    setForm((f) => {
+      const regions = setupRegionsForCountry(country);
+      const region = regions.some((r) => r === f.region)
+        ? f.region
+        : regions[0] ?? setupRegionForCountry(country);
+      return { ...f, country, region };
+    });
+  }
 
   const countryMismatch =
     form.role === "employee" &&
@@ -234,6 +257,7 @@ export function EmployeeForm({
                 : isOpRole
                   ? form.op_countries[0] ?? form.country
                   : form.country.trim(),
+            region: showCountryFields ? form.region : undefined,
           };
           await updateEmployeeProfile(initial.id, payload);
         }
@@ -337,13 +361,29 @@ export function EmployeeForm({
             Country
             <AdminCountrySelect
               value={form.country}
-              onChange={(country) => setForm((f) => ({ ...f, country }))}
+              onChange={changeCountry}
               ariaLabel="Employee country"
             />
           </label>
         ) : null}
 
-        {showCountryFields ? (
+        {showCountryFields && countryRegions.length > 1 ? (
+          <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
+            Region
+            <select
+              value={form.region}
+              onChange={(e) => setForm((f) => ({ ...f, region: e.target.value }))}
+              aria-label="Select the project for this country"
+              className={`cursor-pointer ${fieldClass}`}
+            >
+              {countryRegions.map((region) => (
+                <option key={region} value={region}>
+                  {regionDisplayLabel(region)}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : showCountryFields ? (
           <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
             Region
             <input
@@ -405,6 +445,7 @@ export function EmployeeForm({
             teamLeads={teamLeads}
             managers={managers}
             country={form.country}
+            region={form.region}
             fieldClass={fieldClass}
             invalidFieldClass="border-[var(--color-coral)]"
           />

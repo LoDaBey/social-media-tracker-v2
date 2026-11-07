@@ -66,6 +66,7 @@ export async function AlphaaEmployeeProfile({
           op_countries: [],
           current_level: 2,
           country,
+          region: "Alphaa",
           updated_at: new Date().toISOString(),
         }}
         teamLeads={teamLeads}

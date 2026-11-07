@@ -9,6 +9,7 @@ import { setupRegionForCountry } from "@/lib/setup-options";
 import { regionDisplayLabel } from "@/lib/project-labels";
 import {
   countriesForCreateProject,
+  regionFromStrategyProjectSlug,
 } from "@/lib/employee-create-projects";
 import { ROLE_LABELS, reportingFieldsFromSupervisor } from "@/lib/role-hierarchy";
 import type { Role } from "@/types/db";
@@ -375,6 +376,9 @@ export function CreateEmployeeForm({
             teamLeads={teamLeads}
             managers={managers}
             country={country}
+            region={
+              project_slug ? regionFromStrategyProjectSlug(project_slug) : undefined
+            }
             managerError={fieldErrors.manager_id}
             managerErrorId="create-manager-error"
             fieldClass={fieldClass}

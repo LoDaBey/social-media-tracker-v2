@@ -1,8 +1,24 @@
 "use client";
 
 import { useMemo } from "react";
+import { normalizeProjectRegion } from "@/lib/admin-view";
 import { ROLE_LABELS } from "@/lib/role-hierarchy";
-import type { EmployeeReportingFieldsProps } from "@/types/admin";
+import type {
+  AdminManagerOption,
+  EmployeeReportingFieldsProps,
+} from "@/types/admin";
+
+function inProject(manager: AdminManagerOption, region: string | undefined) {
+  const wanted = normalizeProjectRegion(region);
+  const own = normalizeProjectRegion(manager.region);
+  return !wanted || !own || wanted === own;
+}
+
+function coversCountry(manager: AdminManagerOption, country: string | undefined) {
+  if (!country) return true;
+  if (manager.countries.length > 0) return manager.countries.includes(country);
+  return !manager.home_country || manager.home_country === country;
+}
 
 function managerLabel(
   fullName: string,
@@ -17,6 +33,7 @@ export function EmployeeReportingFields({
   teamLeads,
   managers,
   country,
+  region,
   disabled = false,
   managerError,
   managerErrorId,
@@ -24,20 +41,18 @@ export function EmployeeReportingFields({
   invalidFieldClass,
 }: EmployeeReportingFieldsProps) {
   const managerOptions = useMemo(() => {
-    const matching = country
-      ? managers.filter(
-          (manager) =>
-            manager.countries.length === 0 ||
-            manager.countries.includes(country)
-        )
-      : managers;
-    const options = matching.length > 0 ? matching : managers;
+    // Same project first, then same country. Fall back to the project's managers,
+    // and only to everyone when the project has no managers at all.
+    const sameProject = managers.filter((manager) => inProject(manager, region));
+    const matching = sameProject.filter((manager) => coversCountry(manager, country));
+    const options =
+      matching.length > 0 ? matching : sameProject.length > 0 ? sameProject : managers;
     if (value.managerId && !options.some((manager) => manager.id === value.managerId)) {
       const selected = managers.find((manager) => manager.id === value.managerId);
       return selected ? [selected, ...options] : options;
     }
     return options;
-  }, [country, managers, value.managerId]);
+  }, [country, region, managers, value.managerId]);
 
   const teamLeadOptions = useMemo(() => {
     const matching = value.managerId

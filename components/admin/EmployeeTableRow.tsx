@@ -155,6 +155,7 @@ export function EmployeeTableRow({
               role={row.role}
               source={row.source}
               country={row.country}
+              region={row.region}
             />
             {canManagePermissions ? (
               <EmployeePermissionsButton

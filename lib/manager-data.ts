@@ -30,8 +30,13 @@ export async function fetchManagerCountries(
 }
 
 export async function fetchManagerOptions(): Promise<ManagerOption[]> {
-  const managers = await query<{ id: number; full_name: string }>(
-    `SELECT id, full_name
+  const managers = await query<{
+    id: number;
+    full_name: string;
+    region: string | null;
+    country: string | null;
+  }>(
+    `SELECT id, full_name, region, country
        FROM temp_users
       WHERE role = 'manager' AND is_active = TRUE
       ORDER BY full_name`
@@ -57,6 +62,8 @@ export async function fetchManagerOptions(): Promise<ManagerOption[]> {
     id: m.id,
     full_name: m.full_name,
     countries: byManager.get(m.id) ?? [],
+    region: m.region,
+    home_country: m.country,
   }));
 }
 

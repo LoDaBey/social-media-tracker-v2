@@ -12,6 +12,8 @@ export type ManagerOption = {
   id: number;
   full_name: string;
   countries: string[];
+  region: string | null;
+  home_country: string | null;
 };
 
 export type ManagerAccountListItem = {
