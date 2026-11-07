@@ -34,13 +34,22 @@ export function isFullAdminRole(role: string | null | undefined): boolean {
   return value === "admin" || value === "hoo";
 }
 
+/** Strategy create / edit / delete / add country — Admin only (HOO is read-only). */
+export function isStrategyMutatorRole(role: string | null | undefined): boolean {
+  return normalizeRoleValue(role) === "admin";
+}
+
 /** Roles that use the admin workspace (nav + /admin pages). */
 export function isAdminWorkspaceRole(role: string | null | undefined): boolean {
   const value = normalizeRoleValue(role);
   return value === "admin" || value === "hoo" || value === "op";
 }
 
-/** Direct supervisor role for each assignable role (admin has none). */
+/**
+ * Direct supervisor role for each assignable role.
+ * Hierarchy: Admin / HOO → Operation Manager (project) → Country Manager → Team Lead → Employee.
+ * OP is project-scoped and has no person supervisor picker.
+ */
 export function supervisorRoleFor(userRole: Role): Role | null {
   switch (userRole) {
     case "employee":
@@ -50,7 +59,9 @@ export function supervisorRoleFor(userRole: Role): Role | null {
     case "manager":
       return "op";
     case "op":
-      return "admin";
+    case "hoo":
+    case "admin":
+      return null;
     default:
       return null;
   }
@@ -87,8 +98,6 @@ export function reportingFieldsFromSupervisor(
       return { ...empty, manager_id: supervisorId };
     case "manager":
       return { ...empty, op_id: supervisorId };
-    case "op":
-      return { ...empty, manager_id: supervisorId };
     default:
       return empty;
   }
@@ -112,7 +121,7 @@ export function normalizeReportingForRole(
     case "manager":
       return { ...emptyReportingFields(), op_id: fields.op_id };
     case "op":
-      return { ...emptyReportingFields(), manager_id: fields.manager_id };
+      return emptyReportingFields();
     default:
       return emptyReportingFields();
   }
@@ -129,8 +138,6 @@ export function supervisorIdFromReporting(
       return fields.manager_id;
     case "manager":
       return fields.op_id;
-    case "op":
-      return fields.manager_id;
     default:
       return null;
   }

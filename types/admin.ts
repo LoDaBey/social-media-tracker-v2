@@ -163,6 +163,10 @@ export type UpdateEmployeeProfilePayload = {
   manager_id: number | null;
   op_id: number | null;
   manager_countries?: string[];
+  /** Required when role is op — strategy project the OP owns. */
+  project_slug?: string;
+  /** Required when role is op — countries within project_slug. */
+  op_countries?: string[];
   country: string;
 };
 
@@ -269,6 +273,8 @@ export type AdminWorkspaceProps = {
 export type AdminOverviewHeadingActionsProps = {
   region: AdminRegion;
   canCreateEmployees?: boolean;
+  /** Spare / coverage rebalance from Overview. */
+  canBalanceSpare?: boolean;
 };
 
 export type AdminPageLoaderProps = {
@@ -289,6 +295,10 @@ export type EmployeeFormInitial = {
   manager_id: number | null;
   op_id: number | null;
   manager_countries: string[];
+  /** Strategy project slug when role is Operation Manager. */
+  op_project_slug: string;
+  /** Countries this Operation Manager can access within the project. */
+  op_countries: string[];
   current_level: number;
   country: string;
   /** Bumps when the user row changes so the parent can reset client form state via `key`. */
@@ -634,6 +644,7 @@ export type AdminTempEmployeeEditorBundle = {
   managers: AdminManagerOption[];
   ops: AdminSupervisorOption[];
   admins: AdminSupervisorOption[];
+  projects: EmployeeCreateProjectOption[];
   targets: UpdateEmployeeTargetsPayload;
   activeCounts: Record<string, number>;
 };
@@ -674,6 +685,8 @@ export type EmployeeFormProps = {
   managers: AdminManagerOption[];
   ops: AdminSupervisorOption[];
   admins: AdminSupervisorOption[];
+  /** Strategy projects — used when assigning an Operation Manager. */
+  projects?: EmployeeCreateProjectOption[];
   /** temp = Africa/Europe; alphaa = Main project (same UI, different save path). */
   source?: AdminEmployeeSource;
   embedded?: boolean;
@@ -692,12 +705,15 @@ export type EmployeeTargetsFormProps = {
 export type EmployeeTableRowProps = {
   row: AdminEmployeeListRow;
   holders: BulkImportHolderOption[];
+  /** Admin-only: show the page-permissions action. */
+  canManagePermissions?: boolean;
 };
 
 export type EmployeesTableProps = {
   rows: AdminEmployeeListRow[];
   holders: BulkImportHolderOption[];
   toolbar?: ReactNode;
+  canManagePermissions?: boolean;
 };
 
 export type EmployeesTableToolbarProps = {

@@ -3,7 +3,7 @@ export const runtime = "nodejs";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireFullAdminActor } from "@/lib/admin-access";
+import { requireStrategyAdminActor } from "@/lib/admin-access";
 import { publicAdminMutationError } from "@/lib/admin-action-error";
 import { logOrbitAction } from "@/lib/orbit-log";
 import { isStrategyPlatformKey } from "@/lib/strategy-platforms";
@@ -25,12 +25,12 @@ const createSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    await requireFullAdminActor();
+    await requireStrategyAdminActor("canCreate");
   } catch {
     return NextResponse.json(
       {
         ok: false,
-        error: "Unauthorized — admin or Head of Department only.",
+        error: "Unauthorized — missing strategy create permission.",
       } satisfies StrategyCreateProjectResult,
       { status: 401 }
     );

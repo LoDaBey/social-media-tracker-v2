@@ -3,7 +3,7 @@ export const runtime = "nodejs";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireFullAdminActor } from "@/lib/admin-access";
+import { requireStrategyAdminActor } from "@/lib/admin-access";
 import { publicAdminMutationError } from "@/lib/admin-action-error";
 import { logOrbitAction } from "@/lib/orbit-log";
 import {
@@ -49,12 +49,12 @@ type RouteContext = {
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
-    await requireFullAdminActor();
+    await requireStrategyAdminActor("canUpdate");
   } catch {
     return NextResponse.json(
       {
         ok: false,
-        error: "Unauthorized — admin or Head of Department only.",
+        error: "Unauthorized — missing strategy update permission.",
       } satisfies StrategySaveProjectResult,
       { status: 401 }
     );
@@ -161,12 +161,12 @@ export async function PATCH(request: Request, context: RouteContext) {
 
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
-    await requireFullAdminActor();
+    await requireStrategyAdminActor("canDelete");
   } catch {
     return NextResponse.json(
       {
         ok: false,
-        error: "Unauthorized — admin or Head of Department only.",
+        error: "Unauthorized — missing strategy delete permission.",
       } satisfies StrategyDeleteProjectResult,
       { status: 401 }
     );

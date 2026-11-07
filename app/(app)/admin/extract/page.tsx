@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { getAdminViewerOrNull } from "@/lib/admin-access";
+import { requireAdminPageAccess } from "@/lib/admin-access";
 import { ALL_SETUP_COUNTRIES } from "@/lib/setup-options";
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import { adminViewExtract } from "@/lib/admin-view";
@@ -11,8 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminExtractPage() {
-  const viewer = await getAdminViewerOrNull();
-  if (!viewer) redirect("/login");
+  const viewer = await requireAdminPageAccess("extract");
 
   const countries =
     viewer.role === "op" && viewer.scope

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import * as XLSX from "xlsx";
 import { auth } from "@/auth";
+import { requireFullAdminActor } from "@/lib/admin-access";
 import { pool, queryOne } from "@/lib/db";
 import { publicAdminMutationError } from "@/lib/admin-action-error";
 import {
@@ -37,13 +38,17 @@ async function requireAdminOrManager() {
   const session = await auth();
   const userId = Number(session?.user?.id);
   const role = session?.user?.role;
-  if (
-    !Number.isFinite(userId) ||
-    (role !== "admin" && role !== "hoo" && role !== "manager")
-  ) {
+  if (!Number.isFinite(userId)) {
     throw new Error("Unauthorized.");
   }
-  return { userId, role: role as "admin" | "hoo" | "manager" };
+  if (role === "manager") {
+    return { userId, role: "manager" as const };
+  }
+  const actor = await requireFullAdminActor("employees", "canCreate");
+  return {
+    userId: actor.userId,
+    role: (actor.role === "hoo" ? "hoo" : "admin") as "admin" | "hoo",
+  };
 }
 
 async function assertManagerCanImportHolder(

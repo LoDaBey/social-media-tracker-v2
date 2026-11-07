@@ -21,6 +21,7 @@ import type { EmployeeFormProps, UpdateEmployeeProfilePayload } from "@/types/ad
 import { AdminCountrySelect } from "@/components/admin/AdminCountrySelect";
 import { EmployeeReportingFields } from "@/components/admin/EmployeeReportingFields";
 import { ManagerCountriesField } from "@/components/admin/ManagerCountriesField";
+import { OpAccessFields } from "@/components/admin/OpAccessFields";
 import { SupervisorAssignField } from "@/components/admin/SupervisorAssignField";
 
 function normalizeDate(v: string | null): string {
@@ -49,6 +50,7 @@ export function EmployeeForm({
   managers,
   ops,
   admins,
+  projects = [],
   source = "temp",
   embedded = false,
   onSaved,
@@ -73,6 +75,8 @@ export function EmployeeForm({
       manager_id: initial.manager_id,
       op_id: initial.op_id,
       manager_countries: initial.manager_countries,
+      op_project_slug: initial.op_project_slug,
+      op_countries: initial.op_countries,
       country: initial.country,
     }),
     [initial]
@@ -83,9 +87,9 @@ export function EmployeeForm({
   const dirty = useMemo(() => JSON.stringify(form) !== JSON.stringify(base), [form, base]);
 
   const isManagerRole = form.role === "manager";
-  const isGlobalRole =
-    form.role === "admin" || form.role === "hoo" || form.role === "op";
-  const showCountryFields = !isManagerRole && !isGlobalRole;
+  const isOpRole = form.role === "op";
+  const isGlobalRole = form.role === "admin" || form.role === "hoo";
+  const showCountryFields = !isManagerRole && !isGlobalRole && !isOpRole;
 
   const supervisorId = supervisorIdFromReporting(form.role, {
     team_lead_id: form.team_lead_id,
@@ -141,6 +145,23 @@ export function EmployeeForm({
     }));
   }
 
+  function toggleOpCountry(option: string) {
+    setForm((f) => ({
+      ...f,
+      op_countries: f.op_countries.includes(option)
+        ? f.op_countries.filter((c) => c !== option)
+        : [...f.op_countries, option],
+    }));
+  }
+
+  function handleOpProjectChange(nextSlug: string) {
+    setForm((f) => ({
+      ...f,
+      op_project_slug: nextSlug,
+      op_countries: [],
+    }));
+  }
+
   function cancel() {
     setForm(base);
     setError(null);
@@ -156,6 +177,18 @@ export function EmployeeForm({
       });
       if (reportingMessage) {
         toast.error(reportingMessage);
+        return;
+      }
+    }
+    if (!isAlphaa && isOpRole) {
+      if (!form.op_project_slug.trim()) {
+        toast.error("Select a project for this Operation Manager.");
+        return;
+      }
+      if (form.op_countries.length === 0) {
+        toast.error(
+          "Select at least one country this Operation Manager can access."
+        );
         return;
       }
     }
@@ -193,10 +226,14 @@ export function EmployeeForm({
             op_id: form.op_id,
             manager_countries:
               form.role === "manager" ? form.manager_countries : undefined,
+            project_slug: isOpRole ? form.op_project_slug : undefined,
+            op_countries: isOpRole ? form.op_countries : undefined,
             country:
               form.role === "manager"
                 ? form.manager_countries[0] ?? form.country
-                : form.country.trim(),
+                : isOpRole
+                  ? form.op_countries[0] ?? form.country
+                  : form.country.trim(),
           };
           await updateEmployeeProfile(initial.id, payload);
         }
@@ -336,6 +373,8 @@ export function EmployeeForm({
                 team_lead_id: null,
                 manager_id: null,
                 op_id: null,
+                op_project_slug: nextRole === "op" ? f.op_project_slug : "",
+                op_countries: nextRole === "op" ? f.op_countries : [],
               }));
             }}
             aria-label="Select role"
@@ -369,7 +408,7 @@ export function EmployeeForm({
             fieldClass={fieldClass}
             invalidFieldClass="border-[var(--color-coral)]"
           />
-        ) : (
+        ) : isOpRole ? null : (
           <SupervisorAssignField
             userRole={form.role}
             value={supervisorId}
@@ -397,6 +436,18 @@ export function EmployeeForm({
           <ManagerCountriesField
             selected={form.manager_countries}
             onToggle={toggleManagerCountry}
+          />
+        ) : null}
+
+        {isOpRole ? (
+          <OpAccessFields
+            projects={projects}
+            projectSlug={form.op_project_slug}
+            selectedCountries={form.op_countries}
+            fieldClass={fieldClass}
+            invalidFieldClass="border-[var(--color-coral)]"
+            onProjectChange={handleOpProjectChange}
+            onToggleCountry={toggleOpCountry}
           />
         ) : null}
       </div>

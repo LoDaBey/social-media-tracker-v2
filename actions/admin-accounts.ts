@@ -22,9 +22,14 @@ import type {
   AdminEmployeeSource,
   AdminSocialAccountInput,
 } from "@/types/admin";
+import type { AdminPermissionAction } from "@/types/permissions";
 
-async function requireAdmin() {
-  await requireFullAdminActor();
+async function requireAdmin(action: AdminPermissionAction = "canUpdate") {
+  await requireFullAdminActor("employees", action);
+}
+
+async function requireSpareAdmin() {
+  await requireFullAdminActor("spare", "canUpdate");
 }
 
 function revalidateAccounts(
@@ -60,7 +65,7 @@ export async function createAdminSocialAccount(
   source: AdminEmployeeSource = "temp"
 ): Promise<AdminAccountMutationResult> {
   try {
-    await requireAdmin();
+    await requireAdmin("canCreate");
     if (!Number.isFinite(userId)) return { error: "Invalid employee." };
     const checked = validateSocialAccountInput(
       source === "alphaa" ? withAlphaaEmailPassword(payload) : payload
@@ -223,7 +228,7 @@ export async function deleteAdminSocialAccount(
   source: AdminEmployeeSource = "temp"
 ): Promise<AdminAccountMutationResult> {
   try {
-    await requireAdmin();
+    await requireAdmin("canDelete");
     if (!Number.isFinite(accountId)) return { error: "Invalid account." };
     if (source === "alphaa") {
       const existing = await queryOne<{ user_id: number }>(
@@ -270,7 +275,7 @@ export async function setAdminSocialAccountSpare(
   source: AdminEmployeeSource = "temp"
 ): Promise<AdminAccountMutationResult> {
   try {
-    await requireAdmin();
+    await requireSpareAdmin();
     if (!Number.isFinite(accountId)) return { error: "Invalid account." };
     if (source === "alphaa") {
       const existing = await queryOne<{ user_id: number }>(

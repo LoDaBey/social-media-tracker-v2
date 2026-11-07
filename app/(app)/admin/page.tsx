@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { fetchAdminCountryCoverage } from "@/lib/admin-country-coverage";
-import { getAdminViewerOrNull } from "@/lib/admin-access";
+import { requireAdminPageAccess, viewerAllows } from "@/lib/admin-access";
 import { AdminCoverageKpis } from "@/components/admin/AdminCoverageKpis";
 import { AdminCountryCoverageSection } from "@/components/admin/AdminCountryCoverageSection";
 import { AdminOverviewHeadingActions } from "@/app/(app)/admin/components/AdminOverviewHeadingActions";
@@ -9,7 +9,6 @@ import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import { adminViewOverview } from "@/lib/admin-view";
 import { adminRegionFromSlug } from "@/lib/region-config";
 import { fetchStrategyProjects } from "@/lib/strategy-projects-data";
-import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -22,8 +21,7 @@ type AdminOverviewPageProps = {
 export default async function AdminOverviewPage({
   searchParams,
 }: AdminOverviewPageProps) {
-  const viewer = await getAdminViewerOrNull();
-  if (!viewer) redirect("/login");
+  const viewer = await requireAdminPageAccess("overview");
 
   const params = await searchParams;
   const requestedRegion = adminRegionFromSlug(params.region);
@@ -61,7 +59,8 @@ export default async function AdminOverviewPage({
       actions={
         <AdminOverviewHeadingActions
           region={region}
-          canCreateEmployees={viewer.canEdit}
+          canCreateEmployees={viewerAllows(viewer, "employees", "canCreate")}
+          canBalanceSpare={viewerAllows(viewer, "spare", "canUpdate")}
         />
       }
     >

@@ -4,15 +4,8 @@ import { usePathname } from "next/navigation";
 import { LayoutGroup } from "framer-motion";
 import { AdminHeaderNavItem } from "@/components/layout/AdminHeaderNavItem";
 import { AdminHeaderSpareButton } from "@/components/layout/AdminHeaderSpareButton";
+import { ADMIN_NAV_PAGES } from "@/lib/admin-nav-pages";
 import type { AdminHeaderNavLink, AdminHeaderNavProps } from "@/types/layout";
-
-const LINKS: AdminHeaderNavLink[] = [
-  { href: "/admin", label: "Overview", match: "exact" },
-  { href: "/admin/employees", label: "Employees", match: "prefix" },
-  { href: "/admin/extract", label: "Extract", match: "prefix" },
-  { href: "/admin/strategy", label: "Strategy", match: "prefix" },
-  { href: "/admin/logs", label: "Activity", match: "prefix" },
-];
 
 function isActive(pathname: string, link: AdminHeaderNavLink) {
   if (link.match === "exact") return pathname === link.href;
@@ -23,8 +16,28 @@ export function AdminHeaderNav({
   spareCount,
   spareAccounts,
   spareHolders,
+  allowedPages,
 }: AdminHeaderNavProps) {
   const pathname = usePathname();
+  const allowed = new Set(allowedPages);
+  const links = ADMIN_NAV_PAGES.filter((link) => allowed.has(link.pageKey)).map(
+    (link) => ({
+      href: link.href,
+      label: link.label,
+      match: link.match,
+    })
+  );
+  const showSpare = allowed.has("spare");
+  const beforeSpare = links.filter(
+    (link) =>
+      link.href === "/admin" ||
+      link.href === "/admin/employees" ||
+      link.href === "/admin/extract"
+  );
+  const afterSpare = links.filter(
+    (link) =>
+      link.href === "/admin/strategy" || link.href === "/admin/logs"
+  );
 
   return (
     <LayoutGroup id="admin-header-nav">
@@ -32,19 +45,21 @@ export function AdminHeaderNav({
         className="flex h-full min-w-0 items-center overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         aria-label="Admin sections"
       >
-        {LINKS.slice(0, 3).map((link) => (
+        {beforeSpare.map((link) => (
           <AdminHeaderNavItem
             key={link.href}
             link={link}
             active={isActive(pathname, link)}
           />
         ))}
-        <AdminHeaderSpareButton
-          count={spareCount}
-          accounts={spareAccounts}
-          holders={spareHolders}
-        />
-        {LINKS.slice(3).map((link) => (
+        {showSpare ? (
+          <AdminHeaderSpareButton
+            count={spareCount}
+            accounts={spareAccounts}
+            holders={spareHolders}
+          />
+        ) : null}
+        {afterSpare.map((link) => (
           <AdminHeaderNavItem
             key={link.href}
             link={link}

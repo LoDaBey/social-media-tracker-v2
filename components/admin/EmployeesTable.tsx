@@ -1,7 +1,12 @@
 import type { EmployeesTableProps } from "@/types/admin";
 import { EmployeeTableRow } from "@/components/admin/EmployeeTableRow";
 
-export function EmployeesTable({ rows, holders, toolbar }: EmployeesTableProps) {
+export function EmployeesTable({
+  rows,
+  holders,
+  toolbar,
+  canManagePermissions = false,
+}: EmployeesTableProps) {
   return (
     <div className="rounded-[16px] border border-[var(--color-hairline)] bg-[var(--color-surface)]">
       {toolbar}
@@ -51,6 +56,7 @@ export function EmployeesTable({ rows, holders, toolbar }: EmployeesTableProps) 
                   key={`${row.source}-${row.id}`}
                   row={row}
                   holders={holders}
+                  canManagePermissions={canManagePermissions}
                 />
               ))
             )}

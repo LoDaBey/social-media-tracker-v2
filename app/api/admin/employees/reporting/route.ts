@@ -2,6 +2,7 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { requirePagePermission } from "@/lib/admin-access";
 import { fetchEmployeeReporting } from "@/lib/admin-employee-reporting";
 import { assertManagerCanEditEmployee } from "@/lib/manager-data";
 import type { EmployeeReportingResponse } from "@/types/admin";
@@ -10,14 +11,23 @@ export async function GET(request: Request) {
   const session = await auth();
   const userId = Number(session?.user?.id);
   const role = session?.user?.role;
-  if (
-    !Number.isFinite(userId) ||
-    (role !== "admin" && role !== "hoo" && role !== "manager")
-  ) {
-    return NextResponse.json(
-      { ok: false, error: "Unauthorized." } satisfies EmployeeReportingResponse,
-      { status: 401 }
-    );
+
+  if (role === "manager") {
+    if (!Number.isFinite(userId)) {
+      return NextResponse.json(
+        { ok: false, error: "Unauthorized." } satisfies EmployeeReportingResponse,
+        { status: 401 }
+      );
+    }
+  } else {
+    try {
+      await requirePagePermission("employees", "canRead");
+    } catch {
+      return NextResponse.json(
+        { ok: false, error: "Unauthorized." } satisfies EmployeeReportingResponse,
+        { status: 401 }
+      );
+    }
   }
 
   const url = new URL(request.url);

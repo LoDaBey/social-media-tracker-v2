@@ -10,7 +10,7 @@ import type { SheetsSyncResult } from "@/types/admin";
 
 export async function POST() {
   try {
-    await requireFullAdminActor();
+    await requireFullAdminActor("overview", "canUpdate");
   } catch {
     return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
   }

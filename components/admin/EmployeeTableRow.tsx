@@ -10,6 +10,7 @@ import { EmployeeViewButton } from "@/components/admin/EmployeeViewButton";
 import { EmployeeAccountsPanel } from "@/components/admin/EmployeeAccountsPanel";
 import { AccountTotalsCell } from "@/components/admin/AccountTotalsCell";
 import { EmployeeStatusSelect } from "@/components/admin/EmployeeStatusSelect";
+import { EmployeePermissionsButton } from "@/app/(app)/admin/employees/components/EmployeePermissionsButton";
 import { isTempPlanCountry } from "@/lib/region-config";
 import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import type { EmployeeTableRowProps } from "@/types/admin";
@@ -20,7 +21,11 @@ function teamLeadColumnName(row: EmployeeTableRowProps["row"]): string | null {
   return null;
 }
 
-export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
+export function EmployeeTableRow({
+  row,
+  holders,
+  canManagePermissions = false,
+}: EmployeeTableRowProps) {
   const [expanded, setExpanded] = useState(false);
   const initial = (row.full_name.trim()[0] ?? "?").toUpperCase();
   const isAlphaa = row.source === "alphaa";
@@ -147,6 +152,14 @@ export function EmployeeTableRow({ row, holders }: EmployeeTableRowProps) {
               source={row.source}
               country={row.country}
             />
+            {canManagePermissions ? (
+              <EmployeePermissionsButton
+                userId={row.id}
+                fullName={row.full_name}
+                role={row.role}
+                source={row.source}
+              />
+            ) : null}
             <EmployeeDeleteButton
               userId={row.id}
               fullName={row.full_name}

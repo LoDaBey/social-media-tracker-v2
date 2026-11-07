@@ -12,9 +12,10 @@ import {
 import { logOrbitAction } from "@/lib/orbit-log";
 import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import type { UpdateAlphaaEmployeePayload } from "@/types/admin";
+import type { AdminPermissionAction } from "@/types/permissions";
 
-async function requireAdmin() {
-  const { userId: adminId } = await requireFullAdminActor();
+async function requireAdmin(action: AdminPermissionAction = "canUpdate") {
+  const { userId: adminId } = await requireFullAdminActor("employees", action);
   return { adminId };
 }
 
@@ -106,7 +107,7 @@ export async function setAlphaaEmployeeEmploymentStatus(
 }
 
 export async function deleteAlphaaEmployee(userId: number): Promise<void> {
-  const { adminId } = await requireAdmin();
+  const { adminId } = await requireAdmin("canDelete");
   if (!Number.isFinite(userId)) throw new Error("Invalid user.");
   if (userId === adminId) {
     throw new Error("You cannot delete your own account.");

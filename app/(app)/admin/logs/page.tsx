@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { getAdminViewerOrNull } from "@/lib/admin-access";
+import { requireAdminPageAccess } from "@/lib/admin-access";
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import { fetchAdminActionLogs, parseOrbitLogFilters } from "@/lib/admin-logs-data";
 import { baseCountryFromDisplay } from "@/lib/overview-country-display";
@@ -23,8 +22,7 @@ export default async function AdminLogsPage({
 }: {
   searchParams?: Promise<SearchParams>;
 }) {
-  const viewer = await getAdminViewerOrNull();
-  if (!viewer) redirect("/login");
+  const viewer = await requireAdminPageAccess("activity");
 
   const params = (await searchParams) ?? {};
   const filters = parseOrbitLogFilters({

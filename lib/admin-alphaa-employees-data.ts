@@ -418,6 +418,8 @@ export async function fetchAlphaaEmployeeEditorBundle(
       manager_id: null,
       op_id: null,
       manager_countries: [],
+      op_project_slug: "",
+      op_countries: [],
       current_level: 2,
       country,
       updated_at: new Date().toISOString(),

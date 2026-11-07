@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { requireAdminPageAccess } from "@/lib/admin-access";
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import { fetchAlphaaEmployeeById } from "@/lib/admin-alphaa-employees-data";
 import { adminViewAlphaaEmployee } from "@/lib/admin-view";
@@ -19,6 +20,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function AlphaaEmployeePage({ params }: PageProps) {
+  await requireAdminPageAccess("employees");
+
   const { id: idRaw } = await params;
   const id = Number(idRaw);
   if (!Number.isFinite(id)) notFound();

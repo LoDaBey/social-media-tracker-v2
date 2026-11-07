@@ -5,6 +5,7 @@ import type {
   AdminSpareAccountListItem,
   SpareMarkHolderOption,
 } from "@/types/admin";
+import type { AdminPermissionPageKey } from "@/types/permissions";
 
 export type SignOutOverlayProps = {
   visible: boolean;
@@ -51,6 +52,8 @@ export type AdminHeaderNavProps = {
   spareCount: number;
   spareAccounts: AdminSpareAccountListItem[];
   spareHolders: SpareMarkHolderOption[];
+  /** Page keys the viewer may read; controls which nav items appear. */
+  allowedPages: AdminPermissionPageKey[];
 };
 
 export type AdminHeaderNavItemProps = {
@@ -62,6 +65,8 @@ export type AdminHeaderSpareButtonProps = {
   count: number;
   accounts: AdminSpareAccountListItem[];
   holders: SpareMarkHolderOption[];
+  /** When false, the Spare nav control is hidden. */
+  visible?: boolean;
 };
 
 export type CommandPalettePersonAccount = {

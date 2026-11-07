@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { getAdminViewerOrNull } from "@/lib/admin-access";
+import { requireAdminPageAccess, viewerAllows } from "@/lib/admin-access";
 import { fetchAdminEmployeesList } from "@/lib/admin-data";
 import {
   employeeListStatusCounts,
@@ -30,8 +29,8 @@ export default async function AdminEmployeesPage({
 }: {
   searchParams?: Promise<SearchParams>;
 }) {
-  const viewer = await getAdminViewerOrNull();
-  if (!viewer) redirect("/login");
+  const viewer = await requireAdminPageAccess("employees");
+  const canCreateEmployees = viewerAllows(viewer, "employees", "canCreate");
 
   const sp = (await searchParams) ?? {};
   const q = typeof sp.q === "string" ? sp.q : "";
@@ -107,18 +106,19 @@ export default async function AdminEmployeesPage({
     <AdminWorkspace
       view={adminViewEmployees()}
       actions={
-        <EmployeesHeadingActions canCreateEmployees={viewer.canEdit} />
+        <EmployeesHeadingActions canCreateEmployees={canCreateEmployees} />
       }
     >
       <EmployeesTable
         rows={rows}
         holders={holders}
+        canManagePermissions={viewer.role === "admin"}
         toolbar={
           <EmployeesTableToolbar
             initialQ={q}
             counts={counts}
             holders={holders}
-            canCreateEmployees={viewer.canEdit}
+            canCreateEmployees={canCreateEmployees}
           />
         }
       />
