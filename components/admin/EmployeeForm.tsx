@@ -458,6 +458,8 @@ export function EmployeeForm({
             managers={managers}
             ops={ops}
             admins={admins}
+            region={form.region}
+            country={form.country}
             fieldClass={fieldClass}
             invalidFieldClass="border-[var(--color-coral)]"
           />

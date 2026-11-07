@@ -130,6 +130,27 @@ export function normalizeProjectRegion(
   return null;
 }
 
+/**
+ * Country Managers that fit a person's project, then country. Falls back to the
+ * project's other managers only — never to another project's.
+ */
+export function managersForProjectAndCountry<
+  T extends { countries: string[]; region: string | null; home_country: string | null }
+>(managers: T[], region: string | undefined, country: string | undefined): T[] {
+  const wanted = normalizeProjectRegion(region);
+  const sameProject = managers.filter((manager) => {
+    const own = normalizeProjectRegion(manager.region);
+    return !wanted || !own || wanted === own;
+  });
+  const matching = sameProject.filter((manager) => {
+    if (!country) return true;
+    if (manager.countries.length > 0) return manager.countries.includes(country);
+    return !manager.home_country || manager.home_country === country;
+  });
+  // Never fall back to other projects' managers.
+  return matching.length > 0 ? matching : sameProject;
+}
+
 export function adminEmployeeProjectLabel(
   source: AdminEmployeeSource,
   country?: string | null,

@@ -8,13 +8,15 @@ import type {
   SupervisorAssignFieldProps,
 } from "@/types/admin";
 import { supervisorLabelForUserRole, supervisorRoleFor } from "@/lib/role-hierarchy";
+import { managersForProjectAndCountry } from "@/lib/admin-view";
 
 function optionsForRole(
   userRole: Role,
   teamLeads: AdminTeamLeadOption[],
   managers: AdminManagerOption[],
   ops: AdminSupervisorOption[],
-  admins: AdminSupervisorOption[]
+  admins: AdminSupervisorOption[],
+  scope: { region?: string; country?: string; selectedId: number | null }
 ): { id: number; label: string }[] {
   const supervisorRole = supervisorRoleFor(userRole);
   if (!supervisorRole) return [];
@@ -22,13 +24,19 @@ function optionsForRole(
   switch (supervisorRole) {
     case "team_lead":
       return teamLeads.map((tl) => ({ id: tl.id, label: tl.full_name }));
-    case "manager":
-      return managers.map((m) => ({
+    case "manager": {
+      // Team Leader → only Country Managers of the same project (and country).
+      const fitting = managersForProjectAndCountry(managers, scope.region, scope.country);
+      const selected = managers.find((m) => m.id === scope.selectedId);
+      const list =
+        selected && !fitting.includes(selected) ? [selected, ...fitting] : fitting;
+      return list.map((m) => ({
         id: m.id,
         label: m.countries.length
           ? `${m.full_name} (${m.countries.join(", ")})`
           : m.full_name,
       }));
+    }
     case "op":
       return ops.map((op) => ({ id: op.id, label: op.full_name }));
     case "admin":
@@ -46,6 +54,8 @@ export function SupervisorAssignField({
   managers,
   ops,
   admins,
+  region,
+  country,
   disabled = false,
   error,
   errorId,
@@ -57,7 +67,11 @@ export function SupervisorAssignField({
 
   const label =
     userRole === "manager" ? `${baseLabel} (optional)` : baseLabel;
-  const options = optionsForRole(userRole, teamLeads, managers, ops, admins);
+  const options = optionsForRole(userRole, teamLeads, managers, ops, admins, {
+    region,
+    country,
+    selectedId: value,
+  });
   const emptyOptionLabel =
     userRole === "manager" ? `No ${baseLabel}` : `Select ${baseLabel}`;
 

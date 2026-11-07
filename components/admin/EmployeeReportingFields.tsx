@@ -1,24 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { normalizeProjectRegion } from "@/lib/admin-view";
+import { managersForProjectAndCountry } from "@/lib/admin-view";
 import { ROLE_LABELS } from "@/lib/role-hierarchy";
-import type {
-  AdminManagerOption,
-  EmployeeReportingFieldsProps,
-} from "@/types/admin";
-
-function inProject(manager: AdminManagerOption, region: string | undefined) {
-  const wanted = normalizeProjectRegion(region);
-  const own = normalizeProjectRegion(manager.region);
-  return !wanted || !own || wanted === own;
-}
-
-function coversCountry(manager: AdminManagerOption, country: string | undefined) {
-  if (!country) return true;
-  if (manager.countries.length > 0) return manager.countries.includes(country);
-  return !manager.home_country || manager.home_country === country;
-}
+import type { EmployeeReportingFieldsProps } from "@/types/admin";
 
 function managerLabel(
   fullName: string,
@@ -41,12 +26,7 @@ export function EmployeeReportingFields({
   invalidFieldClass,
 }: EmployeeReportingFieldsProps) {
   const managerOptions = useMemo(() => {
-    // Same project first, then same country. Fall back to the project's managers,
-    // and only to everyone when the project has no managers at all.
-    const sameProject = managers.filter((manager) => inProject(manager, region));
-    const matching = sameProject.filter((manager) => coversCountry(manager, country));
-    const options =
-      matching.length > 0 ? matching : sameProject.length > 0 ? sameProject : managers;
+    const options = managersForProjectAndCountry(managers, region, country);
     if (value.managerId && !options.some((manager) => manager.id === value.managerId)) {
       const selected = managers.find((manager) => manager.id === value.managerId);
       return selected ? [selected, ...options] : options;
