@@ -25,6 +25,7 @@ import {
   isAlphaaCountry,
   isSetupCountry,
   setupRegionForCountry,
+  setupRegionsForCountry,
 } from "@/lib/setup-options";
 import type {
   AdminEmployeeEditorBundle,
@@ -420,6 +421,7 @@ const updateProfileSchema = z
     project_slug: z.string().trim().optional(),
     op_countries: z.array(z.string()).optional(),
     country: z.string().trim(),
+    region: z.enum(["Africa", "Europe", "Alphaa", "Asia"]).optional(),
   })
   .superRefine((data, ctx) => {
     if (data.role === "manager" || data.role === "admin" || data.role === "hoo") {
@@ -538,6 +540,13 @@ export async function updateEmployeeProfile(
         [user_id]
       );
       if (current.rows[0]?.region === "Alphaa") assignedRegion = "Alphaa";
+    }
+    // When the country is in two projects (Palestine: Main / Asia), keep the one chosen.
+    if (p.role !== "op" && p.role !== "manager" && p.region) {
+      const chosen = setupRegionsForCountry(primaryCountry).find(
+        (region) => region === p.region
+      );
+      if (chosen) assignedRegion = chosen;
     }
 
     await client.query(

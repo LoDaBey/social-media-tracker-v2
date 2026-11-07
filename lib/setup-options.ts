@@ -160,6 +160,14 @@ export function setupCountriesForRegion(region: SetupRegion): readonly string[] 
   return SETUP_COUNTRIES;
 }
 
+/** Every project (region) whose country list contains this country. */
+export function setupRegionsForCountry(country: string): SetupRegion[] {
+  const regions: SetupRegion[] = ["Africa", "Europe", "Alphaa", "Asia"];
+  return regions.filter((region) =>
+    (setupCountriesForRegion(region) as readonly string[]).includes(country)
+  );
+}
+
 export function employeeListRegionFromSlug(
   value: string | undefined
 ): "all" | SetupRegion {

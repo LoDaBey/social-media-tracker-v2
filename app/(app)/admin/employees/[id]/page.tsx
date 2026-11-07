@@ -101,6 +101,7 @@ export default async function AdminEmployeeDetailPage({
     op_countries: opCountries,
     current_level: user.current_level,
     country: user.country ?? "",
+    region: user.region ?? "",
     updated_at: user.updated_at,
   };
 

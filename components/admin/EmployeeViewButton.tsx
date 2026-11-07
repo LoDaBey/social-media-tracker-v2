@@ -17,12 +17,13 @@ export function EmployeeViewButton({
   role,
   source,
   country,
+  region,
 }: EmployeeViewButtonProps) {
   const [open, setOpen] = useState(false);
   const [bundle, setBundle] = useState<AdminEmployeeEditorBundle | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const projectLabel = adminEmployeeProjectLabel(source, country);
+  const projectLabel = adminEmployeeProjectLabel(source, country, region);
 
   async function load() {
     setLoading(true);

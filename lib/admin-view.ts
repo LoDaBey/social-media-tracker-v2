@@ -7,6 +7,7 @@ import type {
 import { ROLE_LABELS } from "@/lib/role-hierarchy";
 import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import { setupRegionForCountry } from "@/lib/setup-options";
+import type { CountryRegion } from "@/lib/region-config";
 
 export function normalizeAdminEmployeePanel(
   raw: string | undefined
@@ -117,11 +118,26 @@ export const ADMIN_EMPLOYEE_PANELS: {
   { id: "activity", label: "Activity" },
 ];
 
+/** Saved temp_users.region → project region, or null when blank/unknown. */
+export function normalizeProjectRegion(
+  region: string | null | undefined
+): CountryRegion | null {
+  const value = region?.trim().toLowerCase() ?? "";
+  if (value === "alphaa" || value === "main") return "Alphaa";
+  if (value === "africa") return "Africa";
+  if (value === "europe" || value === "balkan") return "Europe";
+  if (value === "asia") return "Asia";
+  return null;
+}
+
 export function adminEmployeeProjectLabel(
   source: AdminEmployeeSource,
-  country?: string | null
+  country?: string | null,
+  region?: string | null
 ): AdminEmployeeProjectLabel {
   if (source === "alphaa") return MAIN_PROJECT_LABEL;
+  const saved = normalizeProjectRegion(region);
+  if (saved) return saved === "Alphaa" ? MAIN_PROJECT_LABEL : saved;
   return setupRegionForCountry(country ?? "") === "Europe" ? "Europe" : "Africa";
 }
 

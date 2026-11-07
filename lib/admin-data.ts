@@ -486,6 +486,7 @@ export async function fetchAdminEmployeeEditorBundle(
     op_countries: opCountries,
     current_level: user.current_level,
     country: user.country ?? "",
+    region: user.region ?? "",
     updated_at:
       typeof user.updated_at === "string"
         ? user.updated_at
@@ -494,7 +495,7 @@ export async function fetchAdminEmployeeEditorBundle(
 
   return {
     source: "temp",
-    projectLabel: adminEmployeeProjectLabel("temp", user.country),
+    projectLabel: adminEmployeeProjectLabel("temp", user.country, user.region),
     fetchedAt: new Date().toISOString(),
     fullName: user.full_name,
     role: user.role,

@@ -26,7 +26,7 @@ export type AdminEmployeeSource = "temp" | "alphaa";
 
 export type MainProjectLabel = typeof MAIN_PROJECT_LABEL;
 
-export type AdminEmployeeProjectLabel = "Africa" | "Europe" | MainProjectLabel;
+export type AdminEmployeeProjectLabel = "Africa" | "Europe" | "Asia" | MainProjectLabel;
 
 export type AdminEmployeeListRow = {
   id: number;
@@ -170,6 +170,8 @@ export type UpdateEmployeeProfilePayload = {
   /** Required when role is op — countries within project_slug. */
   op_countries?: string[];
   country: string;
+  /** Project region chosen when the country is in more than one project. */
+  region?: string;
 };
 
 export type UpdateEmployeeTargetsPayload = {
@@ -303,6 +305,8 @@ export type EmployeeFormInitial = {
   op_countries: string[];
   current_level: number;
   country: string;
+  /** Saved project region (temp_users.region). */
+  region: string;
   /** Bumps when the user row changes so the parent can reset client form state via `key`. */
   updated_at: string;
 };
@@ -320,6 +324,10 @@ export type AdminManagerOption = {
   id: number;
   full_name: string;
   countries: string[];
+  /** temp_users.region of the manager (project). */
+  region: string | null;
+  /** temp_users.country, used when the manager has no country list. */
+  home_country: string | null;
 };
 
 export type SupervisorAssignFieldProps = {
@@ -348,6 +356,8 @@ export type EmployeeReportingFieldsProps = {
   teamLeads: AdminTeamLeadOption[];
   managers: AdminManagerOption[];
   country?: string;
+  /** Project region of the employee (Africa / Europe / Alphaa / Asia). */
+  region?: string;
   disabled?: boolean;
   managerError?: string;
   managerErrorId?: string;
@@ -806,6 +816,7 @@ export type EmployeeViewButtonProps = {
   role: Role;
   source: AdminEmployeeSource;
   country?: string | null;
+  region?: string | null;
 };
 
 export type EmployeeProjectBadgeProps = {
