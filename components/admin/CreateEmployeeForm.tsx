@@ -406,6 +406,10 @@ export function CreateEmployeeForm({
             managers={managers}
             ops={ops}
             admins={admins}
+            region={
+              project_slug ? regionFromStrategyProjectSlug(project_slug) : undefined
+            }
+            country={country}
             error={fieldErrors.supervisor_id}
             errorId="create-supervisor-error"
             fieldClass={fieldClass}

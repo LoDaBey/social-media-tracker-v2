@@ -343,6 +343,9 @@ export type SupervisorAssignFieldProps = {
   managers: AdminManagerOption[];
   ops: AdminSupervisorOption[];
   admins: AdminSupervisorOption[];
+  /** Team Leader's project and country — scopes the Country Manager list. */
+  region?: string;
+  country?: string;
   disabled?: boolean;
   error?: string;
   errorId?: string;
