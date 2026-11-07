@@ -18,7 +18,12 @@ import type { EmployeeTableRowProps } from "@/types/admin";
 
 function teamLeadColumnName(row: EmployeeTableRowProps["row"]): string | null {
   if (row.role === "manager") return row.op_name;
-  if (row.role === "employee") return row.manager_name;
+  // Team Leader → the Country Manager they report to.
+  if (row.role === "team_lead") return row.manager_name;
+  // Employee → their saved Team Leader; no Team Leader → their Country Manager.
+  if (row.role === "employee") {
+    return row.team_lead_id ? row.team_lead_name : row.manager_name;
+  }
   return null;
 }
 
