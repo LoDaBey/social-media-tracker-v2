@@ -25,23 +25,25 @@ export default async function AdminOverviewPage({
 
   const params = await searchParams;
   const requestedRegion = adminRegionFromSlug(params.region);
-  const strategyProjects = await fetchStrategyProjects();
-
   const opScope = viewer.scope;
   const region =
     viewer.role === "op" && opScope?.projectSlug
       ? adminRegionFromSlug(opScope.projectSlug)
       : requestedRegion;
 
-  const coverage = await fetchAdminCountryCoverage({
-    region,
-    countries:
-      viewer.role === "op" && opScope
-        ? opScope.countries.length > 0
-          ? opScope.countries
-          : []
-        : undefined,
-  });
+  // Independent loads: fetch together instead of one after the other.
+  const [strategyProjects, coverage] = await Promise.all([
+    fetchStrategyProjects(),
+    fetchAdminCountryCoverage({
+      region,
+      countries:
+        viewer.role === "op" && opScope
+          ? opScope.countries.length > 0
+            ? opScope.countries
+            : []
+          : undefined,
+    }),
+  ]);
 
   const projects =
     viewer.role === "op" && opScope?.projectSlug

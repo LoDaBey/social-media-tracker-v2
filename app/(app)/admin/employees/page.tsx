@@ -110,6 +110,7 @@ export default async function AdminEmployeesPage({
       }
     >
       <EmployeesTable
+        key={`${q}|${status}|${role}|${region ?? ""}|${country}`}
         rows={rows}
         holders={holders}
         canManagePermissions={viewer.role === "admin"}

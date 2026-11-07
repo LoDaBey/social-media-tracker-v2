@@ -7,7 +7,6 @@ import {
   readableAdminNavPages,
   viewerAllows,
 } from "@/lib/admin-access";
-import { fetchAdminCommandPalettePeople } from "@/lib/admin-data";
 import { AdminHeaderNav } from "@/components/layout/AdminHeaderNav";
 import { BrandLogo } from "@/components/layout/BrandLogo";
 import { HeaderSearch } from "@/components/layout/HeaderSearch";
@@ -37,13 +36,10 @@ export async function AppHeader({
   const isAdminWorkspace = isAdminWorkspaceRole(role);
   const initials = headerInitials(name);
   const viewer = isAdminWorkspace ? await getAdminViewerOrNull() : null;
-  let [spareAccounts, spareHolders, people] = isAdminWorkspace
-    ? await Promise.all([
-        fetchAdminSpareAccounts(),
-        fetchAdminSpareMarkHolders(),
-        fetchAdminCommandPalettePeople(),
-      ])
-    : [[], [], []];
+  // Search data loads when search opens (see HeaderSearch), not with every page.
+  let [spareAccounts, spareHolders] = isAdminWorkspace
+    ? await Promise.all([fetchAdminSpareAccounts(), fetchAdminSpareMarkHolders()])
+    : [[], []];
 
   if (viewer?.role === "op" && viewer.scope) {
     const allowed = new Set(viewer.scope.countries);
@@ -61,7 +57,6 @@ export async function AppHeader({
         inScopeCountry(holder.country) &&
         (holder.region ?? "").trim().toLowerCase() === regionName
     );
-    people = people.filter((person) => inScopeCountry(person.country));
   }
 
   const canReadSpare = viewer ? viewerAllows(viewer, "spare", "canRead") : false;
@@ -107,7 +102,7 @@ export async function AppHeader({
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           {isAdminWorkspace ? (
-            <HeaderSearch people={people} />
+            <HeaderSearch />
           ) : roleLabel ? (
             <span className="rounded-full bg-[var(--color-emerald)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-white">
               {roleLabel}

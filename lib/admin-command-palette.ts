@@ -19,8 +19,17 @@ function matches(item: CommandPaletteItem, query: string) {
   return haystack(item).includes(query);
 }
 
+export type CommandPaletteAccountRow = {
+  account_name: string | null;
+  username: string | null;
+  account_handle: string | null;
+  account_url: string | null;
+  platform: string;
+};
+
 export function commandPalettePeopleFromRows(
-  rows: AdminEmployeeListRow[]
+  rows: AdminEmployeeListRow[],
+  accountsByUser: Map<number, CommandPaletteAccountRow[]>
 ): CommandPalettePerson[] {
   return rows.map((row) => ({
     id: row.id,
@@ -31,7 +40,7 @@ export function commandPalettePeopleFromRows(
     roleLabel: adminRoleBadge(row.role),
     code: row.employee_code,
     country: row.country,
-    accounts: row.accounts.map((account) => ({
+    accounts: (row.role === "employee" ? accountsByUser.get(row.id) ?? [] : []).map((account) => ({
       name:
         account.account_name ||
         account.username ||

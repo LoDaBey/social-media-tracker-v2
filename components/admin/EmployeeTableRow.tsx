@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getAdminEmployeeAccounts } from "@/actions/admin";
 import { ChevronDown } from "lucide-react";
 import { adminRoleBadge } from "@/lib/admin-view";
 import { EmployeeCountryCell } from "@/components/admin/EmployeeCountryCell";
@@ -14,7 +15,10 @@ import { EmployeeStatusSelect } from "@/components/admin/EmployeeStatusSelect";
 import { EmployeePermissionsButton } from "@/app/(app)/admin/employees/components/EmployeePermissionsButton";
 import { isTempPlanCountry } from "@/lib/region-config";
 import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
-import type { EmployeeTableRowProps } from "@/types/admin";
+import type {
+  AdminSocialAccountListItem,
+  EmployeeTableRowProps,
+} from "@/types/admin";
 
 function teamLeadColumnName(row: EmployeeTableRowProps["row"]): string | null {
   if (row.role === "manager") return row.op_name;
@@ -35,11 +39,36 @@ export function EmployeeTableRow({
   const [expanded, setExpanded] = useState(false);
   const initial = (row.full_name.trim()[0] ?? "?").toUpperCase();
   const isAlphaa = row.source === "alphaa";
-  const canExpand = row.role === "employee" || row.accounts.length > 0;
+  const canExpand = row.role === "employee" || row.account_count > 0;
   const panelId = `employee-accounts-${row.source}-${row.id}`;
   const canMarkSpare =
     !isAlphaa && Boolean(row.country && isTempPlanCountry(row.country));
-  const planAccounts = row.accounts.filter((account) => !account.is_spare).length;
+  const planAccounts = row.plan_account_count;
+  // Accounts load only when the row is opened (not with the whole table).
+  const [accounts, setAccounts] = useState<AdminSocialAccountListItem[] | null>(
+    null
+  );
+  const [accountsError, setAccountsError] = useState<string | null>(null);
+
+  // Reload while open whenever the page refreshes after a save (each refresh
+  // hands this row a new `row` object).
+  useEffect(() => {
+    if (!expanded) return;
+    let cancelled = false;
+    getAdminEmployeeAccounts(row.id).then(
+      (list) => {
+        if (cancelled) return;
+        setAccountsError(null);
+        setAccounts(list);
+      },
+      () => {
+        if (!cancelled) setAccountsError("Could not load accounts.");
+      }
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [expanded, row]);
   const teamLeadName = teamLeadColumnName(row);
   const rowHolder = {
     id: row.id,
@@ -192,20 +221,29 @@ export function EmployeeTableRow({
             id={panelId}
             onClick={(e) => e.stopPropagation()}
           >
-            <EmployeeAccountsPanel
-              userId={row.id}
-              fullName={row.full_name}
-              country={row.country}
-              language={row.language}
-              accounts={row.accounts}
-              assignedCount={row.target_accounts_sum}
-              canAdd
-              canImport={canImport}
-              canMarkSpare={canMarkSpare || isAlphaa}
-              readOnly={false}
-              holders={importHolders}
-              holderSource={row.source}
-            />
+            {accountsError ? (
+              <p className="text-[14px] text-[var(--color-coral)]">{accountsError}</p>
+            ) : accounts === null ? (
+              <div
+                className="h-24 animate-pulse rounded-xl bg-[var(--color-cream-tint)]"
+                aria-label={`Loading accounts for ${row.full_name}`}
+              />
+            ) : (
+              <EmployeeAccountsPanel
+                userId={row.id}
+                fullName={row.full_name}
+                country={row.country}
+                language={row.language}
+                accounts={accounts}
+                assignedCount={row.target_accounts_sum}
+                canAdd
+                canImport={canImport}
+                canMarkSpare={canMarkSpare || isAlphaa}
+                readOnly={false}
+                holders={importHolders}
+                holderSource={row.source}
+              />
+            )}
           </td>
         </tr>
       ) : null}

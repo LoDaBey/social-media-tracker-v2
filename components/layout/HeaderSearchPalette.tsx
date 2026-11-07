@@ -24,6 +24,7 @@ import type { HeaderSearchPaletteProps } from "@/types/layout";
 
 export function HeaderSearchPalette({
   people,
+  loading = false,
   onClose,
 }: HeaderSearchPaletteProps) {
   const router = useRouter();
@@ -151,9 +152,11 @@ export function HeaderSearchPalette({
         >
           {items.length === 0 ? (
             <p className="px-2 py-8 text-center text-[13px] text-[var(--color-muted)]">
-              {trimmedQuery
-                ? "No people or accounts match."
-                : "Type to search people, accounts, usernames, or links."}
+              {loading
+                ? "Loading people and accounts…"
+                : trimmedQuery
+                  ? "No people or accounts match."
+                  : "Type to search people, accounts, usernames, or links."}
             </p>
           ) : (
             groups.map((group, groupIndex) => {

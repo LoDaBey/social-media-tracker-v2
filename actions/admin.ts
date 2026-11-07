@@ -15,6 +15,7 @@ import {
 } from "@/lib/admin-country-targets";
 import { europeSeatTargetsForIndexFromDb } from "@/lib/strategy-plans-data";
 import { fetchAdminEmployeeEditorBundle } from "@/lib/admin-data";
+import { fetchAdminEmployeeAccounts } from "@/lib/admin-accounts-data";
 import {
   countriesForCreateProject,
   regionFromStrategyProjectSlug,
@@ -30,6 +31,7 @@ import {
 import type {
   AdminEmployeeEditorBundle,
   AdminEmployeeSource,
+  AdminSocialAccountListItem,
   CreateEmployeePayload,
   CreateEmployeeResult,
   UpdateEmployeeProfilePayload,
@@ -712,6 +714,15 @@ export async function getAdminEmployeeEditorBundle(
   await requireAdminSession("canRead");
   if (!Number.isFinite(userId)) return null;
   return fetchAdminEmployeeEditorBundle(userId, source);
+}
+
+/** Employees table: a person's accounts, loaded when their row is opened. */
+export async function getAdminEmployeeAccounts(
+  userId: number
+): Promise<AdminSocialAccountListItem[]> {
+  await requireAdminSession("canRead");
+  if (!Number.isFinite(userId)) return [];
+  return fetchAdminEmployeeAccounts(userId);
 }
 
 export async function deleteEmployee(user_id: number): Promise<void> {

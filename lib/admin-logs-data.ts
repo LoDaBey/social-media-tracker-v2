@@ -1,14 +1,17 @@
 import { query } from "@/lib/db";
+import { baseCountryFromDisplay } from "@/lib/overview-country-display";
 import {
   ORBIT_LOG_ACTIONS,
   ORBIT_LOG_RESOURCES,
   type OrbitActionLogRow,
+  type OrbitLogCursor,
   type OrbitLogAction,
   type OrbitLogListFilters,
   type OrbitLogResource,
 } from "@/types/logs";
 
-const LOG_LIMIT = 400;
+/** Activity page loads this many entries at a time (more on scroll). */
+export const LOG_PAGE_SIZE = 50;
 
 type LogDbRow = {
   id: number;
@@ -72,8 +75,28 @@ export function parseOrbitLogFilters(params: {
   };
 }
 
+/** Operation Managers only see entries for their own project countries. */
+export function scopeLogsForViewer(
+  rows: OrbitActionLogRow[],
+  scope: { countries: string[] } | null
+): OrbitActionLogRow[] {
+  if (!scope) return rows;
+  const allowed = new Set(scope.countries);
+  return rows.filter((row) => {
+    const countryRaw = row.details?.country;
+    if (typeof countryRaw !== "string" || !countryRaw.trim()) return false;
+    const base = baseCountryFromDisplay(countryRaw);
+    return allowed.has(base) || allowed.has(countryRaw.trim());
+  });
+}
+
+/**
+ * Newest first, LOG_PAGE_SIZE at a time. `before` = the last entry already shown,
+ * so the next batch continues from there.
+ */
 export async function fetchAdminActionLogs(
-  filters: OrbitLogListFilters
+  filters: OrbitLogListFilters,
+  before: OrbitLogCursor | null = null
 ): Promise<OrbitActionLogRow[]> {
   const clauses: string[] = [];
   const values: unknown[] = [];
@@ -95,8 +118,15 @@ export async function fetchAdminActionLogs(
     );
   }
 
+  if (before) {
+    values.push(before.createdAt, before.id);
+    clauses.push(
+      `(created_at, id) < ($${values.length - 1}::timestamptz, $${values.length})`
+    );
+  }
+
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
-  values.push(LOG_LIMIT);
+  values.push(LOG_PAGE_SIZE);
 
   try {
     const rows = await query<LogDbRow>(
