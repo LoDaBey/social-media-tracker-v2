@@ -43,9 +43,9 @@ export function ExtractTool({ countries }: ExtractToolProps) {
   return (
     <div className="flex flex-col gap-4 sm:gap-5">
       <p className="max-w-2xl text-[14px] text-[var(--color-muted)]">
-        Pick region (Africa, Europe, or {MAIN_PROJECT_LABEL}), country, platform, and account
-        type (UMB / PER). Totals and preview update as you change filters — then
-        export an Excel sheet of exactly what you filtered.
+        Pick region (Africa, Europe, Asia, or {MAIN_PROJECT_LABEL}), role, country,
+        platform, and account type (UMB / PER). Totals and preview update as you
+        change filters — then export an Excel sheet of exactly what you filtered.
       </p>
 
       <ExtractFilters

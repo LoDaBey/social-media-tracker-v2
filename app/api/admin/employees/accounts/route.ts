@@ -10,7 +10,10 @@ export async function GET(request: Request) {
   const session = await auth();
   const userId = Number(session?.user?.id);
   const role = session?.user?.role;
-  if (!Number.isFinite(userId) || (role !== "admin" && role !== "manager")) {
+  if (
+    !Number.isFinite(userId) ||
+    (role !== "admin" && role !== "hoo" && role !== "manager")
+  ) {
     return NextResponse.json(
       { ok: false, error: "Unauthorized." } satisfies EmployeeAccountsResponse,
       { status: 401 }

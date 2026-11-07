@@ -10,6 +10,7 @@ import {
   mapAlphaaStatus,
   normalizeAlphaaPlatformKey,
 } from "@/lib/admin-extract-alphaa-data";
+import { mapAlphaaRole } from "@/lib/admin-alphaa-roles";
 import type {
   AdminEmployeeListFilters,
   AdminEmployeeListRow,
@@ -17,7 +18,8 @@ import type {
   AdminAlphaaEmployeeEditorBundle,
   AlphaaEmployeeProfile,
 } from "@/types/admin";
-import type { Role } from "@/types/db";
+
+export { mapAlphaaRole, alphaaRoleLabelFromRole } from "@/lib/admin-alphaa-roles";
 
 type AlphaaUserQueryRow = {
   id: number;
@@ -47,15 +49,6 @@ type AlphaaAccountQueryRow = {
   country: string | null;
   language1: string | null;
 };
-
-export function mapAlphaaRole(role: string): Role {
-  const value = role.trim().toLowerCase();
-  if (value === "team leader" || value === "team_lead") return "team_lead";
-  if (value === "manager") return "manager";
-  if (value === "admin") return "admin";
-  if (value === "op") return "op";
-  return "employee";
-}
 
 function alphaaRoleSql(role: AdminEmployeeListFilters["role"]): string | null {
   if (role === "employee") return `'handler'`;
@@ -393,6 +386,16 @@ export async function fetchAlphaaEmployeeEditorBundle(
     profile.countries[0] ?? profile.country ?? ""
   );
 
+  const { fetchTeamLeadOptions, fetchOpOptions, fetchAdminSupervisorOptions } =
+    await import("@/lib/admin-data");
+  const { fetchManagerOptions } = await import("@/lib/manager-data");
+  const [teamLeads, managers, ops, admins] = await Promise.all([
+    fetchTeamLeadOptions(),
+    fetchManagerOptions(),
+    fetchOpOptions(),
+    fetchAdminSupervisorOptions(),
+  ]);
+
   return {
     source: "alphaa",
     projectLabel: MAIN_PROJECT_LABEL,
@@ -401,15 +404,25 @@ export async function fetchAlphaaEmployeeEditorBundle(
     role: profile.mappedRole,
     profile: {
       id: profile.id,
-      fullName: profile.fullName,
+      full_name: profile.fullName,
       email: profile.email,
-      phone: profile.phone ?? "",
-      roleLabel: profile.roleLabel,
+      phone: profile.phone,
+      role: profile.mappedRole,
+      is_active: profile.isActive,
+      employee_code: null,
+      employment_status: profile.isActive ? "active" : "deactivated",
+      hire_date: "",
+      team_lead_id: null,
+      manager_id: null,
+      op_id: null,
+      manager_countries: [],
+      current_level: 2,
       country,
-      department: profile.department ?? "",
-      location: profile.location ?? "",
-      projects: profile.projects,
-      isActive: profile.isActive,
+      updated_at: new Date().toISOString(),
     },
+    teamLeads,
+    managers,
+    ops,
+    admins,
   };
 }

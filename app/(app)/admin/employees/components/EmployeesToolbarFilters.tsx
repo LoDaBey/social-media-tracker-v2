@@ -17,6 +17,7 @@ const ROLE_OPTIONS = [
   { value: "team_lead", label: "Team leaders regional" },
   { value: "manager", label: "Country managers" },
   { value: "op", label: "Operation managers" },
+  { value: "hoo", label: "Heads of Department" },
 ];
 
 const REGION_OPTIONS = [

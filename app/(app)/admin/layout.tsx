@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { isAdminWorkspaceRole } from "@/lib/role-hierarchy";
 
 export default async function AdminLayout({
   children,
@@ -9,7 +10,7 @@ export default async function AdminLayout({
   const session = await auth();
   if (!session) redirect("/login");
   const role = session.user.role;
-  if (role !== "admin" && role !== "op") redirect("/dashboard");
+  if (!isAdminWorkspaceRole(role)) redirect("/dashboard");
 
   return <div className="w-full">{children}</div>;
 }

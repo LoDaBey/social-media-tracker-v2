@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { updateEmployeeProfile } from "@/actions/admin";
-import { LEVEL_LABELS } from "@/lib/level-labels";
+import { updateAlphaaEmployeeProfile } from "@/actions/admin-alphaa";
+import { alphaaRoleLabelFromRole } from "@/lib/admin-alphaa-roles";
 import { EMPLOYMENT_STATUSES, EMPLOYMENT_STATUS_LABELS } from "@/lib/employment-status";
 import { setupRegionForCountry } from "@/lib/setup-options";
 import { regionDisplayLabel } from "@/lib/project-labels";
@@ -48,6 +49,7 @@ export function EmployeeForm({
   managers,
   ops,
   admins,
+  source = "temp",
   embedded = false,
   onSaved,
   employmentStatusLocked = false,
@@ -55,6 +57,7 @@ export function EmployeeForm({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const isAlphaa = source === "alphaa";
 
   const base = useMemo(
     () => ({
@@ -70,7 +73,6 @@ export function EmployeeForm({
       manager_id: initial.manager_id,
       op_id: initial.op_id,
       manager_countries: initial.manager_countries,
-      current_level: initial.current_level,
       country: initial.country,
     }),
     [initial]
@@ -81,7 +83,8 @@ export function EmployeeForm({
   const dirty = useMemo(() => JSON.stringify(form) !== JSON.stringify(base), [form, base]);
 
   const isManagerRole = form.role === "manager";
-  const isGlobalRole = form.role === "admin" || form.role === "op";
+  const isGlobalRole =
+    form.role === "admin" || form.role === "hoo" || form.role === "op";
   const showCountryFields = !isManagerRole && !isGlobalRole;
 
   const supervisorId = supervisorIdFromReporting(form.role, {
@@ -145,7 +148,7 @@ export function EmployeeForm({
 
   function submit() {
     setError(null);
-    if (form.role === "employee") {
+    if (!isAlphaa && form.role === "employee") {
       const reportingMessage = reportingValidationMessage(form.role, {
         team_lead_id: form.team_lead_id,
         manager_id: employeeManagerId,
@@ -156,31 +159,47 @@ export function EmployeeForm({
         return;
       }
     }
-    const payload: UpdateEmployeeProfilePayload = {
-      full_name: form.full_name.trim(),
-      email: form.email.trim(),
-      phone: form.phone.trim() === "" ? null : form.phone.trim(),
-      role: form.role,
-      is_active: form.is_active,
-      employee_code: form.employee_code.trim() === "" ? null : form.employee_code.trim(),
-      employment_status: form.employment_status,
-      hire_date: form.hire_date,
-      team_lead_id: form.team_lead_id,
-      manager_id:
-        form.role === "employee" ? employeeManagerId : form.manager_id,
-      op_id: form.op_id,
-      manager_countries:
-        form.role === "manager" ? form.manager_countries : undefined,
-      current_level: form.current_level,
-      country:
-        form.role === "manager"
-          ? form.manager_countries[0] ?? form.country
-          : form.country.trim(),
-    };
 
     startTransition(async () => {
       try {
-        await updateEmployeeProfile(initial.id, payload);
+        if (isAlphaa) {
+          await updateAlphaaEmployeeProfile(initial.id, {
+            fullName: form.full_name.trim(),
+            email: form.email.trim(),
+            phone: form.phone.trim() === "" ? null : form.phone.trim(),
+            roleLabel: alphaaRoleLabelFromRole(form.role),
+            country:
+              form.role === "manager"
+                ? form.manager_countries[0] ?? form.country
+                : form.country.trim(),
+            isActive: form.employment_status === "active",
+          });
+        } else {
+          const payload: UpdateEmployeeProfilePayload = {
+            full_name: form.full_name.trim(),
+            email: form.email.trim(),
+            phone: form.phone.trim() === "" ? null : form.phone.trim(),
+            role: form.role,
+            is_active: form.is_active,
+            employee_code:
+              form.employee_code.trim() === ""
+                ? null
+                : form.employee_code.trim(),
+            employment_status: form.employment_status,
+            hire_date: form.hire_date,
+            team_lead_id: form.team_lead_id,
+            manager_id:
+              form.role === "employee" ? employeeManagerId : form.manager_id,
+            op_id: form.op_id,
+            manager_countries:
+              form.role === "manager" ? form.manager_countries : undefined,
+            country:
+              form.role === "manager"
+                ? form.manager_countries[0] ?? form.country
+                : form.country.trim(),
+          };
+          await updateEmployeeProfile(initial.id, payload);
+        }
         toast.success("Profile saved.");
         router.refresh();
         onSaved?.();
@@ -326,6 +345,7 @@ export function EmployeeForm({
             <option value="team_lead">{ROLE_LABELS.team_lead}</option>
             <option value="manager">{ROLE_LABELS.manager}</option>
             <option value="op">{ROLE_LABELS.op}</option>
+            <option value="hoo">{ROLE_LABELS.hoo}</option>
             <option value="admin">{ROLE_LABELS.admin}</option>
           </select>
         </label>
@@ -379,23 +399,6 @@ export function EmployeeForm({
             onToggle={toggleManagerCountry}
           />
         ) : null}
-
-        <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
-          Current level
-          <select
-            value={form.current_level}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, current_level: Number(e.target.value) }))
-            }
-            className={`cursor-pointer ${fieldClass}`}
-          >
-            {[1, 2, 3, 4, 5, 6].map((lv) => (
-              <option key={lv} value={lv}>
-                {lv} — {LEVEL_LABELS[lv] ?? lv}
-              </option>
-            ))}
-          </select>
-        </label>
       </div>
 
       <div

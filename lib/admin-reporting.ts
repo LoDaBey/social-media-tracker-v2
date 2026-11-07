@@ -12,11 +12,16 @@ import type { Role } from "@/types/db";
 async function assertActiveUserHasRole(
   client: PoolClient,
   userId: number,
-  role: Role
+  role: Role | Role[]
 ): Promise<boolean> {
+  const roles = Array.isArray(role) ? role : [role];
   const row = await client.query<{ id: number }>(
-    `SELECT id FROM temp_users WHERE id = $1 AND role = $2 AND is_active = TRUE`,
-    [userId, role]
+    `SELECT id
+       FROM temp_users
+      WHERE id = $1
+        AND role = ANY($2::text[])
+        AND is_active = TRUE`,
+    [userId, roles]
   );
   return Boolean(row.rows[0]);
 }
@@ -100,10 +105,12 @@ export async function assertValidReporting(
     return { normalized, error: null };
   }
 
+  const allowedSupervisorRoles: Role[] =
+    supervisorRole === "admin" ? ["admin", "hoo"] : [supervisorRole];
   const supervisorOk = await assertActiveUserHasRole(
     client,
     supervisorId,
-    supervisorRole
+    allowedSupervisorRoles
   );
   if (!supervisorOk) {
     return {

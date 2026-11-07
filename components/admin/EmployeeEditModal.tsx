@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { adminEmployeePanelsForSource, adminRoleBadge } from "@/lib/admin-view";
-import { AlphaaEmployeeForm } from "@/components/admin/AlphaaEmployeeForm";
 import { EmployeeEditModalTabs } from "@/components/admin/EmployeeEditModalTabs";
 import { EmployeeForm } from "@/components/admin/EmployeeForm";
 import { EmployeeProjectBadge } from "@/components/admin/EmployeeProjectBadge";
@@ -121,28 +120,22 @@ function EmployeeEditModalFrame({
             <p className="rounded-lg bg-[var(--color-coral-tint)] px-4 py-3 text-[14px] text-[var(--color-coral)]">
               {error}
             </p>
-          ) : bundle?.source === "alphaa" ? (
-            <AlphaaEmployeeForm
-              key={bundle.fetchedAt}
-              initial={bundle.profile}
-              embedded
-              onSaved={onReload}
-            />
-          ) : bundle?.source === "temp" ? (
+          ) : bundle ? (
             <>
               {panel === "profile" ? (
                 <EmployeeForm
-                  key={bundle.profile.updated_at}
+                  key={`${bundle.source}-${bundle.profile.updated_at}`}
                   initial={bundle.profile}
                   teamLeads={bundle.teamLeads}
                   managers={bundle.managers}
                   ops={bundle.ops}
                   admins={bundle.admins}
+                  source={bundle.source}
                   embedded
                   onSaved={onReload}
                 />
               ) : null}
-              {panel === "targets" ? (
+              {panel === "targets" && bundle.source === "temp" ? (
                 <EmployeeTargetsForm
                   key={`${bundle.profile.updated_at}-targets`}
                   userId={userId}

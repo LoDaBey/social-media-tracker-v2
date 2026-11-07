@@ -9,10 +9,15 @@ import {
   alphaaExtraPlatformSql,
 } from "@/lib/alphaa-platform-sql";
 import { ALPHAA_EXTRA_PLATFORM_KEYS } from "@/lib/alphaa-coverage-platforms";
+import {
+  EXTRACT_ROLES,
+  isExtractRoleFilter,
+} from "@/lib/admin-extract-filters";
 import { query } from "@/lib/db";
 import { overviewDisplayCountry } from "@/lib/overview-country-display";
 import type {
   AdminExtractFilters,
+  AdminExtractRoleFilter,
   AdminExtractRow,
   AlphaaExtraPlatformKey,
 } from "@/types/admin";
@@ -23,6 +28,7 @@ type AlphaaExtractQueryRow = {
   region: string | null;
   country: string | null;
   handler_name: string | null;
+  handler_role: string | null;
   platform: string | null;
   personal: boolean | null;
   umberlla: boolean | null;
@@ -33,6 +39,29 @@ type AlphaaExtractQueryRow = {
   acc_state: string | null;
   is_spare: boolean;
 };
+
+function legacyLabelsForExtractRole(role: AdminExtractRoleFilter): string[] {
+  switch (role) {
+    case "employee":
+      return ["handler", "employee"];
+    case "team_lead":
+      return ["team leader", "team_lead"];
+    case "manager":
+      return ["manager"];
+    case "op":
+      return ["op"];
+  }
+}
+
+function normalizeAlphaaHandlerRole(
+  role: string | null
+): AdminExtractRoleFilter | null {
+  const value = role?.trim().toLowerCase() ?? "";
+  if (value === "handler" || value === "employee") return "employee";
+  if (value === "team leader" || value === "team_lead") return "team_lead";
+  if (isExtractRoleFilter(value)) return value;
+  return null;
+}
 
 export function mapAlphaaStatus(
   accState: string | null
@@ -150,6 +179,7 @@ function mapAlphaaRow(row: AlphaaExtractQueryRow): AdminExtractRow {
       ? overviewDisplayCountry(row.country.trim(), "Alphaa")
       : null,
     handler_name: row.handler_name?.trim() || `Handler ${row.id}`,
+    handler_role: normalizeAlphaaHandlerRole(row.handler_role),
     platform: normalizeAlphaaPlatformKey(row.platform, row.umberlla),
     account_scope: mapAlphaaScope(row.personal, row.umberlla),
     username: row.username,
@@ -167,6 +197,12 @@ export async function fetchAlphaaAdminExtract(
 ): Promise<AdminExtractRow[]> {
   const params: unknown[] = [];
   const where: string[] = [];
+  const roles =
+    filters.roles.length > 0 ? filters.roles : [...EXTRACT_ROLES];
+  params.push(roles.flatMap(legacyLabelsForExtractRole));
+  where.push(
+    `LOWER(TRIM(COALESCE(u.role, 'handler'))) = ANY($${params.length}::text[])`
+  );
 
   if (filters.spare === "exclude") {
     where.push(ALPHAA_LEGACY_ACCOUNT_WHERE);
@@ -227,6 +263,7 @@ export async function fetchAlphaaAdminExtract(
           NULLIF(TRIM(u.username), ''),
           'Handler ' || COALESCE(sma.user_id::text, sma.id::text)
         ) AS handler_name,
+        COALESCE(u.role, 'handler') AS handler_role,
         sma.platform,
         sma.personal,
         sma.umberlla,

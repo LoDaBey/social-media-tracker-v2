@@ -1,14 +1,18 @@
 import { auth } from "@/auth";
 import { fetchOpAccessScope } from "@/lib/op-scope";
+import {
+  isAdminWorkspaceRole,
+  isFullAdminRole,
+} from "@/lib/role-hierarchy";
 import type { OpAccessScope } from "@/types/admin";
 import type { Role } from "@/types/db";
 
 export type AdminViewer = {
   userId: number;
-  role: "admin" | "op";
-  /** Null for full admin access; set for Operation Managers. */
+  role: "admin" | "hoo" | "op";
+  /** Null for full admin/HOO access; set for Operation Managers. */
   scope: OpAccessScope | null;
-  /** Admin may mutate; OP is read-only across admin surfaces. */
+  /** Admin and HOO may mutate; OP is read-only across admin surfaces. */
   canEdit: boolean;
 };
 
@@ -17,12 +21,17 @@ export async function requireAdminViewer(): Promise<AdminViewer> {
   const userId = Number(session?.user?.id);
   const role = session?.user?.role as Role | undefined;
 
-  if (!Number.isFinite(userId) || (role !== "admin" && role !== "op")) {
-    throw new Error("Unauthorized — admin or Operation Manager only.");
+  if (!Number.isFinite(userId) || !isAdminWorkspaceRole(role)) {
+    throw new Error("Unauthorized — admin workspace only.");
   }
 
-  if (role === "admin") {
-    return { userId, role: "admin", scope: null, canEdit: true };
+  if (isFullAdminRole(role)) {
+    return {
+      userId,
+      role: role === "hoo" ? "hoo" : "admin",
+      scope: null,
+      canEdit: true,
+    };
   }
 
   const scope = await fetchOpAccessScope(userId);

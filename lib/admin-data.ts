@@ -86,13 +86,16 @@ export async function fetchAdminEmployeesList(
   const teamLeadId = filters.teamLeadId;
 
   const params: unknown[] = [];
-  const where: string[] = [`u.role IN ('employee', 'manager', 'team_lead', 'op')`];
+  const where: string[] = [
+    `u.role IN ('employee', 'manager', 'team_lead', 'op', 'hoo')`,
+  ];
 
   if (
     role === "employee" ||
     role === "manager" ||
     role === "team_lead" ||
-    role === "op"
+    role === "op" ||
+    role === "hoo"
   ) {
     params.push(role);
     where.push(`u.role = $${params.length}`);
@@ -297,7 +300,7 @@ export async function fetchAdminSupervisorOptions(): Promise<
   return query(
     `SELECT id, full_name
        FROM temp_users
-      WHERE role = 'admin' AND is_active = TRUE
+      WHERE role IN ('admin', 'hoo') AND is_active = TRUE
       ORDER BY full_name`
   );
 }

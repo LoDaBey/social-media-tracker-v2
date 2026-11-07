@@ -37,10 +37,13 @@ async function requireAdminOrManager() {
   const session = await auth();
   const userId = Number(session?.user?.id);
   const role = session?.user?.role;
-  if (!Number.isFinite(userId) || (role !== "admin" && role !== "manager")) {
+  if (
+    !Number.isFinite(userId) ||
+    (role !== "admin" && role !== "hoo" && role !== "manager")
+  ) {
     throw new Error("Unauthorized.");
   }
-  return { userId, role: role as "admin" | "manager" };
+  return { userId, role: role as "admin" | "hoo" | "manager" };
 }
 
 async function assertManagerCanImportHolder(

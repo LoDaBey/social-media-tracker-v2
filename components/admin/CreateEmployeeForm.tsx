@@ -72,7 +72,7 @@ export function CreateEmployeeForm({
 
   const isManagerRole = role === "manager";
   const isOpRole = role === "op";
-  const isGlobalRole = role === "admin";
+  const isGlobalRole = role === "admin" || role === "hoo";
   const showCountryFields = !isManagerRole && !isGlobalRole && !isOpRole;
 
   const projectCountries = useMemo(
@@ -357,6 +357,7 @@ export function CreateEmployeeForm({
             <option value="team_lead">{ROLE_LABELS.team_lead}</option>
             <option value="manager">{ROLE_LABELS.manager}</option>
             <option value="op">{ROLE_LABELS.op}</option>
+            <option value="hoo">{ROLE_LABELS.hoo}</option>
             <option value="admin">{ROLE_LABELS.admin}</option>
           </select>
         </label>

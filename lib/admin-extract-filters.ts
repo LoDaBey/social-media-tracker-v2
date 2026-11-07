@@ -16,7 +16,22 @@ import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import type {
   AdminExtractFilters,
   AdminExtractRegionFilter,
+  AdminExtractRoleFilter,
 } from "@/types/admin";
+
+export const EXTRACT_ROLE_OPTIONS: {
+  value: AdminExtractRoleFilter;
+  label: string;
+}[] = [
+  { value: "employee", label: "Employee" },
+  { value: "team_lead", label: "Team Leader Regional" },
+  { value: "manager", label: "Country Manager" },
+  { value: "op", label: "Operation Manager" },
+];
+
+export const EXTRACT_ROLES: AdminExtractRoleFilter[] = EXTRACT_ROLE_OPTIONS.map(
+  (option) => option.value
+);
 
 export function emptyAdminExtractFilters(): AdminExtractFilters {
   return {
@@ -24,9 +39,23 @@ export function emptyAdminExtractFilters(): AdminExtractFilters {
     countries: [],
     platforms: [],
     scopes: [],
+    roles: [],
     status: "active",
     spare: "exclude",
   };
+}
+
+export function isExtractRoleFilter(
+  value: string
+): value is AdminExtractRoleFilter {
+  return (EXTRACT_ROLES as readonly string[]).includes(value);
+}
+
+export function extractRoleLabel(role: AdminExtractRoleFilter | null): string {
+  if (!role) return "Unassigned";
+  return (
+    EXTRACT_ROLE_OPTIONS.find((option) => option.value === role)?.label ?? role
+  );
 }
 
 export function extractCountryOptions(

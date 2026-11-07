@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import {
   emptyAdminExtractFilters,
+  EXTRACT_ROLE_OPTIONS,
   extractCountryOptions,
 } from "@/lib/admin-extract-filters";
 import { CountryFlag } from "@/lib/country-icons";
@@ -20,6 +21,7 @@ import type { AccountScope } from "@/types/db";
 import type {
   AdminExtractFilters,
   AdminExtractRegionFilter,
+  AdminExtractRoleFilter,
   AdminExtractSpareFilter,
   AdminExtractStatusFilter,
   ExtractFiltersProps,
@@ -136,6 +138,51 @@ export function ExtractFilters({
           </select>
         </label>
       </div>
+
+      <fieldset className="flex flex-col gap-2">
+        <legend className="text-[12px] font-semibold text-[var(--color-muted)]">
+          Role
+          <span className="ml-1 font-medium text-[var(--color-muted)]">
+            (empty = all)
+          </span>
+        </legend>
+        <div className="flex flex-wrap gap-2">
+          {EXTRACT_ROLE_OPTIONS.map((option) => {
+            const active = value.roles.includes(option.value);
+            return (
+              <button
+                key={option.value}
+                type="button"
+                aria-label={`Toggle ${option.label}`}
+                aria-pressed={active}
+                onClick={() =>
+                  patch({
+                    roles: toggleValue<AdminExtractRoleFilter>(
+                      value.roles,
+                      option.value
+                    ),
+                  })
+                }
+                className={`cursor-pointer rounded-lg border px-3 py-1.5 text-[13px] font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] ${
+                  active ? chipActive : chipIdle
+                }`}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+        {value.roles.length > 0 ? (
+          <button
+            type="button"
+            aria-label="Clear selected roles"
+            onClick={() => patch({ roles: [] })}
+            className="w-fit cursor-pointer rounded-lg text-[12px] font-semibold text-[var(--color-emerald)] outline-none hover:underline focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+          >
+            Clear roles
+          </button>
+        ) : null}
+      </fieldset>
 
       <fieldset className="flex flex-col gap-2">
         <legend className="text-[12px] font-semibold text-[var(--color-muted)]">
