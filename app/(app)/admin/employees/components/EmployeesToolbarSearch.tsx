@@ -1,15 +1,15 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { useInstantSearchParams } from "@/hooks/useInstantSearchParams";
 import type { EmployeesToolbarSearchProps } from "@/types/admin";
 
 export function EmployeesToolbarSearch({ initialQ }: EmployeesToolbarSearchProps) {
-  const sp = useSearchParams();
-  const status = sp.get("status");
-  const role = sp.get("role");
-  const region = sp.get("region");
-  const country = sp.get("country");
+  // Other filters (status, role, region, country) are kept by the shared state.
+  const { params, update } = useInstantSearchParams();
+  const kept = ["status", "role", "region", "country"]
+    .map((name) => [name, params.get(name)] as const)
+    .filter(([, value]) => value);
 
   return (
     <form
@@ -17,11 +17,17 @@ export function EmployeesToolbarSearch({ initialQ }: EmployeesToolbarSearchProps
       method="get"
       role="search"
       className="relative min-w-0 flex-1"
+      onSubmit={(event) => {
+        // No full page reload: update the search in place.
+        event.preventDefault();
+        const q = String(new FormData(event.currentTarget).get("q") ?? "").trim();
+        update({ q: q || null });
+      }}
     >
-      {status ? <input type="hidden" name="status" value={status} /> : null}
-      {role ? <input type="hidden" name="role" value={role} /> : null}
-      {region ? <input type="hidden" name="region" value={region} /> : null}
-      {country ? <input type="hidden" name="country" value={country} /> : null}
+      {/* Fallback if the form is sent before the page is interactive. */}
+      {kept.map(([name, value]) => (
+        <input key={name} type="hidden" name={name} value={value ?? ""} />
+      ))}
       <Search
         className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-muted)]"
         aria-hidden="true"

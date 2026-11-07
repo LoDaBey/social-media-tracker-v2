@@ -1,4 +1,8 @@
 import { query, queryOne } from "@/lib/db";
+import {
+  ALPHAA_LEGACY_COUNTRY,
+  ALPHAA_REGION_WHERE,
+} from "@/lib/alphaa-platform-sql";
 import { spareItemMatchesCountries } from "@/lib/admin-spare";
 import { managerEmployeeScopeSql } from "@/lib/manager-employee-scope";
 import type { AdminEmployeeSource } from "@/types/admin";
@@ -187,12 +191,12 @@ export async function assertManagerCanViewHolder(
     );
   }
 
-  // Main (ALPHAA) holder: temp_users in region 'Alphaa'.
+  // Main (ALPHAA) holder: region 'Alphaa' or also a Main handler (main_country).
   const row = await queryOne<{ country: string | null }>(
-    `SELECT INITCAP(TRIM(COALESCE(u.country, ''))) AS country
+    `SELECT ${ALPHAA_LEGACY_COUNTRY} AS country
        FROM temp_users u
       WHERE u.id = $1
-        AND u.region = 'Alphaa'`,
+        AND ${ALPHAA_REGION_WHERE}`,
     [holderId]
   );
   if (!row) return false;
@@ -232,13 +236,13 @@ export async function assertManagerCanSpareAccount(
     );
   }
 
-  // Main (ALPHAA) account: owned by a temp_users holder in region 'Alphaa'.
+  // Main (ALPHAA) account: owned by a Main holder (region 'Alphaa' or main_country).
   const row = await queryOne<{ country: string | null }>(
-    `SELECT INITCAP(TRIM(COALESCE(u.country, ''))) AS country
+    `SELECT ${ALPHAA_LEGACY_COUNTRY} AS country
        FROM temp_social_media_accounts sma
        INNER JOIN temp_users u ON u.id = sma.user_id
       WHERE sma.id = $1
-        AND u.region = 'Alphaa'`,
+        AND ${ALPHAA_REGION_WHERE}`,
     [accountId]
   );
   if (!row) return false;

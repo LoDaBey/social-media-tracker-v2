@@ -1,4 +1,8 @@
 import { query } from "@/lib/db";
+import {
+  ALPHAA_LEGACY_COUNTRY,
+  ALPHAA_REGION_WHERE,
+} from "@/lib/alphaa-platform-sql";
 import type { AlphaaSheetsExportAccountRow } from "@/types/admin";
 
 type AlphaaSheetsExportQueryRow = {
@@ -60,7 +64,7 @@ function mapAlphaaSheetsExportRow(
 const ALPHAA_SHEETS_EXPORT_QUERY = `
   SELECT
       sma.geo_region AS region,
-      u.country,
+      ${ALPHAA_LEGACY_COUNTRY} AS country,
       CASE
         WHEN sma.platform = 'x' THEN 'twitter'
         WHEN sma.platform IN ('facebook_personal', 'facebook_umbrella') THEN 'facebook'
@@ -87,9 +91,9 @@ const ALPHAA_SHEETS_EXPORT_QUERY = `
       sma.dropbox
     FROM temp_social_media_accounts sma
     INNER JOIN temp_users u ON u.id = sma.user_id
-    WHERE u.region = 'Alphaa'
+    WHERE ${ALPHAA_REGION_WHERE}
       AND sma.is_spare = false
-  ORDER BY u.country ASC NULLS LAST,
+  ORDER BY country ASC NULLS LAST,
            u.full_name ASC NULLS LAST,
            platform ASC,
            sma.id ASC

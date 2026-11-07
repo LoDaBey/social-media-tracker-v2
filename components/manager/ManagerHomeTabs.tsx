@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useInstantSearchParams } from "@/hooks/useInstantSearchParams";
 import type { ManagerHomeTab, ManagerHomeTabsProps } from "@/types/manager";
 
 export function ManagerHomeTabs({
@@ -9,18 +9,12 @@ export function ManagerHomeTabs({
   coveragePanel,
   actions,
 }: ManagerHomeTabsProps) {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
+  const { params, update } = useInstantSearchParams();
   const tab: ManagerHomeTab =
-    searchParams.get("tab") === "coverage" ? "coverage" : "team";
+    params.get("tab") === "coverage" ? "coverage" : "team";
 
   function selectTab(next: ManagerHomeTab) {
-    const params = new URLSearchParams(searchParams.toString());
-    if (next === "coverage") params.set("tab", "coverage");
-    else params.delete("tab");
-    const query = params.toString();
-    router.push(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    update({ tab: next === "coverage" ? "coverage" : null });
   }
 
   return (

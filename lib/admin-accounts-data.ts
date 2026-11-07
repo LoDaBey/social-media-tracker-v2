@@ -1,4 +1,8 @@
 import { query } from "@/lib/db";
+import {
+  ALPHAA_LEGACY_COUNTRY,
+  ALPHAA_REGION_WHERE,
+} from "@/lib/alphaa-platform-sql";
 import { overviewDisplayCountry } from "@/lib/overview-country-display";
 import type { Platform } from "@/lib/platform-config";
 import type { AccountScope } from "@/types/db";
@@ -158,10 +162,10 @@ async function fetchAlphaaSpareAccounts(): Promise<AdminSpareAccountListItem[]> 
           NULLIF(TRIM(u.full_name), ''),
           'Handler ' || u.id::text
         ) AS handler_name,
-        INITCAP(TRIM(COALESCE(u.country, ''))) AS country
+        ${ALPHAA_LEGACY_COUNTRY} AS country
        FROM temp_social_media_accounts sma
        INNER JOIN temp_users u ON u.id = sma.user_id
-      WHERE u.region = 'Alphaa'
+      WHERE ${ALPHAA_REGION_WHERE}
         AND sma.is_spare IS TRUE
       ORDER BY country ASC, handler_name ASC, sma.platform ASC, sma.id ASC`
   );
@@ -235,9 +239,9 @@ export async function fetchAdminSpareMarkHolders(): Promise<
             NULLIF(TRIM(u.full_name), ''),
             'Handler ' || u.id::text
           ) AS full_name,
-          INITCAP(TRIM(COALESCE(u.country, ''))) AS country
+          ${ALPHAA_LEGACY_COUNTRY} AS country
          FROM temp_users u
-        WHERE u.region = 'Alphaa'
+        WHERE ${ALPHAA_REGION_WHERE}
           AND EXISTS (
             SELECT 1
               FROM temp_social_media_accounts sma

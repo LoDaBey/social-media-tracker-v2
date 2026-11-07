@@ -7,8 +7,11 @@
 import { ALPHAA_EXTRA_PLATFORM_KEYS } from "@/lib/alphaa-coverage-platforms";
 import type { AlphaaExtraPlatformKey } from "@/types/admin";
 
-/** Main (ALPHAA) holders are temp_users with region = 'Alphaa'. */
-export const ALPHAA_REGION_WHERE = `u.region = 'Alphaa'`;
+/**
+ * Main (ALPHAA) holders: temp_users in region 'Alphaa', plus people from other
+ * projects who also hold Main accounts (main_country set, e.g. an Asia OP).
+ */
+export const ALPHAA_REGION_WHERE = `(u.region = 'Alphaa' OR NULLIF(TRIM(u.main_country), '') IS NOT NULL)`;
 
 /** Same rule as ALPHAA sheet export — non-spare accounts only. */
 export const ALPHAA_LEGACY_ACCOUNT_WHERE = `sma.is_spare IS FALSE`;
@@ -35,9 +38,9 @@ export const ALPHAA_PLATFORM_IS_INSTAGRAM = `sma.platform = 'instagram'`;
 
 export const ALPHAA_PLATFORM_IS_TIKTOK = `sma.platform = 'tiktok'`;
 
-/** Country bucket for Main accounts — the holder's country. */
+/** Country bucket for Main accounts — the Main country if set, else the holder's country. */
 export const ALPHAA_LEGACY_COUNTRY = `
-  INITCAP(TRIM(COALESCE(u.country, '')))
+  INITCAP(TRIM(COALESCE(NULLIF(TRIM(u.main_country), ''), u.country, '')))
 `;
 
 export function alphaaExtraPlatformSql(key: AlphaaExtraPlatformKey) {

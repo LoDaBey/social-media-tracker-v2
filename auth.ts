@@ -38,7 +38,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const user = await queryOne<DbUserAuthRow>(
           `SELECT id, full_name, email, password_hash, role
            FROM temp_users
-           WHERE email = $1 AND is_active = TRUE`,
+           WHERE email = $1
+             AND is_active = TRUE
+             AND employment_status <> 'deactivated'`,
           [email]
         );
         if (!user) return null;
@@ -78,15 +80,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // Keep role in sync with temp_users so HOO/admin permissions stay current.
       const userId = Number(token.id);
       if (Number.isFinite(userId)) {
+        let row: { role: Role } | null;
         try {
-          const row = await queryOne<{ role: Role }>(
-            `SELECT role FROM temp_users WHERE id = $1 AND is_active = TRUE`,
+          row = await queryOne<{ role: Role }>(
+            `SELECT role FROM temp_users
+              WHERE id = $1
+                AND is_active = TRUE
+                AND employment_status <> 'deactivated'`,
             [userId]
           );
-          if (row?.role) token.role = row.role;
         } catch {
           // Keep the existing token role if the DB is briefly unavailable.
+          return token;
         }
+        // Deactivated or deleted: end the session now instead of when it expires.
+        if (!row) return null;
+        token.role = row.role;
       }
       return token;
     },

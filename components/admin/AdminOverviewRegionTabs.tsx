@@ -1,7 +1,7 @@
 "use client";
 
 import { LayoutGroup, motion } from "framer-motion";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useInstantSearchParams } from "@/hooks/useInstantSearchParams";
 import {
   adminRegionFromStrategySlug,
   adminRegionSlug,
@@ -17,9 +17,11 @@ export function AdminOverviewRegionTabs({
   hideAllRegions = false,
   children,
 }: AdminOverviewRegionTabsProps) {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
+  const { params, update, isPending } = useInstantSearchParams();
+  // The tab moves as soon as it is clicked; the server-picked region wins once loaded.
+  const selectedSlug = isPending
+    ? params.get("region") ?? "overview"
+    : adminRegionSlug(region);
 
   const tabs: { region: AdminRegion; slug: string; label: string }[] = [
     ...(hideAllRegions
@@ -36,12 +38,8 @@ export function AdminOverviewRegionTabs({
   ];
 
   function selectRegion(next: AdminRegion) {
-    const params = new URLSearchParams(searchParams.toString());
     const slug = adminRegionSlug(next);
-    if (slug === "overview") params.delete("region");
-    else params.set("region", slug);
-    const query = params.toString();
-    router.push(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    update({ region: slug === "overview" ? null : slug });
   }
 
   return (
@@ -53,7 +51,7 @@ export function AdminOverviewRegionTabs({
           aria-label="Admin coverage regions"
         >
           {tabs.map((tab) => {
-            const selected = region === tab.region;
+            const selected = selectedSlug === tab.slug;
 
             return (
               <motion.button

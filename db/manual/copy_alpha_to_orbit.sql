@@ -193,4 +193,4 @@ UNION ALL SELECT 'alpha accounts skipped (owner not copied)', count(*) FROM soci
 --     FROM users u JOIN temp_users t ON LOWER(TRIM(t.full_name)) = LOWER(TRIM(u.username))
 --    WHERE LOWER(TRIM(t.email)) <> LOWER(TRIM(u.email));
 
-ROLLBACK;  -- dry run. Change to COMMIT to keep the copy.
+COMMIT;  -- saves the copy. If any step above fails, nothing is saved.
