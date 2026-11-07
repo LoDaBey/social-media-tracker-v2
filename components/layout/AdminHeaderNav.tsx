@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { LayoutGroup } from "framer-motion";
 import { AdminHeaderNavItem } from "@/components/layout/AdminHeaderNavItem";
 import { AdminHeaderSpareButton } from "@/components/layout/AdminHeaderSpareButton";
-import { ADMIN_NAV_PAGES } from "@/lib/admin-permissions";
+import { ADMIN_NAV_PAGES } from "@/lib/admin-nav-pages";
 import type { AdminHeaderNavLink, AdminHeaderNavProps } from "@/types/layout";
 
 function isActive(pathname: string, link: AdminHeaderNavLink) {

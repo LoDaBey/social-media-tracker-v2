@@ -5,6 +5,8 @@ import { fetchOpAccessScope } from "@/lib/op-scope";
 import {
   adminHrefForPage,
   ADMIN_NAV_PAGES,
+} from "@/lib/admin-nav-pages";
+import {
   permissionAllows,
   resolveUserPagePermissions,
 } from "@/lib/admin-permissions";
