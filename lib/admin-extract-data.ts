@@ -1,5 +1,10 @@
 import { fetchAlphaaAdminExtract } from "@/lib/admin-extract-alphaa-data";
-import { countriesForExtractSource } from "@/lib/admin-extract-filters";
+import {
+  countriesForExtractSource,
+  EXTRACT_ROLES,
+  extractRoleLabel,
+  isExtractRoleFilter,
+} from "@/lib/admin-extract-filters";
 import { extractFilterPlatformLabel } from "@/lib/admin-extract-platform";
 import { overviewDisplayCountry } from "@/lib/overview-country-display";
 import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
@@ -9,6 +14,7 @@ import type {
   AdminExtractBucketCount,
   AdminExtractFilters,
   AdminExtractResult,
+  AdminExtractRoleFilter,
   AdminExtractRow,
   AdminExtractSummary,
 } from "@/types/admin";
@@ -21,7 +27,16 @@ const EMPTY_SUMMARY: AdminExtractSummary = {
   byCountry: [],
   byPlatform: [],
   byScope: [],
+  byRole: [],
 };
+
+function normalizeHandlerRole(role: string | null): AdminExtractRoleFilter | null {
+  const value = role?.trim().toLowerCase() ?? "";
+  if (value === "team leader" || value === "team_lead") return "team_lead";
+  if (isExtractRoleFilter(value)) return value;
+  if (value === "handler") return "employee";
+  return null;
+}
 
 function scopeLabel(scope: AccountScope) {
   return scope === "umbrella" ? "Umbrella" : "Personal";
@@ -72,6 +87,14 @@ function buildSummary(rows: AdminExtractRow[]): AdminExtractSummary {
       (row) => row.account_scope,
       (key) => scopeLabel(key as AccountScope)
     ),
+    byRole: countBy(
+      rows,
+      (row) => row.handler_role ?? "unassigned",
+      (key) =>
+        key === "unassigned"
+          ? "Unassigned"
+          : extractRoleLabel(key as AdminExtractRoleFilter)
+    ),
   };
 }
 
@@ -93,8 +116,11 @@ async function fetchTempAdminExtract(
   filters: AdminExtractFilters
 ): Promise<AdminExtractRow[]> {
   const params: unknown[] = [];
+  const roles =
+    filters.roles.length > 0 ? filters.roles : [...EXTRACT_ROLES];
+  params.push(roles);
   const where: string[] = [
-    `LOWER(u.role) = 'employee'`,
+    `LOWER(TRIM(u.role)) = ANY($${params.length}::text[])`,
     `u.is_active = TRUE`,
   ];
 
@@ -104,10 +130,13 @@ async function fetchTempAdminExtract(
   } else if (filters.region === "Europe") {
     params.push(["Europe", "Balkan"]);
     where.push(`TRIM(u.region) = ANY($${params.length}::text[])`);
+  } else if (filters.region === "Asia") {
+    params.push(["Asia"]);
+    where.push(`LOWER(TRIM(COALESCE(u.region, ''))) = ANY($${params.length}::text[])`);
   } else {
     // "all" path for temp tables only (Alphaa comes from legacy).
     where.push(
-      `LOWER(TRIM(COALESCE(u.region, ''))) IN ('africa', 'europe', 'balkan')`
+      `LOWER(TRIM(COALESCE(u.region, ''))) IN ('africa', 'europe', 'balkan', 'asia')`
     );
   }
 
@@ -152,12 +181,15 @@ async function fetchTempAdminExtract(
     where.push(`a.is_spare = TRUE`);
   }
 
-  const rows = await query<Omit<AdminExtractRow, "source">>(
+  const rows = await query<
+    Omit<AdminExtractRow, "source" | "handler_role"> & { handler_role: string | null }
+  >(
     `SELECT
         a.id,
         u.region,
         u.country,
         u.full_name AS handler_name,
+        u.role AS handler_role,
         a.platform,
         a.account_scope,
         a.username,
@@ -180,6 +212,7 @@ async function fetchTempAdminExtract(
   return rows.map((row) => ({
     ...row,
     source: "temp" as const,
+    handler_role: normalizeHandlerRole(row.handler_role),
     country: row.country
       ? overviewDisplayCountry(row.country, "Africa")
       : row.country,
@@ -193,7 +226,8 @@ export async function fetchAdminExtract(
   const includeTemp =
     filters.region === "all" ||
     filters.region === "Africa" ||
-    filters.region === "Europe";
+    filters.region === "Europe" ||
+    filters.region === "Asia";
   const includeAlphaa =
     filters.region === "all" || filters.region === "Alphaa";
   const tempCountries = countriesForExtractSource(filters.countries, "temp");

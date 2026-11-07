@@ -1,3 +1,4 @@
+import { extractRoleLabel } from "@/lib/admin-extract-filters";
 import { extractFilterPlatformLabel } from "@/lib/admin-extract-platform";
 import { accountScopeLabel } from "@/lib/account-scope";
 import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
@@ -54,6 +55,7 @@ export function ExtractPreviewTable({ rows }: ExtractPreviewTableProps) {
               <th className="px-3 py-2">Region</th>
               <th className="px-3 py-2">Country</th>
               <th className="px-3 py-2">Handler</th>
+              <th className="px-3 py-2">Role</th>
               <th className="px-3 py-2">Platform</th>
               <th className="px-3 py-2">Type</th>
               <th className="px-3 py-2">Username</th>
@@ -75,6 +77,9 @@ export function ExtractPreviewTable({ rows }: ExtractPreviewTableProps) {
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap">
                   {row.handler_name}
+                </td>
+                <td className="px-3 py-2 whitespace-nowrap">
+                  {extractRoleLabel(row.handler_role)}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap">
                   {extractFilterPlatformLabel(row.platform)}

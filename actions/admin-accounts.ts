@@ -17,6 +17,7 @@ import {
 } from "@/lib/admin-alphaa-mutate";
 import { logOrbitAction } from "@/lib/orbit-log";
 import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
+import { isFullAdminRole } from "@/lib/role-hierarchy";
 import type {
   AdminAccountMutationResult,
   AdminEmployeeSource,
@@ -27,8 +28,8 @@ async function requireAdmin() {
   const session = await auth();
   const adminId = Number(session?.user?.id);
   const role = session?.user?.role;
-  if (!Number.isFinite(adminId) || role !== "admin") {
-    throw new Error("Unauthorized — admin only.");
+  if (!Number.isFinite(adminId) || !isFullAdminRole(role)) {
+    throw new Error("Unauthorized — admin or Head of Department only.");
   }
 }
 

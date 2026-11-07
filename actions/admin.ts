@@ -7,7 +7,6 @@ import type { PoolClient } from "pg";
 import { auth } from "@/auth";
 import { pool, queryOne } from "@/lib/db";
 import { getTodayCairoDate, normalizePgDateColumn } from "@/lib/cairo-date";
-import { LEVEL_LABELS } from "@/lib/level-labels";
 import { createNotification } from "@/lib/notifications";
 import {
   AFRICA_SEAT_ACCOUNTS,
@@ -46,8 +45,8 @@ async function requireAdminSession() {
   const session = await auth();
   const adminId = Number(session?.user?.id);
   const role = session?.user?.role;
-  if (!Number.isFinite(adminId) || role !== "admin") {
-    throw new Error("Unauthorized — admin only.");
+  if (!Number.isFinite(adminId) || (role !== "admin" && role !== "hoo")) {
+    throw new Error("Unauthorized — admin or Head of Department only.");
   }
   return { adminId };
 }
@@ -72,7 +71,9 @@ const createEmployeeSchema = z
       .min(8, "Password must be at least 8 characters.")
       .max(128, "Password is too long."),
     phone: z.string().trim().max(50).optional().nullable(),
-    role: z.enum(["employee", "team_lead", "admin", "manager", "op"]).optional(),
+    role: z
+      .enum(["employee", "team_lead", "admin", "manager", "op", "hoo"])
+      .optional(),
     team_lead_id: z.number().int().positive().nullable().optional(),
     manager_id: z.number().int().positive().nullable().optional(),
     op_id: z.number().int().positive().nullable().optional(),
@@ -85,7 +86,7 @@ const createEmployeeSchema = z
   })
   .superRefine((data, ctx) => {
     const role = data.role ?? "employee";
-    if (role === "manager" || role === "admin") return;
+    if (role === "manager" || role === "admin" || role === "hoo") return;
     if (role === "op") {
       if (!(data.project_slug ?? "").trim()) {
         ctx.addIssue({
@@ -220,7 +221,7 @@ export async function createEmployee(
       }
       assignedRegion = regionFromStrategyProjectSlug(projectSlug);
       opProjectSlug = projectSlug;
-    } else if (role !== "manager" && role !== "admin") {
+    } else if (role !== "manager" && role !== "admin" && role !== "hoo") {
       const projects = await fetchEmployeeCreateProjectOptions();
       const project = projects.find((item) => item.slug === projectSlug);
       if (!project) {
@@ -361,7 +362,7 @@ const updateProfileSchema = z.object({
     .transform((s) =>
       s == null || String(s).trim() === "" ? null : String(s).trim().slice(0, 50)
     ),
-  role: z.enum(["employee", "team_lead", "admin", "manager", "op"]),
+  role: z.enum(["employee", "team_lead", "admin", "manager", "op", "hoo"]),
   is_active: z.boolean(),
   employee_code: z
     .union([z.string(), z.null()])
@@ -376,10 +377,14 @@ const updateProfileSchema = z.object({
   manager_id: z.number().int().positive().nullable(),
   op_id: z.number().int().positive().nullable(),
   manager_countries: z.array(z.string()).optional(),
-  current_level: z.number().int().min(1).max(6),
   country: z.string().trim(),
 }).superRefine((data, ctx) => {
-  if (data.role === "manager" || data.role === "admin" || data.role === "op") {
+  if (
+    data.role === "manager" ||
+    data.role === "admin" ||
+    data.role === "hoo" ||
+    data.role === "op"
+  ) {
     return;
   }
   if (!data.country) {
@@ -438,12 +443,6 @@ export async function updateEmployeeProfile(
     const { team_lead_id: teamLeadId, manager_id: managerId, op_id: opId } =
       reportingCheck.normalized;
 
-    const prevLevelRes = await client.query<{ current_level: number }>(
-      `SELECT current_level FROM temp_users WHERE id = $1 FOR UPDATE`,
-      [user_id]
-    );
-    const previousLevel = prevLevelRes.rows[0]?.current_level;
-
     await client.query(
       `UPDATE temp_users SET
          full_name = $1,
@@ -454,12 +453,11 @@ export async function updateEmployeeProfile(
          team_lead_id = $6,
          manager_id = $7,
          op_id = $8,
-         current_level = $9,
-         region = $10,
-         country = $11,
-         employee_code = $12,
-         employment_status = $13
-       WHERE id = $14`,
+         region = $9,
+         country = $10,
+         employee_code = $11,
+         employment_status = $12
+       WHERE id = $13`,
       [
         p.full_name,
         p.email,
@@ -469,7 +467,6 @@ export async function updateEmployeeProfile(
         teamLeadId,
         managerId,
         opId,
-        p.current_level,
         setupRegionForCountry(primaryCountry),
         primaryCountry,
         p.employee_code,
@@ -484,23 +481,6 @@ export async function updateEmployeeProfile(
       await client.query(`DELETE FROM temp_manager_countries WHERE user_id = $1`, [
         user_id,
       ]);
-    }
-
-    if (
-      previousLevel !== undefined &&
-      previousLevel !== p.current_level
-    ) {
-      const label = LEVEL_LABELS[p.current_level] ?? String(p.current_level);
-      await createNotification(client, {
-        user_id,
-        type: "level_changed",
-        category: "admin",
-        title: "Your level was updated",
-        body: `You are now Level ${p.current_level} (${label}).`,
-        action_route: "/dashboard",
-        metadata: { old_level: previousLevel, new_level: p.current_level },
-        created_by: adminId,
-      });
     }
 
     await client.query("COMMIT");

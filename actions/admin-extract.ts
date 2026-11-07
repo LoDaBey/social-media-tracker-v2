@@ -3,11 +3,15 @@
 import { auth } from "@/auth";
 import { fetchAdminExtract } from "@/lib/admin-extract-data";
 import { isExtractPlatform } from "@/lib/admin-extract-platform";
-import { isExtractCountryFilter } from "@/lib/admin-extract-filters";
+import {
+  isExtractCountryFilter,
+  isExtractRoleFilter,
+} from "@/lib/admin-extract-filters";
 import type { AccountScope } from "@/types/db";
 import type {
   AdminExtractFilters,
   AdminExtractResult,
+  AdminExtractRoleFilter,
   AdminExtractSpareFilter,
   AdminExtractStatusFilter,
   AdminExtractRegionFilter,
@@ -17,8 +21,11 @@ function requireAdmin() {
   return auth().then((session) => {
     const adminId = Number(session?.user?.id);
     const role = session?.user?.role;
-    if (!Number.isFinite(adminId) || role !== "admin") {
-      throw new Error("Unauthorized — admin only.");
+    if (
+      !Number.isFinite(adminId) ||
+      (role !== "admin" && role !== "hoo" && role !== "op")
+    ) {
+      throw new Error("Unauthorized — admin workspace only.");
     }
   });
 }
@@ -27,7 +34,8 @@ function normalizeFilters(input: AdminExtractFilters): AdminExtractFilters {
   const region: AdminExtractRegionFilter =
     input.region === "Africa" ||
     input.region === "Europe" ||
-    input.region === "Alphaa"
+    input.region === "Alphaa" ||
+    input.region === "Asia"
       ? input.region
       : "all";
   const platforms = (input.platforms ?? []).filter((platform) =>
@@ -38,6 +46,9 @@ function normalizeFilters(input: AdminExtractFilters): AdminExtractFilters {
   );
   const countries = (input.countries ?? []).filter((country) =>
     isExtractCountryFilter(country)
+  );
+  const roles = (input.roles ?? []).filter((role): role is AdminExtractRoleFilter =>
+    isExtractRoleFilter(role)
   );
   const status: AdminExtractStatusFilter =
     input.status === "all" ||
@@ -55,6 +66,7 @@ function normalizeFilters(input: AdminExtractFilters): AdminExtractFilters {
     countries,
     platforms,
     scopes,
+    roles,
     status,
     spare,
   };

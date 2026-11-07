@@ -11,14 +11,15 @@ import {
 } from "@/lib/admin-alphaa-mutate";
 import { logOrbitAction } from "@/lib/orbit-log";
 import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
+import { isFullAdminRole } from "@/lib/role-hierarchy";
 import type { UpdateAlphaaEmployeePayload } from "@/types/admin";
 
 async function requireAdmin() {
   const session = await auth();
   const adminId = Number(session?.user?.id);
   const role = session?.user?.role;
-  if (!Number.isFinite(adminId) || role !== "admin") {
-    throw new Error("Unauthorized — admin only.");
+  if (!Number.isFinite(adminId) || !isFullAdminRole(role)) {
+    throw new Error("Unauthorized — admin or Head of Department only.");
   }
   return { adminId };
 }
@@ -35,9 +36,9 @@ const profileSchema = z.object({
   phone: z.string().trim().max(50).nullable(),
   roleLabel: z.string().trim().min(1, "Select a role."),
   country: z.string().trim().min(1, "Select a country."),
-  department: z.string().trim().max(255).nullable(),
-  location: z.string().trim().max(255).nullable(),
-  projects: z.array(z.string().trim().max(80)).max(30),
+  department: z.string().trim().max(255).nullable().optional(),
+  location: z.string().trim().max(255).nullable().optional(),
+  projects: z.array(z.string().trim().max(80)).max(30).optional(),
   isActive: z.boolean(),
 });
 
@@ -51,10 +52,19 @@ export async function updateAlphaaEmployeeProfile(
   try {
     parsed = profileSchema.parse(payload);
     await updateAlphaaEmployeeRow(userId, {
-      ...parsed,
+      fullName: parsed.fullName,
+      email: parsed.email,
       phone: parsed.phone || null,
-      department: parsed.department || null,
-      location: parsed.location || null,
+      roleLabel: parsed.roleLabel,
+      country: parsed.country,
+      isActive: parsed.isActive,
+      ...(parsed.department !== undefined
+        ? { department: parsed.department || null }
+        : {}),
+      ...(parsed.location !== undefined
+        ? { location: parsed.location || null }
+        : {}),
+      ...(parsed.projects !== undefined ? { projects: parsed.projects } : {}),
     });
   } catch (error) {
     throw new Error(publicAdminMutationError(error));

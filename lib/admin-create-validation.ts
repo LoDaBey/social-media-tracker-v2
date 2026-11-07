@@ -27,7 +27,7 @@ export function validateCreateEmployeeForm(
       errors.manager_countries =
         "Select at least one country for this manager.";
     }
-  } else if (input.role === "admin") {
+  } else if (input.role === "admin" || input.role === "hoo") {
     // Global role — no project/country assignment.
   } else if (input.role === "op") {
     if (!input.project_slug.trim()) {

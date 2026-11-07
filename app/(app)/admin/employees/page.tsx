@@ -43,7 +43,8 @@ export default async function AdminEmployeesPage({
     roleRaw === "employee" ||
     roleRaw === "manager" ||
     roleRaw === "team_lead" ||
-    roleRaw === "op"
+    roleRaw === "op" ||
+    roleRaw === "hoo"
       ? roleRaw
       : "all";
 

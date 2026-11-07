@@ -26,9 +26,13 @@ const createSchema = z.object({
 export async function POST(request: Request) {
   const session = await auth();
   const userId = Number(session?.user?.id);
-  if (!Number.isFinite(userId) || session?.user?.role !== "admin") {
+  const role = session?.user?.role;
+  if (!Number.isFinite(userId) || (role !== "admin" && role !== "hoo")) {
     return NextResponse.json(
-      { ok: false, error: "Unauthorized — admin only." } satisfies StrategyCreateProjectResult,
+      {
+        ok: false,
+        error: "Unauthorized — admin or Head of Department only.",
+      } satisfies StrategyCreateProjectResult,
       { status: 401 }
     );
   }

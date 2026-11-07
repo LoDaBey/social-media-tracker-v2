@@ -104,32 +104,58 @@ export async function updateAlphaaEmployeeRow(
   );
   if (dup) throw new Error("Email already in use.");
 
-  const result = await pool.query(
-    `UPDATE users
-        SET username = $1,
-            email = $2,
-            phone_number = $3,
-            role = $4,
-            country = $5,
-            department = $6,
-            location = $7,
-            projects = $8::text[],
-            is_active = $9,
-            updated_at = NOW()
-      WHERE id = $10`,
-    [
-      fullName,
-      email,
-      payload.phone,
-      roleLabel,
-      country || null,
-      payload.department,
-      payload.location,
-      reportingKeys(payload.projects),
-      payload.isActive,
-      userId,
-    ]
-  );
+  const hasExtras =
+    payload.department !== undefined ||
+    payload.location !== undefined ||
+    payload.projects !== undefined;
+
+  const result = hasExtras
+    ? await pool.query(
+        `UPDATE users
+            SET username = $1,
+                email = $2,
+                phone_number = $3,
+                role = $4,
+                country = $5,
+                department = $6,
+                location = $7,
+                projects = $8::text[],
+                is_active = $9,
+                updated_at = NOW()
+          WHERE id = $10`,
+        [
+          fullName,
+          email,
+          payload.phone,
+          roleLabel,
+          country || null,
+          payload.department ?? null,
+          payload.location ?? null,
+          reportingKeys(payload.projects ?? []),
+          payload.isActive,
+          userId,
+        ]
+      )
+    : await pool.query(
+        `UPDATE users
+            SET username = $1,
+                email = $2,
+                phone_number = $3,
+                role = $4,
+                country = $5,
+                is_active = $6,
+                updated_at = NOW()
+          WHERE id = $7`,
+        [
+          fullName,
+          email,
+          payload.phone,
+          roleLabel,
+          country || null,
+          payload.isActive,
+          userId,
+        ]
+      );
   if (!result.rowCount) throw new Error("Account holder not found.");
 }
 

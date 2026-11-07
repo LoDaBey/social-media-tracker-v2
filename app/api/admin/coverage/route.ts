@@ -15,7 +15,10 @@ export async function GET(request: Request) {
   const role = session?.user?.role;
   if (
     !Number.isFinite(userId) ||
-    (role !== "admin" && role !== "manager" && role !== "op")
+    (role !== "admin" &&
+      role !== "hoo" &&
+      role !== "manager" &&
+      role !== "op")
   ) {
     return NextResponse.json(
       { ok: false, error: "Unauthorized." } satisfies AdminCountryCoverageResponse,

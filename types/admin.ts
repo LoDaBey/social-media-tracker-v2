@@ -9,7 +9,7 @@ export type EmployeeListStatusFilter = "all" | "active" | "on_hold" | "inactive"
 export type AdminEmployeeListFilters = {
   q?: string;
   status?: EmployeeListStatusFilter;
-  role?: "all" | "employee" | "manager" | "team_lead" | "op";
+  role?: "all" | "employee" | "manager" | "team_lead" | "op" | "hoo";
   region?: "Africa" | "Europe" | "Alphaa" | "Asia";
   country?: string;
   teamLeadId?: number | null;
@@ -163,7 +163,6 @@ export type UpdateEmployeeProfilePayload = {
   manager_id: number | null;
   op_id: number | null;
   manager_countries?: string[];
-  current_level: number;
   country: string;
 };
 
@@ -248,9 +247,9 @@ export type UpdateAlphaaEmployeePayload = {
   phone: string | null;
   roleLabel: string;
   country: string;
-  department: string | null;
-  location: string | null;
-  projects: string[];
+  department?: string | null;
+  location?: string | null;
+  projects?: string[];
   isActive: boolean;
 };
 
@@ -645,7 +644,12 @@ export type AdminAlphaaEmployeeEditorBundle = {
   fetchedAt: string;
   fullName: string;
   role: Role;
-  profile: AlphaaEmployeeFormInitial;
+  /** Same profile shape as Africa/Europe so the editor UI stays unified. */
+  profile: EmployeeFormInitial;
+  teamLeads: AdminTeamLeadOption[];
+  managers: AdminManagerOption[];
+  ops: AdminSupervisorOption[];
+  admins: AdminSupervisorOption[];
 };
 
 export type AdminEmployeeEditorBundle =
@@ -670,6 +674,8 @@ export type EmployeeFormProps = {
   managers: AdminManagerOption[];
   ops: AdminSupervisorOption[];
   admins: AdminSupervisorOption[];
+  /** temp = Africa/Europe; alphaa = Main project (same UI, different save path). */
+  source?: AdminEmployeeSource;
   embedded?: boolean;
   onSaved?: () => void;
   employmentStatusLocked?: boolean;
@@ -1260,12 +1266,21 @@ export type AdminExtractStatusFilter =
   | "archived"
   | "suspended";
 
+/** Roles available on the Extract tool (admin excluded). */
+export type AdminExtractRoleFilter =
+  | "employee"
+  | "team_lead"
+  | "manager"
+  | "op";
+
 export type AdminExtractFilters = {
   region: AdminExtractRegionFilter;
   countries: string[];
   /** Temp Platform keys and/or AlphaaExtraPlatformKey values. */
   platforms: string[];
   scopes: AccountScope[];
+  /** Empty = all extractable roles. */
+  roles: AdminExtractRoleFilter[];
   status: AdminExtractStatusFilter;
   spare: AdminExtractSpareFilter;
 };
@@ -1276,6 +1291,7 @@ export type AdminExtractRow = {
   region: string | null;
   country: string | null;
   handler_name: string;
+  handler_role: AdminExtractRoleFilter | null;
   /** Normalized platform key (temp Platform or Alphaa extra / raw label). */
   platform: string;
   account_scope: AccountScope;
@@ -1299,6 +1315,7 @@ export type AdminExtractSummary = {
   byCountry: AdminExtractBucketCount[];
   byPlatform: AdminExtractBucketCount[];
   byScope: AdminExtractBucketCount[];
+  byRole: AdminExtractBucketCount[];
 };
 
 export type AdminExtractResult = {

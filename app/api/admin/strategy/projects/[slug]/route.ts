@@ -50,9 +50,13 @@ type RouteContext = {
 export async function PATCH(request: Request, context: RouteContext) {
   const session = await auth();
   const userId = Number(session?.user?.id);
-  if (!Number.isFinite(userId) || session?.user?.role !== "admin") {
+  const role = session?.user?.role;
+  if (!Number.isFinite(userId) || (role !== "admin" && role !== "hoo")) {
     return NextResponse.json(
-      { ok: false, error: "Unauthorized — admin only." } satisfies StrategySaveProjectResult,
+      {
+        ok: false,
+        error: "Unauthorized — admin or Head of Department only.",
+      } satisfies StrategySaveProjectResult,
       { status: 401 }
     );
   }
@@ -159,9 +163,13 @@ export async function PATCH(request: Request, context: RouteContext) {
 export async function DELETE(_request: Request, context: RouteContext) {
   const session = await auth();
   const userId = Number(session?.user?.id);
-  if (!Number.isFinite(userId) || session?.user?.role !== "admin") {
+  const role = session?.user?.role;
+  if (!Number.isFinite(userId) || (role !== "admin" && role !== "hoo")) {
     return NextResponse.json(
-      { ok: false, error: "Unauthorized — admin only." } satisfies StrategyDeleteProjectResult,
+      {
+        ok: false,
+        error: "Unauthorized — admin or Head of Department only.",
+      } satisfies StrategyDeleteProjectResult,
       { status: 401 }
     );
   }

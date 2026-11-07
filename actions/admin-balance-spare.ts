@@ -8,6 +8,7 @@ import {
   computeCoverageSpareBalance,
 } from "@/lib/admin-balance-spare";
 import { logOrbitAction } from "@/lib/orbit-log";
+import { isFullAdminRole } from "@/lib/role-hierarchy";
 import type {
   AdminRegion,
   BalanceCoverageSpareResult,
@@ -17,8 +18,8 @@ async function requireAdmin() {
   const session = await auth();
   const adminId = Number(session?.user?.id);
   const role = session?.user?.role;
-  if (!Number.isFinite(adminId) || role !== "admin") {
-    throw new Error("Unauthorized — admin only.");
+  if (!Number.isFinite(adminId) || !isFullAdminRole(role)) {
+    throw new Error("Unauthorized — admin or Head of Department only.");
   }
 }
 

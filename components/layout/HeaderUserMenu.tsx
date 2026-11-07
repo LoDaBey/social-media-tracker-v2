@@ -6,7 +6,7 @@ import { UserMenuSettingsLink } from "@/components/layout/UserMenuSettingsLink";
 import type { HeaderUserMenuProps } from "@/types/layout";
 
 function avatarRingColor(role: HeaderUserMenuProps["role"]) {
-  if (role === "admin") return "var(--color-gold)";
+  if (role === "admin" || role === "hoo") return "var(--color-gold)";
   if (role === "team_lead") return "var(--color-emerald)";
   if (role === "manager") return "var(--color-emerald)";
   return "var(--color-hairline)";
@@ -18,7 +18,8 @@ export function HeaderUserMenu({
   role,
   initials,
 }: HeaderUserMenuProps) {
-  const showName = role === "admin";
+  const showName = role === "admin" || role === "hoo";
+  const displayName = role === "hoo" ? "HOO" : "Admin";
 
   return (
     <details className="relative">
@@ -37,7 +38,7 @@ export function HeaderUserMenu({
         </div>
         {showName ? (
           <span className="hidden text-[13px] font-semibold text-[var(--color-ink)] sm:inline">
-            Admin
+            {displayName}
           </span>
         ) : null}
         <ChevronDown

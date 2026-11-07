@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import * as XLSX from "xlsx";
+import { extractRoleLabel } from "@/lib/admin-extract-filters";
 import { extractFilterPlatformLabel } from "@/lib/admin-extract-platform";
 import { accountScopeLabel } from "@/lib/account-scope";
 import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
@@ -21,6 +22,7 @@ function rowsToSheetRows(rows: AdminExtractRow[]) {
       Region: region,
       Country: row.country ?? "",
       Handler: row.handler_name,
+      Role: extractRoleLabel(row.handler_role),
       Platform: extractFilterPlatformLabel(row.platform),
       "Account type": accountScopeLabel(row.account_scope),
       Account: row.account_name,

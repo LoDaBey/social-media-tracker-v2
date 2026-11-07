@@ -1,12 +1,28 @@
-import { AlphaaEmployeeForm } from "@/components/admin/AlphaaEmployeeForm";
+import {
+  fetchAdminSupervisorOptions,
+  fetchOpOptions,
+  fetchTeamLeadOptions,
+} from "@/lib/admin-data";
+import { fetchManagerOptions } from "@/lib/manager-data";
+import {
+  canonicalAlphaaCountry,
+} from "@/lib/admin-alphaa-employees-data";
 import { EmployeeAccountsPanel } from "@/components/admin/EmployeeAccountsPanel";
-import { canonicalAlphaaCountry } from "@/lib/admin-alphaa-employees-data";
+import { EmployeeForm } from "@/components/admin/EmployeeForm";
 import type { AlphaaEmployeeProfileProps } from "@/types/admin";
 
-export function AlphaaEmployeeProfile({ profile }: AlphaaEmployeeProfileProps) {
+export async function AlphaaEmployeeProfile({
+  profile,
+}: AlphaaEmployeeProfileProps) {
   const country = canonicalAlphaaCountry(
     profile.countries[0] ?? profile.country ?? ""
   );
+  const [teamLeads, managers, ops, admins] = await Promise.all([
+    fetchTeamLeadOptions(),
+    fetchManagerOptions(),
+    fetchOpOptions(),
+    fetchAdminSupervisorOptions(),
+  ]);
   const holders = [
     {
       id: profile.id,
@@ -23,30 +39,38 @@ export function AlphaaEmployeeProfile({ profile }: AlphaaEmployeeProfileProps) {
 
   return (
     <div className="flex flex-col gap-5">
-      <AlphaaEmployeeForm
+      <EmployeeForm
         key={[
           profile.fullName,
           profile.email,
           profile.phone ?? "",
-          profile.roleLabel,
+          profile.mappedRole,
           country,
-          profile.department ?? "",
-          profile.location ?? "",
-          profile.projects.join("|"),
           String(profile.isActive),
         ].join("::")}
         initial={{
           id: profile.id,
-          fullName: profile.fullName,
+          full_name: profile.fullName,
           email: profile.email,
-          phone: profile.phone ?? "",
-          roleLabel: profile.roleLabel,
+          phone: profile.phone,
+          role: profile.mappedRole,
+          is_active: profile.isActive,
+          employee_code: null,
+          employment_status: profile.isActive ? "active" : "deactivated",
+          hire_date: "",
+          team_lead_id: null,
+          manager_id: null,
+          op_id: null,
+          manager_countries: [],
+          current_level: 2,
           country,
-          department: profile.department ?? "",
-          location: profile.location ?? "",
-          projects: profile.projects,
-          isActive: profile.isActive,
+          updated_at: new Date().toISOString(),
         }}
+        teamLeads={teamLeads}
+        managers={managers}
+        ops={ops}
+        admins={admins}
+        source="alphaa"
       />
 
       <section className="flex flex-col gap-3">

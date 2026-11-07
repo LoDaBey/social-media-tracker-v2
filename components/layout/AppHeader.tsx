@@ -11,6 +11,7 @@ import { HeaderUserMenu } from "@/components/layout/HeaderUserMenu";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { baseCountryFromDisplay } from "@/lib/overview-country-display";
+import { isAdminWorkspaceRole } from "@/lib/role-hierarchy";
 import type { AppHeaderProps } from "@/types/layout";
 import Link from "next/link";
 
@@ -28,7 +29,7 @@ export async function AppHeader({
   role,
   roleLabel,
 }: AppHeaderProps) {
-  const isAdminWorkspace = role === "admin" || role === "op";
+  const isAdminWorkspace = isAdminWorkspaceRole(role);
   const initials = headerInitials(name);
   const viewer = isAdminWorkspace ? await getAdminViewerOrNull() : null;
   let [spareAccounts, spareHolders, people] = isAdminWorkspace
@@ -63,7 +64,7 @@ export async function AppHeader({
       <div
         className={[
           "mx-auto flex h-full w-full items-center justify-between gap-3 px-4 sm:px-8",
-          role === "admin" || role === "op" || role === "manager"
+          isAdminWorkspace || role === "manager"
             ? "max-w-[1600px]"
             : "max-w-7xl",
         ].join(" ")}

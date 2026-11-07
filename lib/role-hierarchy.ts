@@ -11,8 +11,19 @@ export const ROLE_LABELS: Record<Role, string> = {
   team_lead: "Team Leader Regional",
   manager: "Country Manager",
   op: "Operation Manager",
+  hoo: "Head of Department",
   admin: "Admin",
 };
+
+/** Admin + HOO — full access to all projects and editable admin surfaces. */
+export function isFullAdminRole(role: string | null | undefined): boolean {
+  return role === "admin" || role === "hoo";
+}
+
+/** Roles that use the admin workspace (nav + /admin pages). */
+export function isAdminWorkspaceRole(role: string | null | undefined): boolean {
+  return role === "admin" || role === "hoo" || role === "op";
+}
 
 /** Direct supervisor role for each assignable role (admin has none). */
 export function supervisorRoleFor(userRole: Role): Role | null {
@@ -72,7 +83,7 @@ export function normalizeReportingForRole(
   userRole: Role,
   fields: ReportingFields
 ): ReportingFields {
-  if (userRole === "admin") return emptyReportingFields();
+  if (userRole === "admin" || userRole === "hoo") return emptyReportingFields();
 
   switch (userRole) {
     case "employee":

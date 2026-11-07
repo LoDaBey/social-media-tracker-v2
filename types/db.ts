@@ -1,4 +1,10 @@
-export type Role = "employee" | "team_lead" | "admin" | "manager" | "op";
+export type Role =
+  | "employee"
+  | "team_lead"
+  | "admin"
+  | "manager"
+  | "op"
+  | "hoo";
 
 export type EmploymentStatus = "active" | "on_hold" | "deactivated";
 
