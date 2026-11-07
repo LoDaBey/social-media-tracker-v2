@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
+import { requireAdminPageAccess } from "@/lib/admin-access";
 import { queryOne } from "@/lib/db";
 import {
   fetchActiveAccountCountsByPlatform,
   fetchAdminSupervisorOptions,
   fetchManagerCountriesForUser,
+  fetchOpCountriesForUser,
   fetchOpOptions,
   fetchTeamLeadOptions,
 } from "@/lib/admin-data";
+import { fetchEmployeeCreateProjectOptions } from "@/lib/employee-create-projects-data";
 import { fetchManagerOptions } from "@/lib/manager-data";
 import { normalizePgDateColumn } from "@/lib/cairo-date";
 import type { TempUser } from "@/types/db";
@@ -46,6 +49,8 @@ export default async function AdminEmployeeDetailPage({
   params: Promise<{ id: string }>;
   searchParams?: Promise<SearchParams>;
 }) {
+  await requireAdminPageAccess("employees");
+
   const { id: idRaw } = await params;
   const id = Number(idRaw);
   if (!Number.isFinite(id)) notFound();
@@ -66,15 +71,20 @@ export default async function AdminEmployeeDetailPage({
     notFound();
   }
 
-  const [teamLeads, managers, ops, admins, managerCountries] = await Promise.all([
-    fetchTeamLeadOptions(),
-    fetchManagerOptions(),
-    fetchOpOptions(),
-    fetchAdminSupervisorOptions(),
-    user.role === "manager"
-      ? fetchManagerCountriesForUser(id)
-      : Promise.resolve([] as string[]),
-  ]);
+  const [teamLeads, managers, ops, admins, managerCountries, opCountries, projects] =
+    await Promise.all([
+      fetchTeamLeadOptions(),
+      fetchManagerOptions(),
+      fetchOpOptions(),
+      fetchAdminSupervisorOptions(),
+      user.role === "manager"
+        ? fetchManagerCountriesForUser(id)
+        : Promise.resolve([] as string[]),
+      user.role === "op"
+        ? fetchOpCountriesForUser(id)
+        : Promise.resolve([] as string[]),
+      fetchEmployeeCreateProjectOptions(),
+    ]);
   const counts =
     panel === "targets"
       ? await fetchActiveAccountCountsByPlatform(id)
@@ -94,6 +104,8 @@ export default async function AdminEmployeeDetailPage({
     manager_id: user.manager_id,
     op_id: user.op_id ?? null,
     manager_countries: managerCountries,
+    op_project_slug: user.op_project_slug ?? "",
+    op_countries: opCountries,
     current_level: user.current_level,
     country: user.country ?? "",
     updated_at: user.updated_at,
@@ -124,6 +136,7 @@ export default async function AdminEmployeeDetailPage({
           managers={managers}
           ops={ops}
           admins={admins}
+          projects={projects}
         />
       ) : null}
 

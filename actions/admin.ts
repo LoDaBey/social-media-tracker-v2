@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import type { PoolClient } from "pg";
 import { requireFullAdminActor } from "@/lib/admin-access";
+import type { AdminPermissionAction } from "@/types/permissions";
 import { pool, queryOne } from "@/lib/db";
 import { getTodayCairoDate, normalizePgDateColumn } from "@/lib/cairo-date";
 import { createNotification } from "@/lib/notifications";
@@ -41,8 +42,10 @@ const setupCountrySchema = z
   .min(1, "Select a country.")
   .refine((value) => isSetupCountry(value), "Select a valid country.");
 
-async function requireAdminSession() {
-  const { userId: adminId } = await requireFullAdminActor();
+async function requireAdminSession(
+  action: AdminPermissionAction = "canUpdate"
+) {
+  const { userId: adminId } = await requireFullAdminActor("employees", action);
   return { adminId };
 }
 
@@ -158,7 +161,7 @@ export async function createEmployee(
 ): Promise<CreateEmployeeResult> {
   let client: PoolClient | undefined;
   try {
-    await requireAdminSession();
+    await requireAdminSession("canCreate");
     const parsed = createEmployeeSchema.safeParse(payload);
     if (!parsed.success) {
       return { error: publicAdminMutationError(parsed.error) };
@@ -349,71 +352,116 @@ export async function createEmployee(
   }
 }
 
-const updateProfileSchema = z.object({
-  full_name: z.string().trim().min(1).max(255),
-  email: z.string().trim().email().max(255),
-  phone: z
-    .union([z.string(), z.null()])
-    .transform((s) =>
-      s == null || String(s).trim() === "" ? null : String(s).trim().slice(0, 50)
-    ),
-  role: z.enum(["employee", "team_lead", "admin", "manager", "op", "hoo"]),
-  is_active: z.boolean(),
-  employee_code: z
-    .union([z.string(), z.null()])
-    .transform((value) => {
-      if (value == null) return null;
-      const trimmed = value.trim();
-      return trimmed === "" ? null : trimmed.slice(0, 50);
-    }),
-  employment_status: z.enum(["active", "on_hold", "deactivated"]),
-  hire_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  team_lead_id: z.number().int().positive().nullable(),
-  manager_id: z.number().int().positive().nullable(),
-  op_id: z.number().int().positive().nullable(),
-  manager_countries: z.array(z.string()).optional(),
-  country: z.string().trim(),
-}).superRefine((data, ctx) => {
-  if (
-    data.role === "manager" ||
-    data.role === "admin" ||
-    data.role === "hoo" ||
-    data.role === "op"
-  ) {
-    return;
-  }
-  if (!data.country) {
-    ctx.addIssue({
-      code: "custom",
-      path: ["country"],
-      message: "Select a country.",
-    });
-    return;
-  }
-  if (!isSetupCountry(data.country)) {
-    ctx.addIssue({
-      code: "custom",
-      path: ["country"],
-      message: "Select a valid country.",
-    });
-  }
-});
+const updateProfileSchema = z
+  .object({
+    full_name: z.string().trim().min(1).max(255),
+    email: z.string().trim().email().max(255),
+    phone: z
+      .union([z.string(), z.null()])
+      .transform((s) =>
+        s == null || String(s).trim() === "" ? null : String(s).trim().slice(0, 50)
+      ),
+    role: z.enum(["employee", "team_lead", "admin", "manager", "op", "hoo"]),
+    is_active: z.boolean(),
+    employee_code: z
+      .union([z.string(), z.null()])
+      .transform((value) => {
+        if (value == null) return null;
+        const trimmed = value.trim();
+        return trimmed === "" ? null : trimmed.slice(0, 50);
+      }),
+    employment_status: z.enum(["active", "on_hold", "deactivated"]),
+    hire_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    team_lead_id: z.number().int().positive().nullable(),
+    manager_id: z.number().int().positive().nullable(),
+    op_id: z.number().int().positive().nullable(),
+    manager_countries: z.array(z.string()).optional(),
+    project_slug: z.string().trim().optional(),
+    op_countries: z.array(z.string()).optional(),
+    country: z.string().trim(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.role === "manager" || data.role === "admin" || data.role === "hoo") {
+      return;
+    }
+    if (data.role === "op") {
+      if (!(data.project_slug ?? "").trim()) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["project_slug"],
+          message: "Select a project for this Operation Manager.",
+        });
+      }
+      if (!(data.op_countries ?? []).some((country) => country.trim())) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["op_countries"],
+          message:
+            "Select at least one country this Operation Manager can access.",
+        });
+      }
+      return;
+    }
+    if (!data.country) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["country"],
+        message: "Select a country.",
+      });
+      return;
+    }
+    if (!isSetupCountry(data.country)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["country"],
+        message: "Select a valid country.",
+      });
+    }
+  });
 
 export async function updateEmployeeProfile(
   user_id: number,
   payload: UpdateEmployeeProfilePayload
 ): Promise<void> {
-  const { adminId } = await requireAdminSession();
+  await requireAdminSession();
   if (!Number.isFinite(user_id)) throw new Error("Invalid user.");
   const p = updateProfileSchema.parse(payload);
 
   let managerCountries: string[] = [];
+  let opCountries: string[] = [];
   if (p.role === "manager") {
     managerCountries = managerCountriesSchema.parse(p.manager_countries ?? []);
   }
+  if (p.role === "op") {
+    opCountries = managerCountriesSchema.parse(p.op_countries ?? []);
+  }
 
-  const primaryCountry =
+  const projectSlug = (p.project_slug ?? "").trim();
+  let assignedRegion =
+    p.role === "manager"
+      ? setupRegionForCountry(managerCountries[0]!)
+      : setupRegionForCountry(p.country);
+  let primaryCountry =
     p.role === "manager" ? managerCountries[0]! : p.country;
+  let opProjectSlug: string | null = null;
+
+  if (p.role === "op") {
+    const projects = await fetchEmployeeCreateProjectOptions();
+    const project = projects.find((item) => item.slug === projectSlug);
+    if (!project) {
+      throw new Error("Select a valid project.");
+    }
+    const projectCountries = countriesForCreateProject(projects, projectSlug);
+    if (
+      opCountries.length === 0 ||
+      opCountries.some((country) => !projectCountries.includes(country))
+    ) {
+      throw new Error("Select countries from this project only.");
+    }
+    assignedRegion = regionFromStrategyProjectSlug(projectSlug);
+    primaryCountry = opCountries[0]!;
+    opProjectSlug = projectSlug;
+  }
 
   const client = await pool.connect();
   try {
@@ -450,9 +498,10 @@ export async function updateEmployeeProfile(
          op_id = $8,
          region = $9,
          country = $10,
-         employee_code = $11,
-         employment_status = $12
-       WHERE id = $13`,
+         op_project_slug = $11,
+         employee_code = $12,
+         employment_status = $13
+       WHERE id = $14`,
       [
         p.full_name,
         p.email,
@@ -462,8 +511,9 @@ export async function updateEmployeeProfile(
         teamLeadId,
         managerId,
         opId,
-        setupRegionForCountry(primaryCountry),
-        primaryCountry,
+        assignedRegion,
+        primaryCountry || null,
+        opProjectSlug,
         p.employee_code,
         p.employment_status,
         user_id,
@@ -474,6 +524,14 @@ export async function updateEmployeeProfile(
       await replaceManagerCountries(client, user_id, managerCountries);
     } else {
       await client.query(`DELETE FROM temp_manager_countries WHERE user_id = $1`, [
+        user_id,
+      ]);
+    }
+
+    if (p.role === "op") {
+      await replaceOpCountries(client, user_id, opCountries);
+    } else {
+      await client.query(`DELETE FROM temp_op_countries WHERE user_id = $1`, [
         user_id,
       ]);
     }
@@ -572,13 +630,13 @@ export async function getAdminEmployeeEditorBundle(
   userId: number,
   source: AdminEmployeeSource = "temp"
 ): Promise<AdminEmployeeEditorBundle | null> {
-  await requireAdminSession();
+  await requireAdminSession("canRead");
   if (!Number.isFinite(userId)) return null;
   return fetchAdminEmployeeEditorBundle(userId, source);
 }
 
 export async function deleteEmployee(user_id: number): Promise<void> {
-  const { adminId } = await requireAdminSession();
+  const { adminId } = await requireAdminSession("canDelete");
   if (!Number.isFinite(user_id)) throw new Error("Invalid user.");
   if (user_id === adminId) {
     throw new Error("You cannot delete your own account.");

@@ -21,12 +21,12 @@ type RouteContext = {
 
 export async function POST(request: Request, context: RouteContext) {
   try {
-    await requireStrategyAdminActor();
+    await requireStrategyAdminActor("canCreate");
   } catch {
     return NextResponse.json(
       {
         ok: false,
-        error: "Unauthorized — admin only.",
+        error: "Unauthorized — missing strategy create permission.",
       } satisfies StrategyCreateSubProjectResult,
       { status: 401 }
     );

@@ -14,7 +14,7 @@ import type {
 } from "@/types/admin";
 
 async function requireAdmin() {
-  await requireFullAdminActor();
+  await requireFullAdminActor("spare", "canUpdate");
 }
 
 function asRegion(value: string): AdminRegion | null {

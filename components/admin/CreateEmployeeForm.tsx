@@ -380,7 +380,7 @@ export function CreateEmployeeForm({
             fieldClass={fieldClass}
             invalidFieldClass={invalidFieldClass}
           />
-        ) : (
+        ) : isOpRole ? null : (
           <SupervisorAssignField
             userRole={role}
             value={supervisor_id ? Number(supervisor_id) : null}

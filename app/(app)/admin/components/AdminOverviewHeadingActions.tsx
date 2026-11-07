@@ -5,10 +5,11 @@ import type { AdminOverviewHeadingActionsProps } from "@/types/admin";
 export function AdminOverviewHeadingActions({
   region,
   canCreateEmployees = true,
+  canBalanceSpare = true,
 }: AdminOverviewHeadingActionsProps) {
   return (
     <div className="flex shrink-0 items-center gap-2">
-      {canCreateEmployees ? <BalanceCoverageButton region={region} /> : null}
+      {canBalanceSpare ? <BalanceCoverageButton region={region} /> : null}
       {canCreateEmployees ? <AdminNewEmployeeButton /> : null}
     </div>
   );

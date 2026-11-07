@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/auth";
+import { requirePagePermission } from "@/lib/admin-access";
 import { fetchAdminExtract } from "@/lib/admin-extract-data";
 import { isExtractPlatform } from "@/lib/admin-extract-platform";
 import {
@@ -16,19 +16,6 @@ import type {
   AdminExtractStatusFilter,
   AdminExtractRegionFilter,
 } from "@/types/admin";
-
-function requireAdmin() {
-  return auth().then((session) => {
-    const adminId = Number(session?.user?.id);
-    const role = session?.user?.role;
-    if (
-      !Number.isFinite(adminId) ||
-      (role !== "admin" && role !== "hoo" && role !== "op")
-    ) {
-      throw new Error("Unauthorized — admin workspace only.");
-    }
-  });
-}
 
 function normalizeFilters(input: AdminExtractFilters): AdminExtractFilters {
   const region: AdminExtractRegionFilter =
@@ -76,7 +63,7 @@ export async function runAdminExtract(
   input: AdminExtractFilters
 ): Promise<AdminExtractResult | { error: string }> {
   try {
-    await requireAdmin();
+    await requirePagePermission("extract", "canRead");
     return await fetchAdminExtract(normalizeFilters(input));
   } catch (error) {
     return {

@@ -25,6 +25,7 @@ import {
   TEMP_MANAGER_NAME_SQL,
   TEMP_TEAM_LEAD_NAME_SQL,
 } from "@/lib/admin-employee-reporting";
+import { fetchEmployeeCreateProjectOptions } from "@/lib/employee-create-projects-data";
 import { fetchManagerOptions } from "@/lib/manager-data";
 import { mapEmployeeListCountries } from "@/lib/overview-country-display";
 import { setupCountriesForRegion } from "@/lib/setup-options";
@@ -311,6 +312,19 @@ export async function fetchAdminSupervisorOptions(): Promise<
   );
 }
 
+export async function fetchOpCountriesForUser(
+  userId: number
+): Promise<string[]> {
+  const rows = await query<{ country: string }>(
+    `SELECT country
+       FROM temp_op_countries
+      WHERE user_id = $1
+      ORDER BY country`,
+    [userId]
+  );
+  return rows.map((row) => row.country);
+}
+
 export async function fetchManagerCountriesForUser(
   userId: number
 ): Promise<string[]> {
@@ -394,6 +408,8 @@ export async function fetchAdminEmployeeEditorBundle(
     ops,
     admins,
     managerCountries,
+    opCountries,
+    projects,
     activeCounts,
   ] = await Promise.all([
     fetchTeamLeadOptions(),
@@ -403,6 +419,10 @@ export async function fetchAdminEmployeeEditorBundle(
     user.role === "manager"
       ? fetchManagerCountriesForUser(userId)
       : Promise.resolve([] as string[]),
+    user.role === "op"
+      ? fetchOpCountriesForUser(userId)
+      : Promise.resolve([] as string[]),
+    fetchEmployeeCreateProjectOptions(),
     fetchActiveAccountCountsByPlatform(userId),
   ]);
 
@@ -420,6 +440,8 @@ export async function fetchAdminEmployeeEditorBundle(
     manager_id: user.manager_id,
     op_id: user.op_id ?? null,
     manager_countries: managerCountries,
+    op_project_slug: user.op_project_slug ?? "",
+    op_countries: opCountries,
     current_level: user.current_level,
     country: user.country ?? "",
     updated_at:
@@ -439,6 +461,7 @@ export async function fetchAdminEmployeeEditorBundle(
     managers,
     ops,
     admins,
+    projects,
     targets: {
       target_x_count: user.target_x_count,
       target_facebook_personal_count: user.target_facebook_personal_count,

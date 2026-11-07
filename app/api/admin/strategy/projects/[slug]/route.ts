@@ -49,12 +49,12 @@ type RouteContext = {
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
-    await requireStrategyAdminActor();
+    await requireStrategyAdminActor("canUpdate");
   } catch {
     return NextResponse.json(
       {
         ok: false,
-        error: "Unauthorized — admin only.",
+        error: "Unauthorized — missing strategy update permission.",
       } satisfies StrategySaveProjectResult,
       { status: 401 }
     );
@@ -161,12 +161,12 @@ export async function PATCH(request: Request, context: RouteContext) {
 
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
-    await requireStrategyAdminActor();
+    await requireStrategyAdminActor("canDelete");
   } catch {
     return NextResponse.json(
       {
         ok: false,
-        error: "Unauthorized — admin only.",
+        error: "Unauthorized — missing strategy delete permission.",
       } satisfies StrategyDeleteProjectResult,
       { status: 401 }
     );

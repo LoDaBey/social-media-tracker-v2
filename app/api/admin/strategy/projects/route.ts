@@ -25,12 +25,12 @@ const createSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    await requireStrategyAdminActor();
+    await requireStrategyAdminActor("canCreate");
   } catch {
     return NextResponse.json(
       {
         ok: false,
-        error: "Unauthorized — admin only.",
+        error: "Unauthorized — missing strategy create permission.",
       } satisfies StrategyCreateProjectResult,
       { status: 401 }
     );

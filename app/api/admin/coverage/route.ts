@@ -2,6 +2,7 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { requirePagePermission } from "@/lib/admin-access";
 import { fetchAdminCountryCoverage } from "@/lib/admin-country-coverage";
 import {
   adminRegionFromSlug,
@@ -13,15 +14,23 @@ export async function GET(request: Request) {
   const session = await auth();
   const userId = Number(session?.user?.id);
   const role = session?.user?.role;
-  const { isAdminWorkspaceRole } = await import("@/lib/role-hierarchy");
-  if (
-    !Number.isFinite(userId) ||
-    (!isAdminWorkspaceRole(role) && role !== "manager")
-  ) {
-    return NextResponse.json(
-      { ok: false, error: "Unauthorized." } satisfies AdminCountryCoverageResponse,
-      { status: 401 }
-    );
+
+  if (role === "manager") {
+    if (!Number.isFinite(userId)) {
+      return NextResponse.json(
+        { ok: false, error: "Unauthorized." } satisfies AdminCountryCoverageResponse,
+        { status: 401 }
+      );
+    }
+  } else {
+    try {
+      await requirePagePermission("overview", "canRead");
+    } catch {
+      return NextResponse.json(
+        { ok: false, error: "Unauthorized." } satisfies AdminCountryCoverageResponse,
+        { status: 401 }
+      );
+    }
   }
 
   const url = new URL(request.url);

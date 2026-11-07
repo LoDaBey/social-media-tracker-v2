@@ -2,7 +2,11 @@ import {
   fetchAdminSpareAccounts,
   fetchAdminSpareMarkHolders,
 } from "@/lib/admin-accounts-data";
-import { getAdminViewerOrNull } from "@/lib/admin-access";
+import {
+  getAdminViewerOrNull,
+  readableAdminNavPages,
+  viewerAllows,
+} from "@/lib/admin-access";
 import { fetchAdminCommandPalettePeople } from "@/lib/admin-data";
 import { AdminHeaderNav } from "@/components/layout/AdminHeaderNav";
 import { BrandLogo } from "@/components/layout/BrandLogo";
@@ -13,6 +17,7 @@ import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { baseCountryFromDisplay } from "@/lib/overview-country-display";
 import { isAdminWorkspaceRole } from "@/lib/role-hierarchy";
 import type { AppHeaderProps } from "@/types/layout";
+import type { AdminPermissionPageKey } from "@/types/permissions";
 import Link from "next/link";
 
 function headerInitials(name: string) {
@@ -59,6 +64,19 @@ export async function AppHeader({
     people = people.filter((person) => inScopeCountry(person.country));
   }
 
+  const canReadSpare = viewer ? viewerAllows(viewer, "spare", "canRead") : false;
+  if (!canReadSpare) {
+    spareAccounts = [];
+    spareHolders = [];
+  }
+
+  const allowedPages: AdminPermissionPageKey[] = viewer
+    ? [
+        ...readableAdminNavPages(viewer).map((item) => item.pageKey),
+        ...(canReadSpare ? (["spare"] as const) : []),
+      ]
+    : [];
+
   return (
     <header className="relative isolate z-50 h-16 border-b border-[var(--color-hairline)] bg-[var(--color-surface)]">
       <div
@@ -82,6 +100,7 @@ export async function AppHeader({
               spareCount={spareAccounts.length}
               spareAccounts={spareAccounts}
               spareHolders={spareHolders}
+              allowedPages={allowedPages}
             />
           ) : null}
         </div>

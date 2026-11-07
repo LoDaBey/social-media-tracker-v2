@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { getAdminViewerOrNull } from "@/lib/admin-access";
+import { requireAdminPageAccess } from "@/lib/admin-access";
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import { adminViewStrategy } from "@/lib/admin-view";
 import {
@@ -28,8 +27,7 @@ export async function generateMetadata({
 }
 
 export default async function AdminStrategyPage({ searchParams }: StrategyPageProps) {
-  const viewer = await getAdminViewerOrNull();
-  if (!viewer) redirect("/login");
+  const viewer = await requireAdminPageAccess("strategy");
 
   const params = await searchParams;
   const [allProjects, regionOptions] = await Promise.all([

@@ -25,7 +25,7 @@ const saveSchema = z.object({
 });
 
 async function requireAdmin() {
-  await requireStrategyAdminActor();
+  await requireStrategyAdminActor("canUpdate");
 }
 
 function revalidateStrategy() {

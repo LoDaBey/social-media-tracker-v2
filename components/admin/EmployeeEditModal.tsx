@@ -130,6 +130,9 @@ function EmployeeEditModalFrame({
                   managers={bundle.managers}
                   ops={bundle.ops}
                   admins={bundle.admins}
+                  projects={
+                    bundle.source === "temp" ? bundle.projects : undefined
+                  }
                   source={bundle.source}
                   embedded
                   onSaved={onReload}
