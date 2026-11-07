@@ -11,6 +11,7 @@ const fieldClass =
 
 function StrategyAddSubProjectModalFrame({
   error,
+  pending = false,
   onClose,
   onCreate,
 }: Omit<StrategyAddSubProjectModalProps, "open">) {
@@ -18,11 +19,13 @@ function StrategyAddSubProjectModalFrame({
   const [name, setName] = useState("");
   const [language, setLanguage] = useState("");
   const [resources, setResources] = useState("0");
+  const [submitting, setSubmitting] = useState(false);
+  const busy = pending || submitting;
 
   useEffect(() => {
     nameRef.current?.focus();
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape" && !busy) onClose();
     };
     window.addEventListener("keydown", onKey);
     const previousOverflow = document.body.style.overflow;
@@ -31,14 +34,19 @@ function StrategyAddSubProjectModalFrame({
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = previousOverflow;
     };
-  }, [onClose]);
+  }, [busy, onClose]);
 
-  function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     const trimmed = name.trim();
-    if (!trimmed) return;
+    if (!trimmed || busy) return;
     const parsedResources = Math.max(0, Math.floor(Number(resources) || 0));
-    onCreate({ name: trimmed, language, resources: parsedResources });
+    setSubmitting(true);
+    try {
+      await onCreate({ name: trimmed, language, resources: parsedResources });
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -144,9 +152,10 @@ function StrategyAddSubProjectModalFrame({
             layout
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            disabled={busy}
             onClick={onClose}
             aria-label="Cancel add country"
-            className="inline-flex h-10 cursor-pointer items-center rounded-lg border border-[var(--color-hairline)] px-4 text-[13px] font-semibold text-[var(--color-ink)] outline-none hover:bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+            className="inline-flex h-10 cursor-pointer items-center rounded-lg border border-[var(--color-hairline)] px-4 text-[13px] font-semibold text-[var(--color-ink)] outline-none hover:bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] disabled:cursor-not-allowed disabled:opacity-70"
           >
             Cancel
           </motion.button>
@@ -155,11 +164,11 @@ function StrategyAddSubProjectModalFrame({
             layout
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            disabled={name.trim().length === 0}
+            disabled={busy || name.trim().length === 0}
             aria-label="Create country"
             className="inline-flex h-10 cursor-pointer items-center rounded-lg bg-[var(--color-emerald)] px-4 text-[13px] font-semibold text-white outline-none hover:bg-[var(--color-emerald-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] disabled:cursor-not-allowed disabled:opacity-70"
           >
-            Add country
+            {busy ? "Adding…" : "Add country"}
           </motion.button>
         </div>
       </motion.form>
@@ -170,6 +179,7 @@ function StrategyAddSubProjectModalFrame({
 export function StrategyAddSubProjectModal({
   open,
   error,
+  pending = false,
   onClose,
   onCreate,
 }: StrategyAddSubProjectModalProps) {
@@ -178,6 +188,7 @@ export function StrategyAddSubProjectModal({
       {open ? (
         <StrategyAddSubProjectModalFrame
           error={error}
+          pending={pending}
           onClose={onClose}
           onCreate={onCreate}
         />

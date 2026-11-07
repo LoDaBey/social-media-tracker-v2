@@ -14,7 +14,13 @@ import {
   isExtractRoleFilter,
 } from "@/lib/admin-extract-filters";
 import { query } from "@/lib/db";
-import { overviewDisplayCountry } from "@/lib/overview-country-display";
+import {
+  isDualRegionCountry,
+  overviewDisplayCountry,
+  overviewLabeledCountry,
+} from "@/lib/overview-country-display";
+import { isExtractMainAsiaCountry } from "@/lib/admin-extract-filters";
+import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import type {
   AdminExtractFilters,
   AdminExtractRoleFilter,
@@ -22,6 +28,13 @@ import type {
   AlphaaExtraPlatformKey,
 } from "@/types/admin";
 import type { AccountScope } from "@/types/db";
+
+function displayAlphaaExtractCountry(country: string): string {
+  if (isDualRegionCountry(country) || isExtractMainAsiaCountry(country)) {
+    return overviewLabeledCountry(country, MAIN_PROJECT_LABEL);
+  }
+  return overviewDisplayCountry(country, "Alphaa");
+}
 
 type AlphaaExtractQueryRow = {
   id: number;
@@ -176,7 +189,7 @@ function mapAlphaaRow(row: AlphaaExtractQueryRow): AdminExtractRow {
     source: "alphaa",
     region: "Alphaa",
     country: row.country?.trim()
-      ? overviewDisplayCountry(row.country.trim(), "Alphaa")
+      ? displayAlphaaExtractCountry(row.country.trim())
       : null,
     handler_name: row.handler_name?.trim() || `Handler ${row.id}`,
     handler_role: normalizeAlphaaHandlerRole(row.handler_role),
@@ -191,15 +204,81 @@ function mapAlphaaRow(row: AlphaaExtractQueryRow): AdminExtractRow {
   };
 }
 
+/** Role filter → Main/legacy handlers/users (not social accounts). */
+async function fetchAlphaaAdminExtractUsers(
+  filters: AdminExtractFilters
+): Promise<AdminExtractRow[]> {
+  const params: unknown[] = [];
+  params.push(filters.roles.flatMap(legacyLabelsForExtractRole));
+  const where: string[] = [
+    `LOWER(TRIM(COALESCE(u.role, 'handler'))) = ANY($${params.length}::text[])`,
+  ];
+
+  if (filters.status === "active") {
+    where.push(`COALESCE(u.is_active, TRUE) IS TRUE`);
+  } else if (filters.status === "archived" || filters.status === "suspended") {
+    where.push(`u.is_active IS FALSE`);
+  }
+
+  if (filters.countries.length > 0) {
+    params.push(filters.countries);
+    where.push(
+      `TRIM(COALESCE(u.country, '')) = ANY($${params.length}::text[])`
+    );
+  }
+
+  const rows = await query<{
+    id: number;
+    country: string | null;
+    handler_name: string | null;
+    handler_role: string | null;
+    email: string | null;
+  }>(
+    `SELECT
+        u.id,
+        TRIM(COALESCE(u.country, '')) AS country,
+        COALESCE(NULLIF(TRIM(u.username), ''), 'Handler ' || u.id::text) AS handler_name,
+        COALESCE(u.role, 'handler') AS handler_role,
+        u.email
+       FROM users u
+      WHERE ${where.join("\n        AND ")}
+      ORDER BY country ASC NULLS LAST,
+               handler_name ASC,
+               u.id ASC`,
+    params
+  );
+
+  return rows.map((row) => ({
+    id: row.id,
+    source: "alphaa" as const,
+    region: "Alphaa",
+    country: row.country?.trim()
+      ? displayAlphaaExtractCountry(row.country.trim())
+      : null,
+    handler_name: row.handler_name?.trim() || `Handler ${row.id}`,
+    handler_role: normalizeAlphaaHandlerRole(row.handler_role),
+    platform: "",
+    account_scope: "personal" as const,
+    username: row.email,
+    account_name: row.handler_name?.trim() || `Handler ${row.id}`,
+    account_url: null,
+    category: null,
+    status: "active" as const,
+    is_spare: false,
+  }));
+}
+
 /** ALPHAA accounts from legacy social_media_accounts (+ users). */
 export async function fetchAlphaaAdminExtract(
   filters: AdminExtractFilters
 ): Promise<AdminExtractRow[]> {
+  if (filters.roles.length > 0) {
+    return fetchAlphaaAdminExtractUsers(filters);
+  }
+
   const params: unknown[] = [];
   const where: string[] = [];
-  const roles =
-    filters.roles.length > 0 ? filters.roles : [...EXTRACT_ROLES];
-  params.push(roles.flatMap(legacyLabelsForExtractRole));
+  params.push(EXTRACT_ROLES.flatMap(legacyLabelsForExtractRole));
   where.push(
     `LOWER(TRIM(COALESCE(u.role, 'handler'))) = ANY($${params.length}::text[])`
   );

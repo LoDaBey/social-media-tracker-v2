@@ -280,6 +280,57 @@ export async function createStrategyProject(
   return { ...mapProject(row), subProjects: [] };
 }
 
+/** Create a country (nested sub-project) under a top-level strategy project. */
+export async function createStrategySubProject(
+  parentSlug: string,
+  input: { name: string; language: string; resources: number }
+): Promise<StrategyProject> {
+  const parent = await fetchStrategyProjectBySlug(parentSlug);
+  if (!parent) throw new Error("That project was not found.");
+  if (parent.parentId != null) {
+    throw new Error("Add countries on the parent project, not a nested book.");
+  }
+
+  const name = input.name.trim();
+  if (!name) throw new Error("Enter a country name.");
+  if (
+    parent.subProjects.some(
+      (child) => child.name.trim().toLowerCase() === name.toLowerCase()
+    )
+  ) {
+    throw new Error("That country name is already used here.");
+  }
+
+  const platforms =
+    parent.platforms.length > 0
+      ? parent.platforms
+      : DEFAULT_CUSTOM_PROJECT_PLATFORMS;
+  const created = await insertSubProject(parent, {
+    name,
+    language: input.language.trim(),
+    resources: Math.max(0, Math.floor(input.resources) || 0),
+    platforms,
+    projectTargets: emptyStrategyScopeCounts(),
+    handlerTargets: emptyStrategyScopeCounts(),
+  });
+  await syncLegacyCountryPlan(parent, created);
+
+  const savedChildren = [...parent.subProjects, created];
+  const rollup = aggregateSubProjects(savedChildren, platforms);
+  await updateProjectRow({
+    slug: parent.slug,
+    region: parent.region,
+    platforms: rollup.platforms,
+    language: parent.language,
+    resources: rollup.resources,
+    totalAccounts: rollup.totalAccounts,
+    projectTargets: rollup.projectTargets,
+    handlerTargets: parent.handlerTargets,
+  });
+
+  return created;
+}
+
 async function insertSubProject(
   parent: StrategyProject,
   input: {

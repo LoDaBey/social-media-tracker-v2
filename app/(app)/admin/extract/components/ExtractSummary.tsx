@@ -54,7 +54,7 @@ export function ExtractSummary({ summary }: ExtractSummaryProps) {
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-            Total matching accounts
+            Total matching
           </p>
           <p className="text-[32px] font-extrabold tabular-nums leading-none text-[var(--color-ink)]">
             {summary.total}

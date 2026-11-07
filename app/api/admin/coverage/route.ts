@@ -13,12 +13,10 @@ export async function GET(request: Request) {
   const session = await auth();
   const userId = Number(session?.user?.id);
   const role = session?.user?.role;
+  const { isAdminWorkspaceRole } = await import("@/lib/role-hierarchy");
   if (
     !Number.isFinite(userId) ||
-    (role !== "admin" &&
-      role !== "hoo" &&
-      role !== "manager" &&
-      role !== "op")
+    (!isAdminWorkspaceRole(role) && role !== "manager")
   ) {
     return NextResponse.json(
       { ok: false, error: "Unauthorized." } satisfies AdminCountryCoverageResponse,

@@ -257,7 +257,8 @@ export function ExtractFilters({
         </legend>
         {value.region === "all" ? (
           <p className="text-[12px] text-[var(--color-muted)]">
-            Sudan is listed twice: Africa (temp) and {MAIN_PROJECT_LABEL} (legacy).
+            Sudan is listed twice: Africa (temp) and {MAIN_PROJECT_LABEL}{" "}
+            (legacy). Palestine is listed twice: {MAIN_PROJECT_LABEL} and Asia.
           </p>
         ) : null}
         <div className="max-h-40 overflow-y-auto rounded-lg border border-[var(--color-hairline)] p-2">

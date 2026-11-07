@@ -6,7 +6,10 @@ import {
   isExtractRoleFilter,
 } from "@/lib/admin-extract-filters";
 import { extractFilterPlatformLabel } from "@/lib/admin-extract-platform";
-import { overviewDisplayCountry } from "@/lib/overview-country-display";
+import {
+  overviewDisplayCountry,
+  overviewLabeledCountry,
+} from "@/lib/overview-country-display";
 import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import { query } from "@/lib/db";
 import type { AccountScope } from "@/types/db";
@@ -78,12 +81,12 @@ function buildSummary(rows: AdminExtractRow[]): AdminExtractSummary {
       (key) => key
     ),
     byPlatform: countBy(
-      rows,
+      rows.filter((row) => Boolean(row.platform)),
       (row) => extractFilterPlatformLabel(row.platform),
       (key) => key
     ),
     byScope: countBy(
-      rows,
+      rows.filter((row) => Boolean(row.platform)),
       (row) => row.account_scope,
       (key) => scopeLabel(key as AccountScope)
     ),
@@ -112,18 +115,11 @@ function sortExtractRows(rows: AdminExtractRow[]) {
   });
 }
 
-async function fetchTempAdminExtract(
-  filters: AdminExtractFilters
-): Promise<AdminExtractRow[]> {
-  const params: unknown[] = [];
-  const roles =
-    filters.roles.length > 0 ? filters.roles : [...EXTRACT_ROLES];
-  params.push(roles);
-  const where: string[] = [
-    `LOWER(TRIM(u.role)) = ANY($${params.length}::text[])`,
-    `u.is_active = TRUE`,
-  ];
-
+function appendTempUserRegionFilter(
+  filters: AdminExtractFilters,
+  params: unknown[],
+  where: string[]
+) {
   if (filters.region === "Africa") {
     params.push(["Africa"]);
     where.push(`TRIM(u.region) = ANY($${params.length}::text[])`);
@@ -132,13 +128,109 @@ async function fetchTempAdminExtract(
     where.push(`TRIM(u.region) = ANY($${params.length}::text[])`);
   } else if (filters.region === "Asia") {
     params.push(["Asia"]);
-    where.push(`LOWER(TRIM(COALESCE(u.region, ''))) = ANY($${params.length}::text[])`);
+    where.push(
+      `LOWER(TRIM(COALESCE(u.region, ''))) = ANY($${params.length}::text[])`
+    );
   } else {
     // "all" path for temp tables only (Alphaa comes from legacy).
     where.push(
       `LOWER(TRIM(COALESCE(u.region, ''))) IN ('africa', 'europe', 'balkan', 'asia')`
     );
   }
+}
+
+function displayTempExtractCountry(
+  country: string | null,
+  region: string | null
+): string | null {
+  if (!country?.trim()) return country;
+  const regionValue = region?.trim().toLowerCase() ?? "";
+  if (regionValue === "asia" && country === "Palestine") {
+    return overviewLabeledCountry(country, "Asia");
+  }
+  return overviewDisplayCountry(country, "Africa");
+}
+
+/** Role filter → handlers/users (not social accounts). */
+async function fetchTempAdminExtractUsers(
+  filters: AdminExtractFilters
+): Promise<AdminExtractRow[]> {
+  const params: unknown[] = [];
+  params.push(filters.roles);
+  const where: string[] = [
+    `LOWER(TRIM(u.role)) = ANY($${params.length}::text[])`,
+  ];
+
+  if (filters.status === "active") {
+    where.push(`u.is_active = TRUE`);
+  } else if (filters.status === "archived" || filters.status === "suspended") {
+    where.push(`u.is_active = FALSE`);
+  }
+
+  appendTempUserRegionFilter(filters, params, where);
+
+  if (filters.countries.length > 0) {
+    params.push(filters.countries);
+    where.push(`TRIM(u.country) = ANY($${params.length}::text[])`);
+  }
+
+  const rows = await query<{
+    id: number;
+    region: string | null;
+    country: string | null;
+    handler_name: string;
+    handler_role: string | null;
+    email: string | null;
+  }>(
+    `SELECT
+        u.id,
+        u.region,
+        u.country,
+        u.full_name AS handler_name,
+        u.role AS handler_role,
+        u.email
+       FROM temp_users u
+      WHERE ${where.join("\n        AND ")}
+      ORDER BY u.region ASC NULLS LAST,
+               u.country ASC NULLS LAST,
+               u.full_name ASC,
+               u.id ASC`,
+    params
+  );
+
+  return rows.map((row) => ({
+    id: row.id,
+    source: "temp" as const,
+    region: row.region,
+    country: displayTempExtractCountry(row.country, row.region),
+    handler_name: row.handler_name,
+    handler_role: normalizeHandlerRole(row.handler_role),
+    platform: "",
+    account_scope: "personal" as const,
+    username: row.email,
+    account_name: row.handler_name,
+    account_url: null,
+    category: null,
+    status: "active" as const,
+    is_spare: false,
+  }));
+}
+
+async function fetchTempAdminExtract(
+  filters: AdminExtractFilters
+): Promise<AdminExtractRow[]> {
+  if (filters.roles.length > 0) {
+    return fetchTempAdminExtractUsers(filters);
+  }
+
+  const params: unknown[] = [];
+  params.push([...EXTRACT_ROLES]);
+  const where: string[] = [
+    `LOWER(TRIM(u.role)) = ANY($${params.length}::text[])`,
+    `u.is_active = TRUE`,
+  ];
+
+  appendTempUserRegionFilter(filters, params, where);
 
   if (filters.countries.length > 0) {
     params.push(filters.countries);
@@ -213,9 +305,7 @@ async function fetchTempAdminExtract(
     ...row,
     source: "temp" as const,
     handler_role: normalizeHandlerRole(row.handler_role),
-    country: row.country
-      ? overviewDisplayCountry(row.country, "Africa")
-      : row.country,
+    country: displayTempExtractCountry(row.country, row.region),
   }));
 }
 

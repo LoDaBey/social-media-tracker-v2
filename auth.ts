@@ -68,10 +68,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.role = (user as { role?: Role }).role;
+        return token;
+      }
+
+      // Keep role in sync with temp_users so HOO/admin permissions stay current.
+      const userId = Number(token.id);
+      if (Number.isFinite(userId)) {
+        try {
+          const row = await queryOne<{ role: Role }>(
+            `SELECT role FROM temp_users WHERE id = $1 AND is_active = TRUE`,
+            [userId]
+          );
+          if (row?.role) token.role = row.role;
+        } catch {
+          // Keep the existing token role if the DB is briefly unavailable.
+        }
       }
       return token;
     },

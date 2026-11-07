@@ -23,7 +23,7 @@ export function ExtractPreviewTable({ rows }: ExtractPreviewTableProps) {
         className="rounded-[16px] bg-[var(--color-surface)] p-4 text-[14px] text-[var(--color-muted)] sm:p-5"
         style={{ boxShadow: "0 4px 24px rgba(20,20,20,.06)" }}
       >
-        No accounts match these filters.
+        No rows match these filters.
       </section>
     );
   }
@@ -82,10 +82,12 @@ export function ExtractPreviewTable({ rows }: ExtractPreviewTableProps) {
                   {extractRoleLabel(row.handler_role)}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap">
-                  {extractFilterPlatformLabel(row.platform)}
+                  {row.platform
+                    ? extractFilterPlatformLabel(row.platform)
+                    : "—"}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap">
-                  {accountScopeLabel(row.account_scope)}
+                  {row.platform ? accountScopeLabel(row.account_scope) : "—"}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap">
                   {row.username ?? "—"}

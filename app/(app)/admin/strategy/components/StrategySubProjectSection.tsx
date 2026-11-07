@@ -38,6 +38,7 @@ export function StrategySubProjectSection({
   projectSlug,
   editing,
   canEdit = false,
+  creatingCountry = false,
   onStartEdit,
   onSelect,
   onChange,
@@ -71,11 +72,15 @@ export function StrategySubProjectSection({
     setAddOpen(true);
   }
 
-  function handleAdd(input: StrategyAddSubProjectInput) {
+  async function handleAdd(input: StrategyAddSubProjectInput) {
     if (!editing) onStartEdit?.();
-    const ok = onAdd(input);
-    if (!ok) {
+    const result = await onAdd(input);
+    if (result === false) {
       setAddError("That country name is already used here.");
+      return;
+    }
+    if (result && typeof result === "object" && result.ok === false) {
+      setAddError(result.error);
       return;
     }
     setAddError(null);
@@ -211,7 +216,9 @@ export function StrategySubProjectSection({
       <StrategyAddSubProjectModal
         open={addOpen}
         error={addError}
+        pending={creatingCountry}
         onClose={() => {
+          if (creatingCountry) return;
           setAddOpen(false);
           setAddError(null);
         }}

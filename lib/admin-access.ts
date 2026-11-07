@@ -1,8 +1,10 @@
 import { auth } from "@/auth";
+import { queryOne } from "@/lib/db";
 import { fetchOpAccessScope } from "@/lib/op-scope";
 import {
   isAdminWorkspaceRole,
   isFullAdminRole,
+  normalizeRoleValue,
 } from "@/lib/role-hierarchy";
 import type { OpAccessScope } from "@/types/admin";
 import type { Role } from "@/types/db";
@@ -16,10 +18,34 @@ export type AdminViewer = {
   canEdit: boolean;
 };
 
+export type FullAdminActor = {
+  userId: number;
+  role: "admin" | "hoo";
+};
+
+async function resolveViewerRole(
+  userId: number,
+  sessionRole: Role | string | undefined
+): Promise<string | undefined> {
+  // Prefer the live DB role so JWT can't leave HOO stuck as read-only OP.
+  try {
+    const row = await queryOne<{ role: string }>(
+      `SELECT role
+         FROM temp_users
+        WHERE id = $1 AND is_active = TRUE`,
+      [userId]
+    );
+    if (row?.role) return normalizeRoleValue(row.role);
+  } catch {
+    // Fall back to the session role if the DB lookup fails.
+  }
+  return sessionRole ? normalizeRoleValue(sessionRole) : undefined;
+}
+
 export async function requireAdminViewer(): Promise<AdminViewer> {
   const session = await auth();
   const userId = Number(session?.user?.id);
-  const role = session?.user?.role as Role | undefined;
+  const role = await resolveViewerRole(userId, session?.user?.role);
 
   if (!Number.isFinite(userId) || !isAdminWorkspaceRole(role)) {
     throw new Error("Unauthorized — admin workspace only.");
@@ -28,7 +54,7 @@ export async function requireAdminViewer(): Promise<AdminViewer> {
   if (isFullAdminRole(role)) {
     return {
       userId,
-      role: role === "hoo" ? "hoo" : "admin",
+      role: normalizeRoleValue(role) === "hoo" ? "hoo" : "admin",
       scope: null,
       canEdit: true,
     };
@@ -49,4 +75,26 @@ export async function getAdminViewerOrNull(): Promise<AdminViewer | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * Live DB role check for mutations (Strategy create/delete/save, etc.).
+ * Do not trust JWT alone — HOO must keep full admin edit rights.
+ */
+export async function requireFullAdminActor(): Promise<FullAdminActor> {
+  const session = await auth();
+  const userId = Number(session?.user?.id);
+  if (!Number.isFinite(userId)) {
+    throw new Error("Unauthorized — admin or Head of Department only.");
+  }
+
+  const role = await resolveViewerRole(userId, session?.user?.role);
+  if (!isFullAdminRole(role)) {
+    throw new Error("Unauthorized — admin or Head of Department only.");
+  }
+
+  return {
+    userId,
+    role: normalizeRoleValue(role) === "hoo" ? "hoo" : "admin",
+  };
 }
