@@ -45,6 +45,8 @@ export type AdminEmployeeListRow = {
   op_id: number | null;
   op_name: string | null;
   region: string | null;
+  /** Strategy / roster project label shown in the employees table. */
+  project: string | null;
   country: string | null;
   language: string | null;
   countries: string[];
@@ -752,6 +754,10 @@ export type EmployeesToolbarSelectProps = {
 
 export type EmployeeCountryCellProps = {
   countries: string[];
+};
+
+export type EmployeeProjectCellProps = {
+  project: string | null;
 };
 
 export type AccountTotalsCellProps = {

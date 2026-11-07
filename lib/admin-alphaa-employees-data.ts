@@ -300,6 +300,7 @@ export async function fetchAlphaaEmployeesList(
       op_id: null,
       op_name: null,
       region: "Alphaa",
+      project: MAIN_PROJECT_LABEL,
       country: countries[0] ?? null,
       language: row.language,
       countries,
