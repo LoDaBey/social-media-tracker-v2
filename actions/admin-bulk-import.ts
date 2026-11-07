@@ -149,11 +149,17 @@ async function importTempHolderAccounts(input: {
   language: string | null;
   rows: BulkImportAccountDraft[];
 }): Promise<{ error?: string; imported?: number }> {
-  const employee = await queryOne<{ id: number }>(
-    `SELECT id FROM temp_users WHERE id = $1 AND role = 'employee'`,
+  const employee = await queryOne<{ id: number; region: string | null }>(
+    `SELECT id, region FROM temp_users WHERE id = $1 AND role = 'employee'`,
     [input.holderId]
   );
   if (!employee) return { error: "Account holder not found." };
+
+  // Main (ALPHAA) holders stay in Main; Sudan / Somalia would otherwise map to Africa.
+  const region =
+    employee.region === "Alphaa" && isAlphaaCountry(input.country)
+      ? "Alphaa"
+      : setupRegionForCountry(input.country);
 
   const client = await pool.connect();
   try {
@@ -169,7 +175,7 @@ async function importTempHolderAccounts(input: {
       [
         input.holderId,
         input.country,
-        setupRegionForCountry(input.country),
+        region,
         input.language,
       ]
     );
