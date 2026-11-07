@@ -9,10 +9,14 @@ import { updateAlphaaEmployeeProfile } from "@/actions/admin-alphaa";
 import { alphaaRoleLabelFromRole } from "@/lib/admin-alphaa-roles";
 import { EMPLOYMENT_STATUSES, EMPLOYMENT_STATUS_LABELS } from "@/lib/employment-status";
 import {
+  setupCountriesForRegion,
   setupRegionForCountry,
   setupRegionsForCountry,
   toggleManagerCountryInGroup,
+  type SetupRegion,
 } from "@/lib/setup-options";
+
+const PROJECT_REGIONS: SetupRegion[] = ["Africa", "Europe", "Alphaa", "Asia"];
 import { normalizeProjectRegion } from "@/lib/admin-view";
 import { regionDisplayLabel } from "@/lib/project-labels";
 import {
@@ -120,19 +124,25 @@ export function EmployeeForm({
     );
   }, [form.role, employeeManagerId, form.team_lead_id, teamLeads, managers]);
 
-  const assignedRegion = useMemo(() => {
-    if (isManagerRole && form.manager_countries.length > 0) {
-      return regionDisplayLabel(form.region || setupRegionForCountry(form.manager_countries[0]));
-    }
-    if (form.country) return regionDisplayLabel(form.region || setupRegionForCountry(form.country));
-    return "";
-  }, [form.country, form.region, form.manager_countries, isManagerRole]);
-
-  // A country can belong to two projects (e.g. Palestine: Main and Asia).
-  const countryRegions = useMemo(
-    () => (form.country ? setupRegionsForCountry(form.country) : []),
-    [form.country]
+  // Country list follows the chosen project (Region).
+  const projectCountries = useMemo(
+    () =>
+      form.region
+        ? [...setupCountriesForRegion(form.region as SetupRegion)]
+        : [],
+    [form.region]
   );
+
+  function changeRegion(region: string) {
+    setForm((f) => {
+      const allowed = setupCountriesForRegion(region as SetupRegion) as readonly string[];
+      return {
+        ...f,
+        region,
+        country: allowed.includes(f.country) ? f.country : "",
+      };
+    });
+  }
 
   function changeCountry(country: string) {
     setForm((f) => {
@@ -366,42 +376,28 @@ export function EmployeeForm({
             <AdminCountrySelect
               value={form.country}
               onChange={changeCountry}
+              countries={form.region ? projectCountries : undefined}
               ariaLabel="Employee country"
             />
           </label>
         ) : null}
 
-        {showCountryFields && countryRegions.length > 1 ? (
+        {showCountryFields ? (
           <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
             Region
             <select
               value={form.region}
-              onChange={(e) => setForm((f) => ({ ...f, region: e.target.value }))}
-              aria-label="Select the project for this country"
+              onChange={(e) => changeRegion(e.target.value)}
+              aria-label="Select the project; the country list follows it"
               className={`cursor-pointer ${fieldClass}`}
             >
-              {countryRegions.map((region) => (
+              {form.region ? null : <option value="">Select a project</option>}
+              {PROJECT_REGIONS.map((region) => (
                 <option key={region} value={region}>
                   {regionDisplayLabel(region)}
                 </option>
               ))}
             </select>
-          </label>
-        ) : showCountryFields ? (
-          <label className="flex flex-col gap-1.5 text-[13px] font-semibold text-[var(--color-muted)]">
-            Region
-            <input
-              value={assignedRegion}
-              disabled
-              readOnly
-              placeholder="Select a country"
-              aria-label={
-                assignedRegion
-                  ? `Region is ${assignedRegion}`
-                  : "Region is set automatically from the selected country"
-              }
-              className={`${fieldClass} cursor-not-allowed bg-[var(--color-cream-tint)] text-[var(--color-muted)]`}
-            />
           </label>
         ) : null}
 
