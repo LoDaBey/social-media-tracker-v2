@@ -11,6 +11,7 @@ import { EMPLOYMENT_STATUSES, EMPLOYMENT_STATUS_LABELS } from "@/lib/employment-
 import {
   setupRegionForCountry,
   setupRegionsForCountry,
+  toggleManagerCountryInGroup,
 } from "@/lib/setup-options";
 import { normalizeProjectRegion } from "@/lib/admin-view";
 import { regionDisplayLabel } from "@/lib/project-labels";
@@ -121,7 +122,7 @@ export function EmployeeForm({
 
   const assignedRegion = useMemo(() => {
     if (isManagerRole && form.manager_countries.length > 0) {
-      return regionDisplayLabel(setupRegionForCountry(form.manager_countries[0]));
+      return regionDisplayLabel(form.region || setupRegionForCountry(form.manager_countries[0]));
     }
     if (form.country) return regionDisplayLabel(form.region || setupRegionForCountry(form.country));
     return "";
@@ -159,13 +160,16 @@ export function EmployeeForm({
     }));
   }
 
-  function toggleManagerCountry(option: string) {
-    setForm((f) => ({
-      ...f,
-      manager_countries: f.manager_countries.includes(option)
-        ? f.manager_countries.filter((c) => c !== option)
-        : [...f.manager_countries, option],
-    }));
+  function toggleManagerCountry(option: string, groupRegion: string) {
+    setForm((f) => {
+      const next = toggleManagerCountryInGroup(
+        f.manager_countries,
+        f.region,
+        option,
+        groupRegion
+      );
+      return { ...f, manager_countries: next.countries, region: next.region };
+    });
   }
 
   function toggleOpCountry(option: string) {
@@ -257,7 +261,7 @@ export function EmployeeForm({
                 : isOpRole
                   ? form.op_countries[0] ?? form.country
                   : form.country.trim(),
-            region: showCountryFields ? form.region : undefined,
+            region: showCountryFields || isManagerRole ? form.region : undefined,
           };
           await updateEmployeeProfile(initial.id, payload);
         }
@@ -476,6 +480,7 @@ export function EmployeeForm({
         {isManagerRole ? (
           <ManagerCountriesField
             selected={form.manager_countries}
+            region={form.region}
             onToggle={toggleManagerCountry}
           />
         ) : null}

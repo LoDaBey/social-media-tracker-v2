@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { createEmployee } from "@/actions/admin";
-import { setupRegionForCountry } from "@/lib/setup-options";
+import {
+  setupRegionForCountry,
+  toggleManagerCountryInGroup,
+} from "@/lib/setup-options";
 import { regionDisplayLabel } from "@/lib/project-labels";
 import {
   countriesForCreateProject,
@@ -66,6 +69,7 @@ export function CreateEmployeeForm({
     null
   );
   const [manager_countries, setManagerCountries] = useState<string[]>([]);
+  const [manager_region, setManagerRegion] = useState("");
   const [op_countries, setOpCountries] = useState<string[]>([]);
   const [project_slug, setProjectSlug] = useState("");
   const [country, setCountry] = useState("");
@@ -97,12 +101,15 @@ export function CreateEmployeeForm({
     regionalManagerCountries.length > 0 &&
     !regionalManagerCountries.includes(country);
 
-  function toggleManagerCountry(option: string) {
-    setManagerCountries((prev) =>
-      prev.includes(option)
-        ? prev.filter((c) => c !== option)
-        : [...prev, option]
+  function toggleManagerCountry(option: string, groupRegion: string) {
+    const next = toggleManagerCountryInGroup(
+      manager_countries,
+      manager_region,
+      option,
+      groupRegion
     );
+    setManagerCountries(next.countries);
+    setManagerRegion(next.region);
   }
 
   function toggleOpCountry(option: string) {
@@ -172,6 +179,7 @@ export function CreateEmployeeForm({
           manager_id: reporting.manager_id,
           op_id: reporting.op_id,
           manager_countries: role === "manager" ? manager_countries : undefined,
+          region: role === "manager" && manager_region ? manager_region : undefined,
           op_countries: role === "op" ? op_countries : undefined,
           project_slug:
             showCountryFields || role === "op" ? project_slug : undefined,
@@ -202,10 +210,12 @@ export function CreateEmployeeForm({
 
   const managerAssignedRegion = useMemo(() => {
     if (isManagerRole && manager_countries.length > 0) {
-      return regionDisplayLabel(setupRegionForCountry(manager_countries[0]));
+      return regionDisplayLabel(
+        manager_region || setupRegionForCountry(manager_countries[0])
+      );
     }
     return "";
-  }, [isManagerRole, manager_countries]);
+  }, [isManagerRole, manager_countries, manager_region]);
 
   const fieldClass =
     "w-full rounded outline-none border border-[var(--color-hairline)] bg-[var(--color-cream-tint)] px-3 py-2.5 text-[15px] font-medium text-[var(--color-ink)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]";
@@ -407,8 +417,9 @@ export function CreateEmployeeForm({
             selected={manager_countries}
             error={fieldErrors.manager_countries}
             projects={projects}
-            onToggle={(option) => {
-              toggleManagerCountry(option);
+            region={manager_region}
+            onToggle={(option, groupRegion) => {
+              toggleManagerCountry(option, groupRegion);
               setFieldErrors((prev) => ({
                 ...prev,
                 manager_countries: undefined,

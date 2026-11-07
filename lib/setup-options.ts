@@ -168,6 +168,35 @@ export function setupRegionsForCountry(country: string): SetupRegion[] {
   );
 }
 
+/**
+ * Country Manager tick/untick. A manager has one project, so ticking a country that
+ * is in two projects (Sudan: Africa + Main) in one group sets the manager's project.
+ */
+export function toggleManagerCountryInGroup(
+  countries: string[],
+  region: string,
+  option: string,
+  groupRegion: string
+): { countries: string[]; region: string } {
+  const shared = setupRegionsForCountry(option).length > 1;
+  const has = countries.includes(option);
+  const checkedHere = has && (!shared || !region || region === groupRegion);
+  if (checkedHere) {
+    return { countries: countries.filter((c) => c !== option), region };
+  }
+  const nextRegion = has || shared || countries.length === 0 || !region ? groupRegion : region;
+  const next = has ? countries : [...countries, option];
+  if (nextRegion === region) return { countries: next, region };
+  // Project changed: drop shared countries that are not in the new project (they would be hidden).
+  return {
+    countries: next.filter((c) => {
+      const regions = setupRegionsForCountry(c);
+      return regions.length < 2 || regions.some((r) => r === nextRegion);
+    }),
+    region: nextRegion,
+  };
+}
+
 export function employeeListRegionFromSlug(
   value: string | undefined
 ): "all" | SetupRegion {

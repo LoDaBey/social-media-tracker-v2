@@ -120,6 +120,7 @@ const createEmployeeSchema = z
     current_level: z.number().int().min(1).max(6).optional(),
     country: z.string().optional(),
     project_slug: z.string().trim().optional(),
+    region: z.enum(["Africa", "Europe", "Alphaa", "Asia"]).optional(),
   })
   .superRefine((data, ctx) => {
     const role = data.role ?? "employee";
@@ -245,6 +246,14 @@ export async function createEmployee(
 
     let assignedRegion = setupRegionForCountry(primaryCountry);
     let opProjectSlug: string | null = null;
+    // Country Manager: keep the project picked for a country that is in two projects.
+    if (
+      role === "manager" &&
+      p.region &&
+      managerCountries.some((c) => setupRegionsForCountry(c).includes(p.region!))
+    ) {
+      assignedRegion = p.region;
+    }
 
     if (role === "op") {
       const projects = await fetchEmployeeCreateProjectOptions();
@@ -542,7 +551,11 @@ export async function updateEmployeeProfile(
       if (current.rows[0]?.region === "Alphaa") assignedRegion = "Alphaa";
     }
     // When the country is in two projects (Palestine: Main / Asia), keep the one chosen.
-    if (p.role !== "op" && p.role !== "manager" && p.region) {
+    if (p.role === "manager" && p.region) {
+      if (managerCountries.some((c) => setupRegionsForCountry(c).includes(p.region!))) {
+        assignedRegion = p.region;
+      }
+    } else if (p.role !== "op" && p.region) {
       const chosen = setupRegionsForCountry(primaryCountry).find(
         (region) => region === p.region
       );
