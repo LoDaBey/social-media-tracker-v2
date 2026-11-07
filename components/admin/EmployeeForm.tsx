@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { updateEmployeeProfile } from "@/actions/admin";
 import { updateAlphaaEmployeeProfile } from "@/actions/admin-alphaa";
-import { alphaaRoleLabelFromRole } from "@/lib/admin-alphaa-employees-data";
+import { alphaaRoleLabelFromRole } from "@/lib/admin-alphaa-roles";
 import { EMPLOYMENT_STATUSES, EMPLOYMENT_STATUS_LABELS } from "@/lib/employment-status";
 import { setupRegionForCountry } from "@/lib/setup-options";
 import { regionDisplayLabel } from "@/lib/project-labels";

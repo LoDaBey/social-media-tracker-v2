@@ -10,6 +10,7 @@ import {
   mapAlphaaStatus,
   normalizeAlphaaPlatformKey,
 } from "@/lib/admin-extract-alphaa-data";
+import { mapAlphaaRole } from "@/lib/admin-alphaa-roles";
 import type {
   AdminEmployeeListFilters,
   AdminEmployeeListRow,
@@ -17,7 +18,8 @@ import type {
   AdminAlphaaEmployeeEditorBundle,
   AlphaaEmployeeProfile,
 } from "@/types/admin";
-import type { Role } from "@/types/db";
+
+export { mapAlphaaRole, alphaaRoleLabelFromRole } from "@/lib/admin-alphaa-roles";
 
 type AlphaaUserQueryRow = {
   id: number;
@@ -47,34 +49,6 @@ type AlphaaAccountQueryRow = {
   country: string | null;
   language1: string | null;
 };
-
-export function mapAlphaaRole(role: string): Role {
-  const value = role.trim().toLowerCase();
-  if (value === "team leader" || value === "team_lead") return "team_lead";
-  if (value === "manager") return "manager";
-  if (value === "admin") return "admin";
-  if (value === "op") return "op";
-  if (value === "hoo" || value === "head of department") return "hoo";
-  return "employee";
-}
-
-/** Map Orbit roles back to legacy Main/ALPHAA role labels. */
-export function alphaaRoleLabelFromRole(role: Role): string {
-  switch (role) {
-    case "team_lead":
-      return "Team Leader";
-    case "manager":
-      return "Manager";
-    case "admin":
-      return "Admin";
-    case "op":
-      return "OP";
-    case "hoo":
-      return "Admin";
-    default:
-      return "Handler";
-  }
-}
 
 function alphaaRoleSql(role: AdminEmployeeListFilters["role"]): string | null {
   if (role === "employee") return `'handler'`;
