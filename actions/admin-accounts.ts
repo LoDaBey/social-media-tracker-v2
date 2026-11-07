@@ -144,7 +144,7 @@ export async function updateAdminSocialAccount(
     const data = normalizeSocialAccountInput(checked.data);
     if (source === "alphaa") {
       const existing = await queryOne<{ user_id: number }>(
-        `SELECT user_id FROM social_media_accounts WHERE id = $1`,
+        `SELECT user_id FROM temp_social_media_accounts WHERE id = $1`,
         [accountId]
       );
       const result = await updateAlphaaSocialAccountRow(accountId, data);
@@ -232,7 +232,7 @@ export async function deleteAdminSocialAccount(
     if (!Number.isFinite(accountId)) return { error: "Invalid account." };
     if (source === "alphaa") {
       const existing = await queryOne<{ user_id: number }>(
-        `SELECT user_id FROM social_media_accounts WHERE id = $1`,
+        `SELECT user_id FROM temp_social_media_accounts WHERE id = $1`,
         [accountId]
       );
       const result = await deleteAlphaaSocialAccountRow(accountId);
@@ -279,7 +279,7 @@ export async function setAdminSocialAccountSpare(
     if (!Number.isFinite(accountId)) return { error: "Invalid account." };
     if (source === "alphaa") {
       const existing = await queryOne<{ user_id: number }>(
-        `SELECT user_id FROM social_media_accounts WHERE id = $1`,
+        `SELECT user_id FROM temp_social_media_accounts WHERE id = $1`,
         [accountId]
       );
       const result = await setAlphaaSocialAccountSpareRow(accountId, isSpare);

@@ -55,40 +55,47 @@ function mapAlphaaSheetsExportRow(
   };
 }
 
+// Main (ALPHAA) accounts from Orbit tables, shaped like the original ALPHAA sheet:
+// x → twitter and facebook_* → facebook so the "Platforms" column reads the same.
 const ALPHAA_SHEETS_EXPORT_QUERY = `
   SELECT
-      sma.region,
-      sma.country,
-      sma.platform,
-      sma.acc_name,
-      sma.acc_bio,
-      sma.acc_url,
-      sma.personal,
-      sma.umberlla,
-      sma.blogs,
-      sma.native,
-      sma.golden,
-      sma.acc_state,
+      sma.geo_region AS region,
+      u.country,
+      CASE
+        WHEN sma.platform = 'x' THEN 'twitter'
+        WHEN sma.platform IN ('facebook_personal', 'facebook_umbrella') THEN 'facebook'
+        ELSE sma.platform
+      END AS platform,
+      sma.account_name AS acc_name,
+      sma.bio AS acc_bio,
+      sma.account_url AS acc_url,
+      (sma.account_scope = 'personal') AS personal,
+      (sma.account_scope = 'umbrella') AS umberlla,
+      sma.is_blogs AS blogs,
+      sma.is_native AS native,
+      sma.is_golden AS golden,
+      sma.status AS acc_state,
       sma.language1,
       sma.language2,
-      u.username AS handler_name,
-      sma.acc_username,
-      sma.acc_email,
-      sma.acc_password_hash,
-      sma.acc_mobile,
-      sma.direction,
+      u.full_name AS handler_name,
+      sma.username AS acc_username,
+      sma.account_email AS acc_email,
+      sma.account_password AS acc_password_hash,
+      sma.mobile_number AS acc_mobile,
+      sma.category AS direction,
       sma.rss,
       sma.dropbox
-    FROM social_media_accounts sma
-    LEFT JOIN users u ON sma.user_id = u.id
-    WHERE sma.spare_acc = false
-  ORDER BY sma.country ASC NULLS LAST,
-           u.username ASC NULLS LAST,
-           sma.platform ASC,
+    FROM temp_social_media_accounts sma
+    INNER JOIN temp_users u ON u.id = sma.user_id
+    WHERE u.region = 'Alphaa'
+      AND sma.is_spare = false
+  ORDER BY u.country ASC NULLS LAST,
+           u.full_name ASC NULLS LAST,
+           platform ASC,
            sma.id ASC
 `;
 
-/** Loads ALPHAA accounts from the legacy social_media_accounts table. */
+/** Loads Main (ALPHAA) accounts from temp_social_media_accounts. */
 export async function fetchAlphaaAccountsForSheetsExport(): Promise<
   AlphaaSheetsExportAccountRow[]
 > {

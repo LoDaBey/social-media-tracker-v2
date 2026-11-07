@@ -1,10 +1,11 @@
+/*
+ * Edits for Main (ALPHAA) holders and accounts.
+ * Main holders are temp_users with region = 'Alphaa'; their accounts are in
+ * temp_social_media_accounts. Nothing here touches the old Alpha tables.
+ */
 import { pool, queryOne } from "@/lib/db";
-import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
-import { fetchStrategyProjectRegionForAlphaaUser } from "@/lib/strategy-projects-data";
-import { strategyAccountRegionValue } from "@/lib/strategy-regions";
-import { alphaaLegacyPlatformFields } from "@/lib/bulk-import-parse";
+import { mapAlphaaRole } from "@/lib/admin-alphaa-roles";
 import { uniqueAccountUrlError } from "@/lib/social-account-validation";
-import { PLATFORMS, type Platform } from "@/lib/platform-config";
 import { baseCountryFromDisplay } from "@/lib/overview-country-display";
 import { publicAdminMutationError } from "@/lib/admin-action-error";
 import type {
@@ -15,30 +16,6 @@ import type {
 
 const ALPHAA_ROLES = ["Handler", "Team Leader", "Manager", "Admin", "OP", "HR", "QC"] as const;
 
-function reportingKeys(values: string[]) {
-  const seen = new Set<string>();
-  const keys: string[] = [];
-  for (const value of values) {
-    const key = value.trim().toLowerCase();
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
-    keys.push(key);
-  }
-  return keys;
-}
-
-function alphaaAccState(status: AdminSocialAccountInput["status"]) {
-  if (status === "archived") return "archived";
-  if (status === "suspended") return "suspended";
-  return "active";
-}
-
-function asPlatform(value: string): Platform | null {
-  return (PLATFORMS as readonly string[]).includes(value)
-    ? (value as Platform)
-    : null;
-}
-
 export function normalizeAlphaaRoleLabel(roleLabel: string) {
   const trimmed = roleLabel.trim();
   const match = ALPHAA_ROLES.find(
@@ -47,42 +24,12 @@ export function normalizeAlphaaRoleLabel(roleLabel: string) {
   return match ?? null;
 }
 
-async function alphaaAccountDefaults(userId: number) {
-  const existing = await queryOne<{
-    country: string | null;
-    region: string | null;
-    language1: string | null;
-    language2: string | null;
-  }>(
-    `SELECT country, region, language1, language2
-       FROM social_media_accounts
-      WHERE user_id = $1
-      ORDER BY id ASC
-      LIMIT 1`,
+async function alphaaHolderExists(userId: number) {
+  const row = await queryOne<{ id: number }>(
+    `SELECT id FROM temp_users WHERE id = $1 AND region = 'Alphaa'`,
     [userId]
   );
-  const user = await queryOne<{ country: string | null }>(
-    `SELECT country FROM users WHERE id = $1`,
-    [userId]
-  );
-  const country =
-    existing?.country?.trim() ||
-    user?.country?.trim() ||
-    "";
-  if (!country) {
-    return { error: "Set a country on this person before adding accounts." };
-  }
-  const language1 = existing?.language1?.trim() || "English";
-  const projectRegion = await fetchStrategyProjectRegionForAlphaaUser(userId);
-  return {
-    country,
-    region:
-      existing?.region?.trim() ||
-      (projectRegion ? strategyAccountRegionValue(projectRegion) : "") ||
-      "africa",
-    language1,
-    language2: existing?.language2?.trim() || language1,
-  };
+  return Boolean(row);
 }
 
 export async function updateAlphaaEmployeeRow(
@@ -99,63 +46,46 @@ export async function updateAlphaaEmployeeRow(
   if (!country) throw new Error("Select a country.");
 
   const dup = await queryOne<{ id: number }>(
-    `SELECT id FROM users WHERE LOWER(TRIM(email)) = $1 AND id <> $2 LIMIT 1`,
+    `SELECT id FROM temp_users WHERE LOWER(TRIM(email)) = $1 AND id <> $2 LIMIT 1`,
     [email, userId]
   );
   if (dup) throw new Error("Email already in use.");
 
-  const hasExtras =
-    payload.department !== undefined ||
-    payload.location !== undefined ||
-    payload.projects !== undefined;
-
-  const result = hasExtras
-    ? await pool.query(
-        `UPDATE users
-            SET username = $1,
-                email = $2,
-                phone_number = $3,
-                role = $4,
-                country = $5,
-                department = $6,
-                location = $7,
-                projects = $8::text[],
-                is_active = $9,
-                updated_at = NOW()
-          WHERE id = $10`,
-        [
-          fullName,
-          email,
-          payload.phone,
-          roleLabel,
-          country || null,
-          payload.department ?? null,
-          payload.location ?? null,
-          reportingKeys(payload.projects ?? []),
-          payload.isActive,
-          userId,
-        ]
-      )
-    : await pool.query(
-        `UPDATE users
-            SET username = $1,
-                email = $2,
-                phone_number = $3,
-                role = $4,
-                country = $5,
-                is_active = $6,
-                updated_at = NOW()
-          WHERE id = $7`,
-        [
-          fullName,
-          email,
-          payload.phone,
-          roleLabel,
-          country || null,
-          payload.isActive,
-          userId,
-        ]
+  // These rows are real Orbit logins now. The Main editor must not grant
+  // admin-workspace roles (admin / hoo / op) — that stays in the Orbit editor.
+  const role = mapAlphaaRole(roleLabel);
+  if (role === "admin" || role === "hoo" || role === "op") {
+    const current = await queryOne<{ role: string }>(
+      `SELECT role FROM temp_users WHERE id = $1 AND region = 'Alphaa'`,
+      [userId]
+    );
+    if (current?.role !== role) {
+      throw new Error(
+        "Admin and Operation Manager roles can only be given from the Orbit employee editor."
       );
+    }
+  }
+
+  const result = await pool.query(
+    `UPDATE temp_users
+        SET full_name = $1,
+            email = $2,
+            phone = $3,
+            role = $4,
+            country = $5,
+            is_active = $6
+      WHERE id = $7
+        AND region = 'Alphaa'`,
+    [
+      fullName,
+      email,
+      payload.phone,
+      role,
+      country,
+      payload.isActive,
+      userId,
+    ]
+  );
   if (!result.rowCount) throw new Error("Account holder not found.");
 }
 
@@ -164,87 +94,70 @@ export async function setAlphaaEmployeeActiveRow(
   isActive: boolean
 ): Promise<void> {
   const result = await pool.query(
-    `UPDATE users SET is_active = $2, updated_at = NOW() WHERE id = $1`,
+    `UPDATE temp_users SET is_active = $2 WHERE id = $1 AND region = 'Alphaa'`,
     [userId, isActive]
   );
   if (!result.rowCount) throw new Error("Account holder not found.");
 }
 
+/** Deletes the Orbit holder (its accounts go with it via ON DELETE CASCADE). */
 export async function deleteAlphaaEmployeeRow(userId: number): Promise<void> {
-  const user = await queryOne<{ id: number }>(
-    `SELECT id FROM users WHERE id = $1`,
+  const result = await pool.query(
+    `DELETE FROM temp_users WHERE id = $1 AND region = 'Alphaa'`,
     [userId]
   );
-  if (!user) throw new Error("User not found.");
-
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-    await client.query(`DELETE FROM social_media_accounts WHERE user_id = $1`, [
-      userId,
-    ]);
-    await client.query(`DELETE FROM users WHERE id = $1`, [userId]);
-    await client.query("COMMIT");
-  } catch (error) {
-    await client.query("ROLLBACK").catch(() => {});
-    const code =
-      typeof error === "object" && error !== null && "code" in error
-        ? (error as { code?: string }).code
-        : null;
-    if (code === "23503") {
-      throw new Error(
-        `This person still has linked ${MAIN_PROJECT_LABEL} records. Deactivate them instead of deleting.`
-      );
-    }
-    throw error;
-  } finally {
-    client.release();
-  }
+  if (!result.rowCount) throw new Error("User not found.");
 }
 
 export async function createAlphaaSocialAccountRow(
   userId: number,
   payload: AdminSocialAccountInput
 ): Promise<AdminAccountMutationResult> {
-  const employee = await queryOne<{ id: number }>(
-    `SELECT id FROM users WHERE id = $1`,
+  if (!(await alphaaHolderExists(userId))) return { error: "Employee not found." };
+
+  // New accounts inherit the holder's languages / sheet region from an existing account.
+  const sibling = await queryOne<{
+    geo_region: string | null;
+    language1: string | null;
+    language2: string | null;
+  }>(
+    `SELECT geo_region, language1, language2
+       FROM temp_social_media_accounts
+      WHERE user_id = $1
+      ORDER BY id ASC
+      LIMIT 1`,
     [userId]
   );
-  if (!employee) return { error: "Employee not found." };
-
-  const defaults = await alphaaAccountDefaults(userId);
-  if ("error" in defaults) return defaults;
-
-  const mapped = alphaaLegacyPlatformFields(payload.platform);
+  const language1 = sibling?.language1?.trim() || "English";
   const accountName =
     payload.username.replace(/^@/, "") || payload.accountHolder || "Pending";
 
   try {
     await pool.query(
-      `INSERT INTO social_media_accounts
-        (user_id, platform, personal, umberlla, acc_name, acc_bio, acc_username,
-         acc_url, acc_email, acc_password_hash, acc_mobile, direction, acc_state,
-         spare_acc, country, language1, language2, region)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, FALSE,
-               $14, $15, $16, $17)`,
+      `INSERT INTO temp_social_media_accounts
+        (user_id, platform, account_name, account_handle, account_url,
+         starting_followers, current_followers, category, username,
+         account_email, account_password, email_password, mobile_number, status,
+         account_scope, geo_region, language1, language2)
+       VALUES ($1, $2, $3, $4, $5, 0, 0, $6, $7, $8, $9, $10, $11, $12, $13,
+               $14, $15, $16)`,
       [
         userId,
-        mapped.platform,
-        mapped.personal,
-        mapped.umberlla,
+        payload.platform,
         accountName,
-        "",
-        payload.username.trim() || accountName,
+        payload.accountHolder,
         payload.url.trim(),
+        payload.category.trim() || "GH-G",
+        payload.username.trim() || accountName,
         payload.email.trim(),
         payload.accountPassword,
+        payload.emailPassword,
         payload.mobileNumber.trim() || null,
-        payload.category.trim() || "GH-G",
-        alphaaAccState(payload.status),
-        defaults.country,
-        defaults.language1,
-        defaults.language2,
-        defaults.region,
+        payload.status ?? "active",
+        payload.accountScope ?? "personal",
+        sibling?.geo_region ?? null,
+        language1,
+        sibling?.language2?.trim() || language1,
       ]
     );
     return {};
@@ -257,64 +170,51 @@ export async function updateAlphaaSocialAccountRow(
   accountId: number,
   payload: AdminSocialAccountInput
 ): Promise<AdminAccountMutationResult> {
-  const existing = await queryOne<{
-    id: number;
-    user_id: number;
-    platform: string | null;
-    personal: boolean | null;
-    umberlla: boolean | null;
-    acc_password_hash: string | null;
-  }>(
-    `SELECT id, user_id, platform, personal, umberlla, acc_password_hash
-       FROM social_media_accounts
-      WHERE id = $1`,
+  const existing = await queryOne<{ account_password: string | null }>(
+    `SELECT sma.account_password
+       FROM temp_social_media_accounts sma
+       INNER JOIN temp_users u ON u.id = sma.user_id
+      WHERE sma.id = $1
+        AND u.region = 'Alphaa'`,
     [accountId]
   );
   if (!existing) return { error: "Account not found." };
 
-  const knownPlatform = asPlatform(payload.platform);
-  const keepLegacyPlatform = !knownPlatform;
-  const mapped = knownPlatform
-    ? alphaaLegacyPlatformFields(knownPlatform)
-    : {
-        platform: existing.platform ?? "twitter",
-        personal: Boolean(existing.personal),
-        umberlla: Boolean(existing.umberlla),
-      };
   const accountName =
     payload.username.replace(/^@/, "") || payload.accountHolder || "Pending";
   const password =
-    payload.accountPassword.trim() || existing.acc_password_hash || "";
+    payload.accountPassword.trim() || existing.account_password || "";
 
   try {
     await pool.query(
-      `UPDATE social_media_accounts
+      `UPDATE temp_social_media_accounts
           SET platform = $2,
-              personal = $3,
-              umberlla = $4,
-              acc_name = $5,
-              acc_username = $6,
-              acc_url = $7,
-              acc_email = $8,
-              acc_password_hash = $9,
-              acc_mobile = $10,
-              direction = $11,
-              acc_state = $12,
-              updated_at = NOW()
+              account_name = $3,
+              account_handle = $4,
+              account_url = $5,
+              category = $6,
+              username = $7,
+              account_email = $8,
+              account_password = $9,
+              email_password = $10,
+              mobile_number = $11,
+              status = $12,
+              account_scope = $13
         WHERE id = $1`,
       [
         accountId,
-        keepLegacyPlatform ? existing.platform : mapped.platform,
-        keepLegacyPlatform ? existing.personal : mapped.personal,
-        keepLegacyPlatform ? existing.umberlla : mapped.umberlla,
+        payload.platform,
         accountName,
-        payload.username.trim() || accountName,
+        payload.accountHolder,
         payload.url.trim(),
+        payload.category.trim() || "GH-G",
+        payload.username.trim() || accountName,
         payload.email.trim(),
         password,
+        payload.emailPassword,
         payload.mobileNumber.trim() || null,
-        payload.category.trim() || "GH-G",
-        alphaaAccState(payload.status),
+        payload.status ?? "active",
+        payload.accountScope ?? "personal",
       ]
     );
     return {};
@@ -326,15 +226,16 @@ export async function updateAlphaaSocialAccountRow(
 export async function deleteAlphaaSocialAccountRow(
   accountId: number
 ): Promise<AdminAccountMutationResult> {
-  const existing = await queryOne<{ user_id: number }>(
-    `SELECT user_id FROM social_media_accounts WHERE id = $1`,
-    [accountId]
-  );
-  if (!existing) return { error: "Account not found." };
   try {
-    await pool.query(`DELETE FROM social_media_accounts WHERE id = $1`, [
-      accountId,
-    ]);
+    const result = await pool.query(
+      `DELETE FROM temp_social_media_accounts sma
+        USING temp_users u
+       WHERE u.id = sma.user_id
+         AND sma.id = $1
+         AND u.region = 'Alphaa'`,
+      [accountId]
+    );
+    if (!result.rowCount) return { error: "Account not found." };
     return {};
   } catch (error) {
     return { error: publicAdminMutationError(error) };
@@ -345,16 +246,17 @@ export async function setAlphaaSocialAccountSpareRow(
   accountId: number,
   isSpare: boolean
 ): Promise<AdminAccountMutationResult> {
-  const existing = await queryOne<{ id: number }>(
-    `SELECT id FROM social_media_accounts WHERE id = $1`,
-    [accountId]
-  );
-  if (!existing) return { error: "Account not found." };
   try {
-    await pool.query(
-      `UPDATE social_media_accounts SET spare_acc = $2, updated_at = NOW() WHERE id = $1`,
+    const result = await pool.query(
+      `UPDATE temp_social_media_accounts sma
+          SET is_spare = $2
+         FROM temp_users u
+        WHERE u.id = sma.user_id
+          AND sma.id = $1
+          AND u.region = 'Alphaa'`,
       [accountId, isSpare]
     );
+    if (!result.rowCount) return { error: "Account not found." };
     return {};
   } catch (error) {
     return { error: publicAdminMutationError(error) };

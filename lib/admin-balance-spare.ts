@@ -1,4 +1,3 @@
-import { normalizeAlphaaPlatformKey } from "@/lib/admin-extract-alphaa-data";
 import { extractPlatformLabel } from "@/lib/admin-extract-platform";
 import {
   ALPHAA_EXTRA_PLATFORM_KEYS,
@@ -11,6 +10,7 @@ import {
 import {
   ALPHAA_LEGACY_ACTIVE_WHERE,
   ALPHAA_LEGACY_COUNTRY,
+  ALPHAA_REGION_WHERE,
 } from "@/lib/alphaa-platform-sql";
 import { pool, query } from "@/lib/db";
 import {
@@ -66,9 +66,7 @@ type AlphaaBalanceRow = {
   country: string;
   is_spare: boolean;
   username: string | null;
-  platform: string | null;
-  personal: boolean | null;
-  umberlla: boolean | null;
+  platform: string;
 };
 
 type TempBalanceRow = {
@@ -172,18 +170,17 @@ async function fetchAlphaaBalanceAccounts(
         sma.id,
         sma.user_id,
         COALESCE(
-          NULLIF(TRIM(u.username), ''),
+          NULLIF(TRIM(u.full_name), ''),
           'Handler ' || u.id::text
         ) AS handler_name,
         ${ALPHAA_LEGACY_COUNTRY} AS country,
-        sma.spare_acc AS is_spare,
-        sma.acc_username AS username,
-        sma.platform,
-        sma.personal,
-        sma.umberlla
-       FROM social_media_accounts sma
-       INNER JOIN users u ON u.id = sma.user_id
-      WHERE ${ALPHAA_LEGACY_ACTIVE_WHERE}
+        sma.is_spare,
+        sma.username,
+        sma.platform
+       FROM temp_social_media_accounts sma
+       INNER JOIN temp_users u ON u.id = sma.user_id
+      WHERE ${ALPHAA_REGION_WHERE}
+        AND ${ALPHAA_LEGACY_ACTIVE_WHERE}
         AND ${ALPHAA_LEGACY_COUNTRY} = ANY($1::text[])
       ORDER BY sma.id ASC`,
     [countries]
@@ -194,7 +191,7 @@ async function fetchAlphaaBalanceAccounts(
     userId: row.user_id,
     handlerName: row.handler_name,
     country: displayCountry(row.country, "alphaa", region),
-    platform: normalizeAlphaaPlatformKey(row.platform, row.umberlla),
+    platform: row.platform,
     isSpare: Boolean(row.is_spare),
     username: row.username,
   }));
@@ -469,34 +466,13 @@ export async function applyCoverageSpareBalance(
   marked: BalanceCoverageSpareChange[],
   unmarked: BalanceCoverageSpareChange[]
 ) {
-  const markAlphaa = marked.filter((row) => row.source === "alphaa").map((row) => row.accountId);
-  const markTemp = marked.filter((row) => row.source === "temp").map((row) => row.accountId);
-  const unmarkAlphaa = unmarked
-    .filter((row) => row.source === "alphaa")
-    .map((row) => row.accountId);
-  const unmarkTemp = unmarked
-    .filter((row) => row.source === "temp")
-    .map((row) => row.accountId);
+  // Main (ALPHAA) accounts now live in temp_social_media_accounts too.
+  const markTemp = marked.map((row) => row.accountId);
+  const unmarkTemp = unmarked.map((row) => row.accountId);
 
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    if (markAlphaa.length > 0) {
-      await client.query(
-        `UPDATE social_media_accounts
-            SET spare_acc = TRUE, updated_at = NOW()
-          WHERE id = ANY($1::int[])`,
-        [markAlphaa]
-      );
-    }
-    if (unmarkAlphaa.length > 0) {
-      await client.query(
-        `UPDATE social_media_accounts
-            SET spare_acc = FALSE, updated_at = NOW()
-          WHERE id = ANY($1::int[])`,
-        [unmarkAlphaa]
-      );
-    }
     if (markTemp.length > 0) {
       await client.query(
         `UPDATE temp_social_media_accounts

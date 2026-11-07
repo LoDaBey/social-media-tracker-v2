@@ -345,7 +345,7 @@ async function splitCoverageCountries(
     ]);
   const allTempPlanCountries = [...africaPlanCountries, ...europePlanCountries];
 
-  /** ALPHAA — legacy users + social_media_accounts only. */
+  /** ALPHAA — temp_users in region Alphaa + temp_social_media_accounts. */
   if (region === "Alphaa") {
     return {
       tempCountries: [] as string[],

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { requireAdminPageAccess } from "@/lib/admin-access";
 import { queryOne } from "@/lib/db";
@@ -62,14 +62,7 @@ export default async function AdminEmployeeDetailPage({
   });
 
   const user = await queryOne<TempUser>(`SELECT * FROM temp_users WHERE id = $1`, [id]);
-  if (!user) {
-    const alphaa = await queryOne<{ id: number }>(
-      `SELECT id FROM users WHERE id = $1`,
-      [id]
-    );
-    if (alphaa) redirect(`/admin/employees/alphaa/${id}`);
-    notFound();
-  }
+  if (!user) notFound();
 
   const [teamLeads, managers, ops, admins, managerCountries, opCountries, projects] =
     await Promise.all([

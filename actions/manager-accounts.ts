@@ -186,7 +186,7 @@ export async function setManagerSocialAccountSpare(
 
     if (source === "alphaa") {
       const existing = await queryOne<{ user_id: number }>(
-        `SELECT user_id FROM social_media_accounts WHERE id = $1`,
+        `SELECT user_id FROM temp_social_media_accounts WHERE id = $1`,
         [accountId]
       );
       const result = await setAlphaaSocialAccountSpareRow(accountId, isSpare);

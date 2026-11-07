@@ -7,10 +7,10 @@ import { requireFullAdminActor } from "@/lib/admin-access";
 import { pool, queryOne } from "@/lib/db";
 import { publicAdminMutationError } from "@/lib/admin-action-error";
 import {
-  alphaaLegacyPlatformFields,
   parseAfricaTemplateSheet,
   sanitizeBulkImportRow,
 } from "@/lib/bulk-import-parse";
+import { accountScopeForPlatform } from "@/lib/account-scope";
 import { uniqueAccountUrlError } from "@/lib/social-account-validation";
 import { isAlphaaCountry } from "@/lib/region-config";
 import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
@@ -247,32 +247,32 @@ async function importAlphaaHolderAccounts(input: {
     return { error: `Select a ${MAIN_PROJECT_LABEL} country.` };
   }
 
-  const employee = await queryOne<{ id: number }>(
-    `SELECT id FROM users WHERE id = $1`,
+  // Main (ALPHAA) holder = temp_users row in region 'Alphaa'.
+  const employee = await queryOne<{ id: number; country: string | null }>(
+    `SELECT id, country FROM temp_users WHERE id = $1 AND region = 'Alphaa'`,
     [input.holderId]
   );
   if (!employee) return { error: "Account holder not found." };
 
   const existing = await queryOne<{
-    country: string | null;
-    region: string | null;
+    geo_region: string | null;
     language1: string | null;
     language2: string | null;
   }>(
-    `SELECT country, region, language1, language2
-       FROM social_media_accounts
+    `SELECT geo_region, language1, language2
+       FROM temp_social_media_accounts
       WHERE user_id = $1
       ORDER BY id ASC
       LIMIT 1`,
     [input.holderId]
   );
 
-  const country = existing?.country?.trim() || input.country;
+  const country = employee.country?.trim() || input.country;
   const projectRegion = await fetchStrategyProjectRegionForAlphaaUser(
     input.holderId
   );
   const region =
-    existing?.region?.trim() ||
+    existing?.geo_region?.trim() ||
     (projectRegion ? strategyAccountRegionValue(projectRegion) : "") ||
     "africa";
   const language1 =
@@ -283,48 +283,52 @@ async function importAlphaaHolderAccounts(input: {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    await client.query(`DELETE FROM social_media_accounts WHERE user_id = $1`, [
+    await client.query(`UPDATE temp_users SET country = $2 WHERE id = $1`, [
       input.holderId,
+      country,
     ]);
+    // Same replace-all behaviour as before, now on this holder's Orbit accounts only.
+    await client.query(
+      `DELETE FROM temp_social_media_accounts WHERE user_id = $1`,
+      [input.holderId]
+    );
 
     const values: unknown[] = [];
     const sqlRows: string[] = [];
     input.rows.forEach((row, idx) => {
-      const base = idx * 18;
+      const base = idx * 16;
       sqlRows.push(
-        `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9}, $${base + 10}, $${base + 11}, $${base + 12}, $${base + 13}, $${base + 14}, $${base + 15}, $${base + 16}, $${base + 17}, $${base + 18})`
+        `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, 0, 0, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9}, $${base + 10}, $${base + 11}, $${base + 12}, $${base + 13}, $${base + 14}, $${base + 15}, $${base + 16})`
       );
       const platform = row.platform as Platform;
-      const mapped = alphaaLegacyPlatformFields(platform);
       const accountName =
         row.username.replace(/^@/, "") || row.accountHolder || "Pending";
       values.push(
         input.holderId,
-        mapped.platform,
-        mapped.personal,
-        mapped.umberlla,
+        platform,
         accountName,
-        "",
-        row.username.trim() || accountName,
-        row.url.trim() || "",
-        row.email.trim() || "",
-        row.accountPassword || "",
-        row.mobileNumber.trim() || null,
+        row.accountHolder || null,
+        row.url.trim() || null,
         row.category.trim() || "GH-G",
+        row.username.trim() || accountName,
+        row.email.trim() || null,
+        row.accountPassword || null,
+        row.emailPassword || null,
+        row.mobileNumber.trim() || null,
         row.status,
-        false,
-        country,
+        accountScopeForPlatform(platform),
+        region,
         language1,
-        language2,
-        region
+        language2
       );
     });
 
     await client.query(
-      `INSERT INTO social_media_accounts
-        (user_id, platform, personal, umberlla, acc_name, acc_bio, acc_username,
-         acc_url, acc_email, acc_password_hash, acc_mobile, direction, acc_state,
-         spare_acc, country, language1, language2, region)
+      `INSERT INTO temp_social_media_accounts
+        (user_id, platform, account_name, account_handle, account_url,
+         starting_followers, current_followers, category, username,
+         account_email, account_password, email_password, mobile_number, status,
+         account_scope, geo_region, language1, language2)
        VALUES ${sqlRows.join(", ")}`,
       values
     );
