@@ -94,7 +94,7 @@ export function SpareAccountsDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto p-4 sm:p-8"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8"
       role="presentation"
     >
       <motion.button
@@ -113,96 +113,100 @@ export function SpareAccountsDialog({
         initial={{ opacity: 0, y: 16, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 12, scale: 0.98 }}
-        className="relative z-10 my-4 w-full max-w-5xl rounded-[20px] bg-[var(--color-surface)] p-5 shadow-xl sm:p-6"
+        className="relative z-10 flex max-h-[calc(100vh-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-[20px] bg-[var(--color-surface)] shadow-xl sm:max-h-[calc(100vh-4rem)]"
       >
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2
-              id="spare-accounts-modal-title"
-              className="text-[22px] font-extrabold text-[var(--color-ink)] sm:text-[26px]"
+        <div className="shrink-0 border-b border-[var(--color-hairline)] px-5 pb-4 pt-5 sm:px-6 sm:pt-6">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2
+                id="spare-accounts-modal-title"
+                className="text-[22px] font-extrabold text-[var(--color-ink)] sm:text-[26px]"
+              >
+                Spare accounts
+              </h2>
+              <p className="mt-1 text-[14px] text-[var(--color-muted)]">
+                {subtitle}
+              </p>
+            </div>
+            <button
+              type="button"
+              aria-label="Close spare accounts"
+              onClick={onClose}
+              className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-[var(--color-muted)] outline-none hover:bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
             >
-              Spare accounts
-            </h2>
-            <p className="mt-1 text-[14px] text-[var(--color-muted)]">
-              {subtitle}
-            </p>
+              <X className="h-5 w-5" aria-hidden="true" strokeWidth={2} />
+            </button>
           </div>
-          <button
-            type="button"
-            aria-label="Close spare accounts"
-            onClick={onClose}
-            className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-[var(--color-muted)] outline-none hover:bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
-          >
-            <X className="h-5 w-5" aria-hidden="true" strokeWidth={2} />
-          </button>
+
+          <div className="mt-5 flex gap-2">
+            <motion.button
+              type="button"
+              layout
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              aria-label="View current spare accounts"
+              aria-pressed={tab === "spare"}
+              onClick={() => setTab("spare")}
+              className={`cursor-pointer rounded-lg px-3 py-2 text-[13px] font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] ${
+                tab === "spare"
+                  ? "bg-[var(--color-ink)] text-[var(--color-surface)]"
+                  : "bg-[var(--color-cream-tint)] text-[var(--color-ink)]"
+              }`}
+            >
+              Current spare (
+              {filtersActive
+                ? `${filteredAccounts.length} of ${accounts.length}`
+                : accounts.length}
+              )
+            </motion.button>
+            <motion.button
+              type="button"
+              layout
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              aria-label="Mark a handler account as spare"
+              aria-pressed={tab === "mark"}
+              onClick={() => setTab("mark")}
+              className={`cursor-pointer rounded-lg px-3 py-2 text-[13px] font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] ${
+                tab === "mark"
+                  ? "bg-[var(--color-ink)] text-[var(--color-surface)]"
+                  : "bg-[var(--color-cream-tint)] text-[var(--color-ink)]"
+              }`}
+            >
+              Mark spare
+            </motion.button>
+          </div>
+
+          <SpareAccountsFilters
+            accounts={accounts}
+            holders={holders}
+            value={filters}
+            onChange={setFilters}
+          />
         </div>
 
-        <div className="mt-5 flex gap-2">
-          <motion.button
-            type="button"
-            layout
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            aria-label="View current spare accounts"
-            aria-pressed={tab === "spare"}
-            onClick={() => setTab("spare")}
-            className={`cursor-pointer rounded-lg px-3 py-2 text-[13px] font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] ${
-              tab === "spare"
-                ? "bg-[var(--color-ink)] text-[var(--color-surface)]"
-                : "bg-[var(--color-cream-tint)] text-[var(--color-ink)]"
-            }`}
-          >
-            Current spare (
-            {filtersActive
-              ? `${filteredAccounts.length} of ${accounts.length}`
-              : accounts.length}
-            )
-          </motion.button>
-          <motion.button
-            type="button"
-            layout
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            aria-label="Mark a handler account as spare"
-            aria-pressed={tab === "mark"}
-            onClick={() => setTab("mark")}
-            className={`cursor-pointer rounded-lg px-3 py-2 text-[13px] font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] ${
-              tab === "mark"
-                ? "bg-[var(--color-ink)] text-[var(--color-surface)]"
-                : "bg-[var(--color-cream-tint)] text-[var(--color-ink)]"
-            }`}
-          >
-            Mark spare
-          </motion.button>
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6 sm:pb-6">
+          {tab === "spare" ? (
+            <SpareAccountsList
+              accounts={filteredAccounts}
+              pendingKey={pendingKey}
+              pending={pending}
+              onUnmark={unmark}
+              emptyMessage={
+                accounts.length > 0 && filtersActive
+                  ? "No spare accounts match these filters."
+                  : undefined
+              }
+            />
+          ) : (
+            <SpareAccountsMarkPanel
+              holders={filteredHolders}
+              filters={filters}
+              onSpareChange={handleSpareChange}
+              setSpare={setSpare}
+            />
+          )}
         </div>
-
-        <SpareAccountsFilters
-          accounts={accounts}
-          holders={holders}
-          value={filters}
-          onChange={setFilters}
-        />
-
-        {tab === "spare" ? (
-          <SpareAccountsList
-            accounts={filteredAccounts}
-            pendingKey={pendingKey}
-            pending={pending}
-            onUnmark={unmark}
-            emptyMessage={
-              accounts.length > 0 && filtersActive
-                ? "No spare accounts match these filters."
-                : undefined
-            }
-          />
-        ) : (
-          <SpareAccountsMarkPanel
-            holders={filteredHolders}
-            filters={filters}
-            onSpareChange={handleSpareChange}
-            setSpare={setSpare}
-          />
-        )}
       </motion.div>
     </div>
   );

@@ -1,26 +1,20 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
+import { requireFullAdminActor } from "@/lib/admin-access";
 import { publicAdminMutationError } from "@/lib/admin-action-error";
 import {
   applyCoverageSpareBalance,
   computeCoverageSpareBalance,
 } from "@/lib/admin-balance-spare";
 import { logOrbitAction } from "@/lib/orbit-log";
-import { isFullAdminRole } from "@/lib/role-hierarchy";
 import type {
   AdminRegion,
   BalanceCoverageSpareResult,
 } from "@/types/admin";
 
 async function requireAdmin() {
-  const session = await auth();
-  const adminId = Number(session?.user?.id);
-  const role = session?.user?.role;
-  if (!Number.isFinite(adminId) || !isFullAdminRole(role)) {
-    throw new Error("Unauthorized — admin or Head of Department only.");
-  }
+  await requireFullAdminActor();
 }
 
 function asRegion(value: string): AdminRegion | null {
@@ -28,11 +22,15 @@ function asRegion(value: string): AdminRegion | null {
     value === "Overview" ||
     value === "Africa" ||
     value === "Europe" ||
-    value === "Alphaa"
+    value === "Alphaa" ||
+    value === "Asia"
   ) {
     return value;
   }
-  return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  // Strategy project slugs / other custom regions are valid AdminRegion values.
+  return trimmed;
 }
 
 export async function balanceAdminCoverageSpare(

@@ -3,7 +3,7 @@ export const runtime = "nodejs";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/auth";
+import { requireFullAdminActor } from "@/lib/admin-access";
 import { publicAdminMutationError } from "@/lib/admin-action-error";
 import { logOrbitAction } from "@/lib/orbit-log";
 import {
@@ -48,10 +48,9 @@ type RouteContext = {
 };
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const session = await auth();
-  const userId = Number(session?.user?.id);
-  const role = session?.user?.role;
-  if (!Number.isFinite(userId) || (role !== "admin" && role !== "hoo")) {
+  try {
+    await requireFullAdminActor();
+  } catch {
     return NextResponse.json(
       {
         ok: false,
@@ -161,10 +160,9 @@ export async function PATCH(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
-  const session = await auth();
-  const userId = Number(session?.user?.id);
-  const role = session?.user?.role;
-  if (!Number.isFinite(userId) || (role !== "admin" && role !== "hoo")) {
+  try {
+    await requireFullAdminActor();
+  } catch {
     return NextResponse.json(
       {
         ok: false,

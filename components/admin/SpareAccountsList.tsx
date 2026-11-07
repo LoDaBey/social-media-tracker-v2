@@ -18,7 +18,7 @@ export function SpareAccountsList({
 }: SpareAccountsListProps) {
   if (accounts.length === 0) {
     return (
-      <p className="mt-6 rounded-lg bg-[var(--color-cream-tint)] px-4 py-8 text-center text-[14px] text-[var(--color-muted)]">
+      <p className="rounded-lg bg-[var(--color-cream-tint)] px-4 py-8 text-center text-[14px] text-[var(--color-muted)]">
         {emptyMessage ??
           "No spare accounts right now. Use Mark spare to add one."}
       </p>
@@ -26,7 +26,7 @@ export function SpareAccountsList({
   }
 
   return (
-    <div className="mt-6 overflow-x-auto rounded-[16px] border border-[var(--color-hairline)]">
+    <div className="overflow-x-auto rounded-[16px] border border-[var(--color-hairline)]">
       <table className="w-full min-w-[800px] border-collapse text-left">
         <thead>
           <tr className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">

@@ -23,14 +23,16 @@ function rowsToSheetRows(rows: AdminExtractRow[]) {
       Country: row.country ?? "",
       Handler: row.handler_name,
       Role: extractRoleLabel(row.handler_role),
-      Platform: extractFilterPlatformLabel(row.platform),
-      "Account type": accountScopeLabel(row.account_scope),
-      Account: row.account_name,
+      Platform: row.platform ? extractFilterPlatformLabel(row.platform) : "",
+      "Account type": row.platform
+        ? accountScopeLabel(row.account_scope)
+        : "",
+      Account: row.platform ? row.account_name : "",
       Username: row.username ?? "",
       URL: row.account_url ?? "",
       Category: row.category ?? "",
       Status: row.status,
-      Spare: row.is_spare ? "Yes" : "No",
+      Spare: row.platform ? (row.is_spare ? "Yes" : "No") : "",
       Source: row.source === "alphaa" ? MAIN_PROJECT_LABEL : "Temp",
     };
   });

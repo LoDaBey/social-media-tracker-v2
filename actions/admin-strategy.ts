@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { auth } from "@/auth";
+import { requireFullAdminActor } from "@/lib/admin-access";
 import { publicAdminMutationError } from "@/lib/admin-action-error";
 import { saveStrategyCountry } from "@/lib/strategy-plans-data";
 import {
@@ -10,7 +10,6 @@ import {
   targetsGrandTotal,
 } from "@/lib/strategy-platforms";
 import { logOrbitAction } from "@/lib/orbit-log";
-import { isFullAdminRole } from "@/lib/role-hierarchy";
 import type { StrategySaveCountryInput } from "@/types/strategy";
 
 const saveSchema = z.object({
@@ -26,11 +25,7 @@ const saveSchema = z.object({
 });
 
 async function requireAdmin() {
-  const session = await auth();
-  const adminId = Number(session?.user?.id);
-  if (!Number.isFinite(adminId) || !isFullAdminRole(session?.user?.role)) {
-    throw new Error("Unauthorized — admin or Head of Department only.");
-  }
+  await requireFullAdminActor();
 }
 
 function revalidateStrategy() {

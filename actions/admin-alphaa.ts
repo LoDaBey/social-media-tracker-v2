@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { auth } from "@/auth";
+import { requireFullAdminActor } from "@/lib/admin-access";
 import { publicAdminMutationError } from "@/lib/admin-action-error";
 import {
   deleteAlphaaEmployeeRow,
@@ -11,16 +11,10 @@ import {
 } from "@/lib/admin-alphaa-mutate";
 import { logOrbitAction } from "@/lib/orbit-log";
 import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
-import { isFullAdminRole } from "@/lib/role-hierarchy";
 import type { UpdateAlphaaEmployeePayload } from "@/types/admin";
 
 async function requireAdmin() {
-  const session = await auth();
-  const adminId = Number(session?.user?.id);
-  const role = session?.user?.role;
-  if (!Number.isFinite(adminId) || !isFullAdminRole(role)) {
-    throw new Error("Unauthorized — admin or Head of Department only.");
-  }
+  const { userId: adminId } = await requireFullAdminActor();
   return { adminId };
 }
 

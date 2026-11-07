@@ -11,6 +11,7 @@ import {
   baseCountryFromDisplay,
   isDualRegionCountry,
   overviewDisplayCountry,
+  overviewLabeledCountry,
 } from "@/lib/overview-country-display";
 import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import type {
@@ -32,6 +33,13 @@ export const EXTRACT_ROLE_OPTIONS: {
 export const EXTRACT_ROLES: AdminExtractRoleFilter[] = EXTRACT_ROLE_OPTIONS.map(
   (option) => option.value
 );
+
+/** Countries that appear under both Main and Asia in Data extract. */
+export const EXTRACT_MAIN_ASIA_COUNTRIES = ["Palestine"] as const;
+
+export function isExtractMainAsiaCountry(country: string) {
+  return (EXTRACT_MAIN_ASIA_COUNTRIES as readonly string[]).includes(country);
+}
 
 export function emptyAdminExtractFilters(): AdminExtractFilters {
   return {
@@ -58,6 +66,20 @@ export function extractRoleLabel(role: AdminExtractRoleFilter | null): string {
   );
 }
 
+function labelAlphaaCountry(country: string): string {
+  if (isDualRegionCountry(country) || isExtractMainAsiaCountry(country)) {
+    return overviewLabeledCountry(country, MAIN_PROJECT_LABEL);
+  }
+  return country;
+}
+
+function labelAsiaCountry(country: string): string {
+  if (isExtractMainAsiaCountry(country)) {
+    return overviewLabeledCountry(country, "Asia");
+  }
+  return country;
+}
+
 export function extractCountryOptions(
   region: AdminExtractRegionFilter
 ): string[] {
@@ -68,11 +90,11 @@ export function extractCountryOptions(
     );
   }
   if (region === "Alphaa") {
-    return ALPHAA_SETUP_COUNTRIES.map((country) =>
-      overviewDisplayCountry(country, "Alphaa")
-    );
+    return ALPHAA_SETUP_COUNTRIES.map(labelAlphaaCountry);
   }
-  if (region === "Asia") return [...ASIA_SETUP_COUNTRIES];
+  if (region === "Asia") {
+    return ASIA_SETUP_COUNTRIES.map(labelAsiaCountry);
+  }
 
   const options: string[] = [];
   for (const country of SETUP_COUNTRIES) {
@@ -82,8 +104,15 @@ export function extractCountryOptions(
     }
   }
   options.push(...EUROPE_SETUP_COUNTRIES);
-  options.push(...ALPHAA_EXCLUSIVE_SETUP_COUNTRIES);
-  options.push(...ASIA_EXCLUSIVE_SETUP_COUNTRIES);
+  for (const country of ALPHAA_EXCLUSIVE_SETUP_COUNTRIES) {
+    options.push(labelAlphaaCountry(country));
+  }
+  for (const country of ASIA_EXCLUSIVE_SETUP_COUNTRIES) {
+    options.push(country);
+  }
+  for (const country of EXTRACT_MAIN_ASIA_COUNTRIES) {
+    options.push(overviewLabeledCountry(country, "Asia"));
+  }
   return options;
 }
 
@@ -101,6 +130,7 @@ export function countriesForExtractSource(
   for (const country of countries) {
     const base = baseCountryFromDisplay(country);
     if (!base) continue;
+
     if (isDualRegionCountry(base)) {
       const wantsAfrica = country.endsWith("(Africa)");
       const wantsAlphaa = country.endsWith(`(${MAIN_PROJECT_LABEL})`);
@@ -112,6 +142,19 @@ export function countriesForExtractSource(
       if (source === "alphaa" && wantsAlphaa) selected.push(base);
       continue;
     }
+
+    if (isExtractMainAsiaCountry(base)) {
+      const wantsAsia = country.endsWith("(Asia)");
+      const wantsMain = country.endsWith(`(${MAIN_PROJECT_LABEL})`);
+      if (!wantsAsia && !wantsMain) {
+        selected.push(base);
+        continue;
+      }
+      if (source === "temp" && wantsAsia) selected.push(base);
+      if (source === "alphaa" && wantsMain) selected.push(base);
+      continue;
+    }
+
     selected.push(base);
   }
 

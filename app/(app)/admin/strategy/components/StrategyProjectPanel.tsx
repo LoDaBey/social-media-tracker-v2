@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import { useCreateStrategyCountry } from "@/hooks/useCreateStrategyCountry";
 import {
   addStrategyScopeCounts,
   emptyStrategyScopeCounts,
@@ -16,6 +19,7 @@ import { StrategyProjectPlatformPicker } from "./StrategyProjectPlatformPicker";
 import { StrategyProjectToolbar } from "./StrategyProjectToolbar";
 import { StrategySubProjectSection } from "./StrategySubProjectSection";
 import type {
+  StrategyAddSubProjectInput,
   StrategyPlatformKey,
   StrategyProject,
   StrategyProjectPanelProps,
@@ -48,6 +52,10 @@ export function StrategyProjectPanel({
   onSave,
   onDelete,
 }: StrategyProjectPanelProps) {
+  const router = useRouter();
+  const { createCountry, pending: creatingCountry } = useCreateStrategyCountry(
+    project.slug
+  );
   const [editing, setEditing] = useState(false);
   const isEditing = canEdit && editing;
   const [region, setRegion] = useState<StrategyProjectRegion | "">(
@@ -112,23 +120,25 @@ export function StrategyProjectPanel({
     );
   }
 
-  function handleAddSubProject(input: {
-    name: string;
-    language: string;
-    resources: number;
-  }) {
+  async function handleAddSubProject(input: StrategyAddSubProjectInput) {
     const name = input.name.trim();
     if (
       subProjects.some(
         (item) => item.name.trim().toLowerCase() === name.toLowerCase()
       )
     ) {
-      return false;
+      return { ok: false as const, error: "That country name is already used here." };
     }
+
+    const result = await createCountry(input);
+    if (!result.ok) {
+      return result;
+    }
+
     const draft: StrategySubProjectDraft = {
-      key: `new-${name.toLowerCase()}-${Date.now()}`,
-      slug: null,
-      name,
+      key: result.country.slug,
+      slug: result.country.slug,
+      name: result.country.name,
       language: input.language,
       resources: Math.max(0, Math.floor(input.resources) || 0),
       projectTargets: emptyStrategyScopeCounts(),
@@ -136,7 +146,10 @@ export function StrategyProjectPanel({
     };
     setSubProjects((current) => [...current, draft]);
     setSelectedKey(draft.key);
-    return true;
+    setEditing(true);
+    toast.success(`${result.country.name} added.`);
+    router.refresh();
+    return { ok: true as const };
   }
 
   function handleDeleteSubProject(key: string) {
@@ -242,6 +255,7 @@ export function StrategyProjectPanel({
             projectSlug={project.slug}
             editing={isEditing}
             canEdit={canEdit}
+            creatingCountry={creatingCountry}
             onStartEdit={() => setEditing(true)}
             onSelect={setSelectedKey}
             onChange={(key, next) =>

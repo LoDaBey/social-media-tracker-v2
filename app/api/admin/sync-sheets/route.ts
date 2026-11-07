@@ -1,7 +1,7 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { requireFullAdminActor } from "@/lib/admin-access";
 import { fetchAlphaaAccountsForSheetsExport } from "@/lib/alphaa-sheets-export-data";
 import { fetchAccountsForSheetsExport } from "@/lib/admin-sheets-export-data";
 import { syncAccountsToGoogleSheets } from "@/lib/google-sheets";
@@ -9,16 +9,10 @@ import { logOrbitAction } from "@/lib/orbit-log";
 import type { SheetsSyncResult } from "@/types/admin";
 
 export async function POST() {
-  const session = await auth();
-  const userId = Number(session?.user?.id);
-  const role = session?.user?.role;
-
-  if (!Number.isFinite(userId)) {
+  try {
+    await requireFullAdminActor();
+  } catch {
     return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
-  }
-
-  if (role !== "admin" && role !== "hoo" && role !== "manager") {
-    return NextResponse.json({ success: false, message: "Forbidden." }, { status: 403 });
   }
 
   try {

@@ -1,9 +1,6 @@
 import { AdminCoverageCountCell } from "@/components/admin/AdminCoverageCountCell";
 import { StrategyPlatformIcon } from "@/app/(app)/admin/strategy/components/StrategyPlatformIcon";
-import {
-  coverageMetricHasShortfall,
-  coverageMetricTotal,
-} from "@/lib/coverage-live-metrics";
+import { coverageMetricTotal } from "@/lib/coverage-live-metrics";
 import type { CoverageLivePlatformCardProps } from "@/types/admin";
 
 const SCOPE_BAR = {
@@ -15,16 +12,9 @@ const SCOPE_BAR = {
 
 export function CoverageLivePlatformCard({ metric }: CoverageLivePlatformCardProps) {
   const total = coverageMetricTotal(metric);
-  const short = coverageMetricHasShortfall(metric);
 
   return (
-    <article
-      className={`relative flex flex-col gap-2.5 rounded-[14px] p-3 ring-1 ${
-        short
-          ? "bg-[#FDE8E6] ring-[var(--color-coral)]"
-          : "bg-[var(--color-surface)] ring-[var(--color-hairline)]"
-      }`}
-    >
+    <article className="relative flex flex-col gap-2.5 rounded-[14px] bg-[var(--color-surface)] p-3 ring-1 ring-[var(--color-hairline)]">
       <header className="flex items-center gap-2">
         <StrategyPlatformIcon platform={metric.platform} className="h-6 w-6" />
         <h4 className="min-w-0 flex-1 truncate text-[13px] font-semibold text-[var(--color-ink)]">

@@ -394,11 +394,16 @@ export type StrategyAddSubProjectInput = {
   resources: number;
 };
 
+export type StrategyCreateSubProjectResult =
+  | { ok: true; country: { name: string; slug: string } }
+  | { ok: false; error: string };
+
 export type StrategyAddSubProjectModalProps = {
   open: boolean;
   error: string | null;
+  pending?: boolean;
   onClose: () => void;
-  onCreate: (input: StrategyAddSubProjectInput) => void;
+  onCreate: (input: StrategyAddSubProjectInput) => void | Promise<void>;
 };
 
 export type StrategyDeleteSubProjectButtonProps = {
@@ -421,10 +426,15 @@ export type StrategySubProjectSectionProps = {
   projectSlug?: string;
   editing: boolean;
   canEdit?: boolean;
+  creatingCountry?: boolean;
   onStartEdit?: () => void;
   onSelect: (key: string) => void;
   onChange: (key: string, next: StrategySubProjectDraft) => void;
-  onAdd: (input: StrategyAddSubProjectInput) => boolean;
+  onAdd: (
+    input: StrategyAddSubProjectInput
+  ) =>
+    | boolean
+    | Promise<boolean | { ok: true } | { ok: false; error: string }>;
   onDelete: (key: string) => void;
 };
 

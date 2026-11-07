@@ -15,14 +15,29 @@ export const ROLE_LABELS: Record<Role, string> = {
   admin: "Admin",
 };
 
+/** Normalize role strings from session/DB before permission checks. */
+export function normalizeRoleValue(role: string | null | undefined): string {
+  const value = (role ?? "").trim().toLowerCase();
+  if (
+    value === "head of department" ||
+    value === "head_of_department" ||
+    value === "hod"
+  ) {
+    return "hoo";
+  }
+  return value;
+}
+
 /** Admin + HOO — full access to all projects and editable admin surfaces. */
 export function isFullAdminRole(role: string | null | undefined): boolean {
-  return role === "admin" || role === "hoo";
+  const value = normalizeRoleValue(role);
+  return value === "admin" || value === "hoo";
 }
 
 /** Roles that use the admin workspace (nav + /admin pages). */
 export function isAdminWorkspaceRole(role: string | null | undefined): boolean {
-  return role === "admin" || role === "hoo" || role === "op";
+  const value = normalizeRoleValue(role);
+  return value === "admin" || value === "hoo" || value === "op";
 }
 
 /** Direct supervisor role for each assignable role (admin has none). */

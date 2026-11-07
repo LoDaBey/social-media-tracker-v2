@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import type { PoolClient } from "pg";
-import { auth } from "@/auth";
+import { requireFullAdminActor } from "@/lib/admin-access";
 import { pool, queryOne } from "@/lib/db";
 import { getTodayCairoDate, normalizePgDateColumn } from "@/lib/cairo-date";
 import { createNotification } from "@/lib/notifications";
@@ -42,12 +42,7 @@ const setupCountrySchema = z
   .refine((value) => isSetupCountry(value), "Select a valid country.");
 
 async function requireAdminSession() {
-  const session = await auth();
-  const adminId = Number(session?.user?.id);
-  const role = session?.user?.role;
-  if (!Number.isFinite(adminId) || (role !== "admin" && role !== "hoo")) {
-    throw new Error("Unauthorized — admin or Head of Department only.");
-  }
+  const { userId: adminId } = await requireFullAdminActor();
   return { adminId };
 }
 
