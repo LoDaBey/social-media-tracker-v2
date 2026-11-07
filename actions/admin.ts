@@ -21,7 +21,11 @@ import {
 } from "@/lib/employee-create-projects";
 import { fetchEmployeeCreateProjectOptions } from "@/lib/employee-create-projects-data";
 import { isEuropeCountry } from "@/lib/region-config";
-import { isSetupCountry, setupRegionForCountry } from "@/lib/setup-options";
+import {
+  isAlphaaCountry,
+  isSetupCountry,
+  setupRegionForCountry,
+} from "@/lib/setup-options";
 import type {
   AdminEmployeeEditorBundle,
   AdminEmployeeSource,
@@ -485,6 +489,16 @@ export async function updateEmployeeProfile(
     }
     const { team_lead_id: teamLeadId, manager_id: managerId, op_id: opId } =
       reportingCheck.normalized;
+
+    // Main (ALPHAA) people keep their project when saved. Sudan / Somalia are also
+    // Africa countries, so re-deriving the region from the country would move them.
+    if (p.role !== "op" && isAlphaaCountry(primaryCountry)) {
+      const current = await client.query<{ region: string | null }>(
+        `SELECT region FROM temp_users WHERE id = $1`,
+        [user_id]
+      );
+      if (current.rows[0]?.region === "Alphaa") assignedRegion = "Alphaa";
+    }
 
     await client.query(
       `UPDATE temp_users SET
