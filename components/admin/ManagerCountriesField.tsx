@@ -7,6 +7,8 @@ import {
   SETUP_COUNTRIES,
   type SetupRegion,
 } from "@/lib/setup-options";
+import { normalizeProjectRegion } from "@/lib/admin-view";
+import { regionFromStrategyProjectSlug } from "@/lib/employee-create-projects";
 import type { ManagerCountriesFieldProps } from "@/types/admin";
 import { AdminFieldError } from "@/components/admin/AdminFieldError";
 
@@ -24,14 +26,14 @@ function CountryCheckbox({
 }: {
   option: string;
   checked: boolean;
-  onToggle: (country: string) => void;
+  onToggle: () => void;
 }) {
   return (
     <label className="flex cursor-pointer items-center gap-2.5 text-[13px] font-medium text-[var(--color-ink)]">
       <input
         type="checkbox"
         checked={checked}
-        onChange={() => onToggle(option)}
+        onChange={onToggle}
         className="rounded outline-none"
         aria-label={`Include ${option}`}
       />
@@ -46,19 +48,30 @@ export function ManagerCountriesField({
   error,
   onToggle,
   projects,
+  region,
 }: ManagerCountriesFieldProps) {
   const groups =
     projects && projects.length > 0
       ? projects.map((project) => ({
           key: project.slug,
           label: project.name,
+          region: regionFromStrategyProjectSlug(project.slug) as string,
           countries: project.countries,
         }))
-      : REGION_GROUPS.map(({ region, countries }) => ({
-          key: region,
-          label: regionDisplayLabel(region),
+      : REGION_GROUPS.map(({ region: groupRegion, countries }) => ({
+          key: groupRegion,
+          label: regionDisplayLabel(groupRegion),
+          region: groupRegion as string,
           countries: [...countries],
         }));
+  const managerRegion = normalizeProjectRegion(region);
+
+  // Sudan / Somalia / Palestine sit in two groups: tick them only in the manager's project.
+  function isChecked(option: string, groupRegion: string) {
+    if (!selected.includes(option)) return false;
+    const inGroups = groups.filter((g) => g.countries.includes(option)).length;
+    return inGroups < 2 || !managerRegion || managerRegion === groupRegion;
+  }
 
   return (
     <fieldset className="sm:col-span-2">
@@ -77,7 +90,7 @@ export function ManagerCountriesField({
             : "border-[var(--color-hairline)]"
         }`}
       >
-        {groups.map(({ key, label, countries }) =>
+        {groups.map(({ key, label, region: groupRegion, countries }) =>
           countries.length === 0 ? null : (
             <section key={key} aria-label={`${label} countries`}>
               <h3 className="text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--color-muted)]">
@@ -90,8 +103,8 @@ export function ManagerCountriesField({
                     <CountryCheckbox
                       key={`${key}-${option}`}
                       option={option}
-                      checked={selected.includes(option)}
-                      onToggle={onToggle}
+                      checked={isChecked(option, groupRegion)}
+                      onToggle={() => onToggle(option, groupRegion)}
                     />
                   ))}
               </div>

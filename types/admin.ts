@@ -86,6 +86,8 @@ export type CreateEmployeePayload = {
   country: string;
   /** Strategy project slug — sets region and scopes the country list. */
   project_slug?: string;
+  /** Country Manager's project when a ticked country is in two projects. */
+  region?: string;
 };
 
 export type CreateEmployeeResult = { id: number } | { error: string };
@@ -148,8 +150,11 @@ export type AdminFieldErrorProps = {
 export type ManagerCountriesFieldProps = {
   selected: string[];
   error?: string;
-  onToggle: (country: string) => void;
+  /** groupRegion = the project group the box was ticked in. */
+  onToggle: (country: string, groupRegion: string) => void;
   projects?: EmployeeCreateProjectOption[];
+  /** Manager's project; a country listed in two groups is ticked only in this one. */
+  region?: string;
 };
 
 export type UpdateEmployeeProfilePayload = {

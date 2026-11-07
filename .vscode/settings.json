@@ -23,7 +23,7 @@
       "driver": "PostgreSQL",
       "name": "ALPHAA-DB",
       "database": "alphaa_xml1",
-      "username": "admin"
+      "username": "admin2"
     }
   ]
 }
