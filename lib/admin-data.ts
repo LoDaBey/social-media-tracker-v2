@@ -110,14 +110,22 @@ export async function fetchAdminEmployeesList(
     const regionParam = params.length;
     params.push([...setupCountriesForRegion(region)]);
     const countriesParam = params.length;
+    // A person's own region decides the list they belong to. The country match is
+    // only a fallback for people with no region, otherwise shared countries
+    // (Sudan, Somalia, Palestine) pull Main staff into Africa / Asia.
     where.push(
       `(u.region = ANY($${regionParam}::text[])
-        OR INITCAP(TRIM(COALESCE(u.country, ''))) = ANY($${countriesParam}::text[])
-        OR EXISTS (
-            SELECT 1 FROM temp_manager_countries mc
-             WHERE mc.user_id = u.id
-               AND mc.country = ANY($${countriesParam}::text[])
-          ))`
+        OR (
+          COALESCE(TRIM(u.region), '') = ''
+          AND (
+            INITCAP(TRIM(COALESCE(u.country, ''))) = ANY($${countriesParam}::text[])
+            OR EXISTS (
+                SELECT 1 FROM temp_manager_countries mc
+                 WHERE mc.user_id = u.id
+                   AND mc.country = ANY($${countriesParam}::text[])
+              )
+          )
+        ))`
     );
   } else if (region === "Alphaa") {
     params.push(["Alphaa"]);
@@ -126,10 +134,17 @@ export async function fetchAdminEmployeesList(
   if (country) {
     params.push(country);
     const i = params.length;
+    // Match the countries the table shows: own country, managed countries and
+    // Operation Manager countries (case/space-insensitive).
     where.push(
-      `(u.country = $${i} OR EXISTS (
+      `(LOWER(TRIM(COALESCE(u.country, ''))) = LOWER(TRIM($${i}))
+        OR EXISTS (
           SELECT 1 FROM temp_manager_countries mc
-           WHERE mc.user_id = u.id AND mc.country = $${i}
+           WHERE mc.user_id = u.id AND LOWER(TRIM(mc.country)) = LOWER(TRIM($${i}))
+        )
+        OR EXISTS (
+          SELECT 1 FROM temp_op_countries oc
+           WHERE oc.user_id = u.id AND LOWER(TRIM(oc.country)) = LOWER(TRIM($${i}))
         ))`
     );
   }

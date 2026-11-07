@@ -22,7 +22,7 @@ export const EUROPE_COUNTRIES = [
 /** @deprecated Use EUROPE_COUNTRIES */
 export const BALKAN_COUNTRIES = EUROPE_COUNTRIES;
 
-/** Legacy ALPHAA coverage + sheet export (social_media_accounts). */
+/** ALPHAA (Main) coverage + sheet export (temp_users region Alphaa). */
 export const ALPHAA_COUNTRIES = [
   "Sudan",
   "Somalia",

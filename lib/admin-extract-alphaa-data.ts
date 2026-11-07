@@ -6,6 +6,7 @@ import {
   ALPHAA_PLATFORM_IS_INSTAGRAM,
   ALPHAA_PLATFORM_IS_TIKTOK,
   ALPHAA_PLATFORM_IS_X,
+  ALPHAA_REGION_WHERE,
   alphaaExtraPlatformSql,
 } from "@/lib/alphaa-platform-sql";
 import { ALPHAA_EXTRA_PLATFORM_KEYS } from "@/lib/alphaa-coverage-platforms";
@@ -42,14 +43,13 @@ type AlphaaExtractQueryRow = {
   country: string | null;
   handler_name: string | null;
   handler_role: string | null;
-  platform: string | null;
-  personal: boolean | null;
-  umberlla: boolean | null;
+  platform: string;
+  account_scope: AccountScope;
   username: string | null;
   account_name: string | null;
   account_url: string | null;
   category: string | null;
-  acc_state: string | null;
+  status: AdminExtractRow["status"];
   is_spare: boolean;
 };
 
@@ -193,13 +193,13 @@ function mapAlphaaRow(row: AlphaaExtractQueryRow): AdminExtractRow {
       : null,
     handler_name: row.handler_name?.trim() || `Handler ${row.id}`,
     handler_role: normalizeAlphaaHandlerRole(row.handler_role),
-    platform: normalizeAlphaaPlatformKey(row.platform, row.umberlla),
-    account_scope: mapAlphaaScope(row.personal, row.umberlla),
+    platform: row.platform,
+    account_scope: row.account_scope,
     username: row.username,
     account_name: row.account_name?.trim() || row.username?.trim() || "—",
     account_url: row.account_url,
     category: row.category,
-    status: mapAlphaaStatus(row.acc_state),
+    status: row.status,
     is_spare: Boolean(row.is_spare),
   };
 }
@@ -211,11 +211,12 @@ async function fetchAlphaaAdminExtractUsers(
   const params: unknown[] = [];
   params.push(filters.roles.flatMap(legacyLabelsForExtractRole));
   const where: string[] = [
+    ALPHAA_REGION_WHERE,
     `LOWER(TRIM(COALESCE(u.role, 'handler'))) = ANY($${params.length}::text[])`,
   ];
 
   if (filters.status === "active") {
-    where.push(`COALESCE(u.is_active, TRUE) IS TRUE`);
+    where.push(`u.is_active IS TRUE`);
   } else if (filters.status === "archived" || filters.status === "suspended") {
     where.push(`u.is_active IS FALSE`);
   }
@@ -237,10 +238,10 @@ async function fetchAlphaaAdminExtractUsers(
     `SELECT
         u.id,
         TRIM(COALESCE(u.country, '')) AS country,
-        COALESCE(NULLIF(TRIM(u.username), ''), 'Handler ' || u.id::text) AS handler_name,
+        COALESCE(NULLIF(TRIM(u.full_name), ''), 'Handler ' || u.id::text) AS handler_name,
         COALESCE(u.role, 'handler') AS handler_role,
         u.email
-       FROM users u
+       FROM temp_users u
       WHERE ${where.join("\n        AND ")}
       ORDER BY country ASC NULLS LAST,
                handler_name ASC,
@@ -268,7 +269,7 @@ async function fetchAlphaaAdminExtractUsers(
   }));
 }
 
-/** ALPHAA accounts from legacy social_media_accounts (+ users). */
+/** Main (ALPHAA) accounts: temp_social_media_accounts of temp_users in region 'Alphaa'. */
 export async function fetchAlphaaAdminExtract(
   filters: AdminExtractFilters
 ): Promise<AdminExtractRow[]> {
@@ -277,7 +278,7 @@ export async function fetchAlphaaAdminExtract(
   }
 
   const params: unknown[] = [];
-  const where: string[] = [];
+  const where: string[] = [ALPHAA_REGION_WHERE];
   params.push(EXTRACT_ROLES.flatMap(legacyLabelsForExtractRole));
   where.push(
     `LOWER(TRIM(COALESCE(u.role, 'handler'))) = ANY($${params.length}::text[])`
@@ -286,7 +287,7 @@ export async function fetchAlphaaAdminExtract(
   if (filters.spare === "exclude") {
     where.push(ALPHAA_LEGACY_ACCOUNT_WHERE);
   } else if (filters.spare === "only") {
-    where.push(`sma.spare_acc IS TRUE`);
+    where.push(`sma.is_spare IS TRUE`);
   }
 
   if (filters.countries.length > 0) {
@@ -308,27 +309,18 @@ export async function fetchAlphaaAdminExtract(
 
   if (filters.scopes.length === 1) {
     if (filters.scopes[0] === "umbrella") {
-      where.push(`sma.umberlla IS TRUE`);
+      where.push(`sma.account_scope = 'umbrella'`);
     } else {
-      where.push(`COALESCE(sma.umberlla, FALSE) IS FALSE`);
+      where.push(`sma.account_scope = 'personal'`);
     }
   }
 
   if (filters.status === "active") {
-    where.push(`
-      (
-        sma.acc_state IS NULL
-        OR LOWER(TRIM(sma.acc_state)) IN ('', 'active', 'open', 'live')
-      )
-    `);
+    where.push(`sma.status = 'active'`);
   } else if (filters.status === "archived") {
-    where.push(`LOWER(TRIM(COALESCE(sma.acc_state, ''))) = 'archived'`);
+    where.push(`sma.status = 'archived'`);
   } else if (filters.status === "suspended") {
-    where.push(`
-      LOWER(TRIM(COALESCE(sma.acc_state, ''))) IN (
-        'suspended', 'inactive', 'closed'
-      )
-    `);
+    where.push(`sma.status = 'suspended'`);
   }
 
   const whereSql = where.length > 0 ? `WHERE ${where.join("\n        AND ")}` : "";
@@ -336,24 +328,23 @@ export async function fetchAlphaaAdminExtract(
   const rows = await query<AlphaaExtractQueryRow>(
     `SELECT
         sma.id,
-        sma.region,
+        u.region,
         ${ALPHAA_LEGACY_COUNTRY} AS country,
         COALESCE(
-          NULLIF(TRIM(u.username), ''),
-          'Handler ' || COALESCE(sma.user_id::text, sma.id::text)
+          NULLIF(TRIM(u.full_name), ''),
+          'Handler ' || sma.user_id::text
         ) AS handler_name,
         COALESCE(u.role, 'handler') AS handler_role,
         sma.platform,
-        sma.personal,
-        sma.umberlla,
-        sma.acc_username AS username,
-        sma.acc_name AS account_name,
-        sma.acc_url AS account_url,
-        sma.direction AS category,
-        sma.acc_state,
-        COALESCE(sma.spare_acc, FALSE) AS is_spare
-       FROM social_media_accounts sma
-       LEFT JOIN users u ON u.id = sma.user_id
+        sma.account_scope,
+        sma.username,
+        sma.account_name,
+        sma.account_url,
+        sma.category,
+        sma.status,
+        sma.is_spare
+       FROM temp_social_media_accounts sma
+       INNER JOIN temp_users u ON u.id = sma.user_id
       ${whereSql}
       ORDER BY country ASC NULLS LAST,
                handler_name ASC,

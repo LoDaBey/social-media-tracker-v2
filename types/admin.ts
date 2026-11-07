@@ -30,7 +30,7 @@ export type AdminEmployeeProjectLabel = "Africa" | "Europe" | MainProjectLabel;
 
 export type AdminEmployeeListRow = {
   id: number;
-  /** temp = Africa/Europe roster; alphaa = legacy users + social_media_accounts. */
+  /** temp = Orbit roster; alphaa = Main project rows (also temp tables, region Alphaa). */
   source: "temp" | "alphaa";
   full_name: string;
   email: string;
@@ -369,7 +369,7 @@ export type AdminKpiTileProps = {
   subtitle?: string;
 };
 
-/** ALPHAA-only extended platforms (legacy social_media_accounts). */
+/** ALPHAA-only extended platforms. */
 export type AlphaaExtraPlatformKey =
   | "threads"
   | "reddit"
@@ -1228,7 +1228,7 @@ export type SheetsExportAccountRow = {
 
 export type AlphaaSheetsExportFlag = boolean | string | null;
 
-/** Row shape from the legacy social_media_accounts table (ALPHAA sheet export). */
+/** Row shape for the ALPHAA sheet export (original ALPHAA column names). */
 export type AlphaaSheetsExportAccountRow = {
   region: string | null;
   country: string | null;

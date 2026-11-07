@@ -114,12 +114,16 @@ async function syncStrategyAccountsToSheetTab(
   return accounts.length;
 }
 
-/** ALPHAA tab — full replace including headers (legacy social_media_accounts format). */
+/** ALPHAA tab — full replace including headers (original ALPHAA sheet format). */
 async function syncAlphaaAccountsToSheetTab(
   target: RegionSheetsTarget,
   accounts: AlphaaSheetsExportAccountRow[],
   credentials: GoogleSheetsCredentials
 ) {
+  // Main accounts are read from temp tables now. Until they are copied over the
+  // list is empty — leave the existing ALPHAA tab untouched instead of clearing it.
+  if (accounts.length === 0) return 0;
+
   const sheets = getSheetsClient(credentials);
   const transformedAccounts = accounts.map(transformAlphaaSheetsExportRow);
   const values = transformedAccounts.map(alphaaSheetsExportValuesFromRow);
@@ -153,7 +157,7 @@ export type SheetsSyncSummary = {
   total: number;
 };
 
-/** Sync Africa/Europe (temp accounts) and ALPHAA (legacy social_media_accounts). */
+/** Sync Africa/Europe and ALPHAA tabs, all from temp accounts. */
 export async function syncAccountsToGoogleSheets(
   africaEuropeAccounts: SheetsExportAccountRow[],
   alphaaAccounts: AlphaaSheetsExportAccountRow[]

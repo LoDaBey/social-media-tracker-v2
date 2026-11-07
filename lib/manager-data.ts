@@ -187,22 +187,17 @@ export async function assertManagerCanViewHolder(
     );
   }
 
-  const row = await queryOne<{
-    country: string | null;
-    projects: string[] | null;
-  }>(
-    `SELECT INITCAP(TRIM(COALESCE(u.country, ''))) AS country,
-            COALESCE(u.projects, ARRAY[]::text[]) AS projects
-       FROM users u
-      WHERE u.id = $1`,
+  // Main (ALPHAA) holder: temp_users in region 'Alphaa'.
+  const row = await queryOne<{ country: string | null }>(
+    `SELECT INITCAP(TRIM(COALESCE(u.country, ''))) AS country
+       FROM temp_users u
+      WHERE u.id = $1
+        AND u.region = 'Alphaa'`,
     [holderId]
   );
   if (!row) return false;
   return spareItemMatchesCountries(
-    {
-      country: row.country,
-      projects: Array.isArray(row.projects) ? row.projects : [],
-    },
+    { country: row.country, projects: row.country ? [row.country] : [] },
     managerCountries
   );
 }
@@ -237,23 +232,18 @@ export async function assertManagerCanSpareAccount(
     );
   }
 
-  const row = await queryOne<{
-    country: string | null;
-    projects: string[] | null;
-  }>(
-    `SELECT INITCAP(TRIM(COALESCE(sma.country, u.country, ''))) AS country,
-            COALESCE(u.projects, ARRAY[]::text[]) AS projects
-       FROM social_media_accounts sma
-       INNER JOIN users u ON u.id = sma.user_id
-      WHERE sma.id = $1`,
+  // Main (ALPHAA) account: owned by a temp_users holder in region 'Alphaa'.
+  const row = await queryOne<{ country: string | null }>(
+    `SELECT INITCAP(TRIM(COALESCE(u.country, ''))) AS country
+       FROM temp_social_media_accounts sma
+       INNER JOIN temp_users u ON u.id = sma.user_id
+      WHERE sma.id = $1
+        AND u.region = 'Alphaa'`,
     [accountId]
   );
   if (!row) return false;
   return spareItemMatchesCountries(
-    {
-      country: row.country,
-      projects: Array.isArray(row.projects) ? row.projects : [],
-    },
+    { country: row.country, projects: row.country ? [row.country] : [] },
     managerCountries
   );
 }

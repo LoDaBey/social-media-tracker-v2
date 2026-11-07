@@ -1,8 +1,3 @@
-import { fetchAlphaaAccountsByUserIds } from "@/lib/admin-alphaa-employees-data";
-import {
-  mapAlphaaStatus,
-  normalizeAlphaaPlatformKey,
-} from "@/lib/admin-extract-alphaa-data";
 import { query } from "@/lib/db";
 import { overviewDisplayCountry } from "@/lib/overview-country-display";
 import type { Platform } from "@/lib/platform-config";
@@ -36,18 +31,15 @@ type TempSpareQueryRow = Omit<AdminSpareAccountListItem, "source" | "projects">;
 
 type AlphaaSpareQueryRow = {
   id: number;
-  platform: string | null;
-  personal: boolean | null;
-  umberlla: boolean | null;
+  platform: string;
   username: string | null;
   account_name: string | null;
   account_url: string | null;
   category: string | null;
-  acc_state: string | null;
+  status: AdminSpareAccountListItem["status"];
   handler_id: number;
   handler_name: string;
   country: string | null;
-  projects: string[] | null;
 };
 
 type TempSpareHolderRow = {
@@ -61,23 +53,7 @@ type AlphaaSpareHolderRow = {
   id: number;
   full_name: string;
   country: string | null;
-  projects: string[] | null;
 };
-
-function mapProjectList(raw: string[] | null | undefined): string[] {
-  if (!Array.isArray(raw)) return [];
-  const seen = new Set<string>();
-  const projects: string[] = [];
-  for (const value of raw) {
-    const trimmed = value?.trim();
-    if (!trimmed) continue;
-    const key = trimmed.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    projects.push(trimmed);
-  }
-  return projects;
-}
 
 function mapAccount(row: AccountQueryRow): AdminSocialAccountListItem {
   return {
@@ -130,12 +106,10 @@ export async function fetchAdminAccountsByUserIds(
 
 export async function fetchAdminHolderAccounts(
   userId: number,
+  // Main (ALPHAA) holders live in temp tables too, so both sources read the same table.
   source: AdminEmployeeSource
 ): Promise<AdminSocialAccountListItem[]> {
-  if (source === "alphaa") {
-    const byUser = await fetchAlphaaAccountsByUserIds([userId]);
-    return byUser.get(userId) ?? [];
-  }
+  void source;
   return fetchAdminEmployeeAccounts(userId);
 }
 
@@ -174,23 +148,21 @@ async function fetchAlphaaSpareAccounts(): Promise<AdminSpareAccountListItem[]> 
     `SELECT
         sma.id,
         sma.platform,
-        sma.personal,
-        sma.umberlla,
-        sma.acc_username AS username,
-        sma.acc_name AS account_name,
-        sma.acc_url AS account_url,
-        sma.direction AS category,
-        sma.acc_state,
+        sma.username,
+        sma.account_name,
+        sma.account_url,
+        sma.category,
+        sma.status,
         u.id AS handler_id,
         COALESCE(
-          NULLIF(TRIM(u.username), ''),
+          NULLIF(TRIM(u.full_name), ''),
           'Handler ' || u.id::text
         ) AS handler_name,
-        INITCAP(TRIM(COALESCE(sma.country, u.country, ''))) AS country,
-        COALESCE(u.projects, ARRAY[]::text[]) AS projects
-       FROM social_media_accounts sma
-       INNER JOIN users u ON u.id = sma.user_id
-      WHERE sma.spare_acc IS TRUE
+        INITCAP(TRIM(COALESCE(u.country, ''))) AS country
+       FROM temp_social_media_accounts sma
+       INNER JOIN temp_users u ON u.id = sma.user_id
+      WHERE u.region = 'Alphaa'
+        AND sma.is_spare IS TRUE
       ORDER BY country ASC, handler_name ASC, sma.platform ASC, sma.id ASC`
   );
 
@@ -199,17 +171,17 @@ async function fetchAlphaaSpareAccounts(): Promise<AdminSpareAccountListItem[]> 
     return {
       id: row.id,
       source: "alphaa" as const,
-      platform: normalizeAlphaaPlatformKey(row.platform, row.umberlla),
+      platform: row.platform,
       username: row.username,
       account_name: row.account_name?.trim() || row.username?.trim() || "—",
       account_url: row.account_url,
       category: row.category,
-      status: mapAlphaaStatus(row.acc_state),
+      status: row.status,
       handler_id: row.handler_id,
       handler_name: row.handler_name,
       country: country ? overviewDisplayCountry(country, "Alphaa") : null,
       region: "Alphaa",
-      projects: mapProjectList(row.projects),
+      projects: country ? [country] : [],
     };
   });
 }
@@ -260,17 +232,17 @@ export async function fetchAdminSpareMarkHolders(): Promise<
       `SELECT
           u.id,
           COALESCE(
-            NULLIF(TRIM(u.username), ''),
+            NULLIF(TRIM(u.full_name), ''),
             'Handler ' || u.id::text
           ) AS full_name,
-          INITCAP(TRIM(COALESCE(u.country, ''))) AS country,
-          COALESCE(u.projects, ARRAY[]::text[]) AS projects
-         FROM users u
-        WHERE EXISTS (
-          SELECT 1
-            FROM social_media_accounts sma
-           WHERE sma.user_id = u.id
-        )
+          INITCAP(TRIM(COALESCE(u.country, ''))) AS country
+         FROM temp_users u
+        WHERE u.region = 'Alphaa'
+          AND EXISTS (
+            SELECT 1
+              FROM temp_social_media_accounts sma
+             WHERE sma.user_id = u.id
+          )
         ORDER BY full_name ASC, u.id ASC`
     ),
   ]);
@@ -291,7 +263,7 @@ export async function fetchAdminSpareMarkHolders(): Promise<
       full_name: row.full_name,
       country: country ? overviewDisplayCountry(country, "Alphaa") : null,
       region: "Alphaa",
-      projects: mapProjectList(row.projects),
+      projects: country ? [country] : [],
     };
   });
 

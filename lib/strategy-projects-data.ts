@@ -551,17 +551,14 @@ export async function applyStrategyProjectRegionToAccounts(
   if (!region) return;
   const accountRegion = strategyAccountRegionValue(region);
   try {
+    // Main (ALPHAA) holders' project is their country.
     await query(
-      `UPDATE social_media_accounts sma
-       SET region = $2,
-           updated_at = CURRENT_TIMESTAMP
-       FROM users u
+      `UPDATE temp_social_media_accounts sma
+       SET geo_region = $2
+       FROM temp_users u
        WHERE sma.user_id = u.id
-         AND EXISTS (
-           SELECT 1
-           FROM unnest(COALESCE(u.projects, ARRAY[]::text[])) AS project_name
-           WHERE LOWER(TRIM(project_name)) = LOWER(TRIM($1))
-         )`,
+         AND u.region = 'Alphaa'
+         AND LOWER(TRIM(COALESCE(u.country, ''))) = LOWER(TRIM($1))`,
       [name, accountRegion]
     );
   } catch (error) {
@@ -576,13 +573,9 @@ export async function fetchStrategyProjectRegionForAlphaaUser(
     const row = await queryOne<{ region: string | null }>(
       `SELECT sp.region
        FROM strategy_projects sp
-       JOIN users u ON u.id = $1
+       JOIN temp_users u ON u.id = $1 AND u.region = 'Alphaa'
        WHERE TRIM(COALESCE(sp.region, '')) <> ''
-         AND EXISTS (
-           SELECT 1
-           FROM unnest(COALESCE(u.projects, ARRAY[]::text[])) AS project_name
-           WHERE LOWER(TRIM(project_name)) = LOWER(TRIM(sp.name))
-         )
+         AND LOWER(TRIM(COALESCE(u.country, ''))) = LOWER(TRIM(sp.name))
        ORDER BY sp.updated_at DESC
        LIMIT 1`,
       [userId]
@@ -603,9 +596,9 @@ export async function fetchStrategyProjectRegionOptions(): Promise<string[]> {
        WHERE TRIM(COALESCE(region, '')) <> ''`
     );
     const accountRows = await query<{ region: string }>(
-      `SELECT DISTINCT region
-       FROM social_media_accounts
-       WHERE TRIM(COALESCE(region, '')) <> ''`
+      `SELECT DISTINCT geo_region AS region
+       FROM temp_social_media_accounts
+       WHERE TRIM(COALESCE(geo_region, '')) <> ''`
     );
     stored = [...projectRows, ...accountRows].map((row) => row.region);
   } catch (error) {

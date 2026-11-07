@@ -11,6 +11,7 @@ import {
   ALPHAA_PLATFORM_IS_INSTAGRAM,
   ALPHAA_PLATFORM_IS_TIKTOK,
   ALPHAA_PLATFORM_IS_X,
+  ALPHAA_REGION_WHERE,
   alphaaExtraPlatformCountColumns,
 } from "@/lib/alphaa-platform-sql";
 import type { AlphaaExtraPlatformKey } from "@/types/admin";
@@ -55,9 +56,8 @@ function existingCountryKey(map: Map<string, unknown>, country: string): string 
 }
 
 /**
- * ALPHAA tab only — legacy users + social_media_accounts (TableCreations.sql).
- * Never reads temp_users or temp_social_media_accounts.
- * Spare accounts (spare_acc = true) and inactive acc_state rows are excluded.
+ * ALPHAA tab only — temp_users (region 'Alphaa') + temp_social_media_accounts.
+ * Spare accounts (is_spare) and non-active accounts are excluded.
  * TOTAL uses unique account ids so it matches extract.
  */
 export async function fetchAlphaaCountryActuals(
@@ -70,8 +70,8 @@ export async function fetchAlphaaCountryActuals(
       `SELECT
          ${ALPHAA_LEGACY_COUNTRY} AS country,
          COUNT(DISTINCT u.id)::text AS employees
-       FROM users u
-       INNER JOIN social_media_accounts sma ON sma.user_id = u.id
+       FROM temp_users u
+       INNER JOIN temp_social_media_accounts sma ON sma.user_id = u.id
        WHERE ${ALPHAA_COVERAGE_ACCOUNT_WHERE}
          AND ${countrySqlClause(1)}
        GROUP BY ${ALPHAA_LEGACY_COUNTRY}`,
@@ -101,7 +101,8 @@ export async function fetchAlphaaCountryActuals(
          COUNT(sma.id) FILTER (WHERE ${ALPHAA_PLATFORM_IS_INSTAGRAM})::text AS instagram,
          COUNT(sma.id) FILTER (WHERE ${ALPHAA_PLATFORM_IS_TIKTOK})::text AS tiktok,
          ${alphaaExtraPlatformCountColumns()}
-       FROM social_media_accounts sma
+       FROM temp_social_media_accounts sma
+       INNER JOIN temp_users u ON u.id = sma.user_id
        WHERE ${ALPHAA_COVERAGE_ACCOUNT_WHERE}
          AND ${countrySqlClause(1)}
        GROUP BY ${ALPHAA_LEGACY_COUNTRY}`,
@@ -171,22 +172,24 @@ export async function fetchAlphaaCountryActuals(
   return actualByCountry;
 }
 
-/** Spare accounts (`spare_acc`) on the legacy ALPHAA table. */
+/** Spare Main (ALPHAA) accounts (`is_spare`). */
 export async function fetchAlphaaSpareCount(
   countries: string[]
 ): Promise<number> {
   if (countries.length === 0) return 0;
   const rows = await query<{ spare: string }>(
     `SELECT COUNT(*)::text AS spare
-       FROM social_media_accounts sma
-      WHERE sma.spare_acc IS TRUE
+       FROM temp_social_media_accounts sma
+       INNER JOIN temp_users u ON u.id = sma.user_id
+      WHERE ${ALPHAA_REGION_WHERE}
+        AND sma.is_spare IS TRUE
         AND ${countrySqlClause(1)}`,
     [countries]
   );
   return Number(rows[0]?.spare ?? 0);
 }
 
-/** One row per legacy user with accounts in the ALPHAA country (users + social_media_accounts). */
+/** One row per Main (ALPHAA) holder with accounts in the country. */
 export async function fetchAlphaaHolderActuals(
   countries: string[]
 ): Promise<Map<string, AlphaaHolderActuals[]>> {
@@ -209,7 +212,7 @@ export async function fetchAlphaaHolderActuals(
     `SELECT
        u.id,
        COALESCE(
-         NULLIF(TRIM(u.username), ''),
+         NULLIF(TRIM(u.full_name), ''),
          'Handler ' || u.id::text
        ) AS full_name,
        COALESCE(NULLIF(TRIM(u.email), ''), '') AS email,
@@ -225,11 +228,11 @@ export async function fetchAlphaaHolderActuals(
        COUNT(sma.id) FILTER (WHERE ${ALPHAA_PLATFORM_IS_INSTAGRAM})::text AS instagram,
        COUNT(sma.id) FILTER (WHERE ${ALPHAA_PLATFORM_IS_TIKTOK})::text AS tiktok,
        ${alphaaExtraPlatformCountColumns()}
-     FROM users u
-     INNER JOIN social_media_accounts sma ON sma.user_id = u.id
+     FROM temp_users u
+     INNER JOIN temp_social_media_accounts sma ON sma.user_id = u.id
      WHERE ${ALPHAA_COVERAGE_ACCOUNT_WHERE}
        AND ${countrySqlClause(1)}
-     GROUP BY u.id, u.username, u.email, ${ALPHAA_LEGACY_COUNTRY}
+     GROUP BY u.id, u.full_name, u.email, ${ALPHAA_LEGACY_COUNTRY}
      ORDER BY full_name ASC, u.id ASC`,
     [countries]
   );
