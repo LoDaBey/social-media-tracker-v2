@@ -1,5 +1,10 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import type { EmployeesTableProps } from "@/types/admin";
 import { EmployeeTableRow } from "@/components/admin/EmployeeTableRow";
+
+const PAGE_SIZE = 50;
 
 export function EmployeesTable({
   rows,
@@ -7,6 +12,27 @@ export function EmployeesTable({
   toolbar,
   canManagePermissions = false,
 }: EmployeesTableProps) {
+  // Draw 50 rows first, then 50 more each time the bottom comes into view.
+  // The page keys this table by its filters, so new filters start from the top.
+  const [visible, setVisible] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const hasMore = visible < rows.length;
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !hasMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setVisible((count) => count + PAGE_SIZE);
+        }
+      },
+      { rootMargin: "400px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, visible]);
+
   return (
     <div className="rounded-[16px] border border-[var(--color-hairline)] bg-[var(--color-surface)]">
       {toolbar}
@@ -54,7 +80,7 @@ export function EmployeesTable({
                 </td>
               </tr>
             ) : (
-              rows.map((row) => (
+              rows.slice(0, visible).map((row) => (
                 <EmployeeTableRow
                   key={`${row.source}-${row.id}`}
                   row={row}
@@ -65,6 +91,15 @@ export function EmployeesTable({
             )}
           </tbody>
         </table>
+        {hasMore ? (
+          <div
+            ref={sentinelRef}
+            className="px-4 py-4 text-center text-[13px] text-[var(--color-muted)]"
+            aria-live="polite"
+          >
+            Showing {visible} of {rows.length}…
+          </div>
+        ) : null}
       </div>
     </div>
   );

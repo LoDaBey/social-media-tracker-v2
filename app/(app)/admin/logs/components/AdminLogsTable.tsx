@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { loadAdminLogsPage } from "@/actions/admin-logs";
 import { formatCairoDateTime } from "@/lib/cairo-date";
 import type { AdminLogsTableProps, OrbitActionLogRow } from "@/types/logs";
 
@@ -25,10 +26,62 @@ function hasDetails(row: OrbitActionLogRow) {
   return Boolean(row.details && Object.keys(row.details).length > 0);
 }
 
-export function AdminLogsTable({ rows }: AdminLogsTableProps) {
+export function AdminLogsTable({
+  rows: firstRows,
+  nextCursor: firstCursor,
+  filters,
+}: AdminLogsTableProps) {
   const [openId, setOpenId] = useState<number | null>(null);
+  // Newest 50 come with the page; older ones load as the bottom scrolls into view.
+  const [rows, setRows] = useState(firstRows);
+  const [cursor, setCursor] = useState(firstCursor);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-  if (rows.length === 0) {
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !cursor || loading || loadError) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        observer.disconnect();
+        setLoading(true);
+        loadAdminLogsPage(filters, cursor)
+          .then((page) => {
+            setRows((prev) => [...prev, ...page.rows]);
+            setCursor(page.nextCursor);
+          })
+          .catch(() => setLoadError(true))
+          .finally(() => setLoading(false));
+      },
+      { rootMargin: "400px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [cursor, filters, loading, loadError]);
+
+  const more = cursor ? (
+    <div
+      ref={sentinelRef}
+      className="px-4 py-4 text-center text-[13px] text-[var(--color-muted)]"
+      aria-live="polite"
+    >
+      {loadError ? (
+        <button
+          type="button"
+          onClick={() => setLoadError(false)}
+          className="cursor-pointer font-semibold text-[var(--color-emerald)] underline outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+        >
+          Could not load more. Try again
+        </button>
+      ) : (
+        "Loading older activity…"
+      )}
+    </div>
+  ) : null;
+
+  if (rows.length === 0 && !cursor) {
     return (
       <p className="py-12 text-center text-[14px] text-[var(--color-muted)]">
         No Orbit actions recorded yet.
@@ -107,6 +160,7 @@ export function AdminLogsTable({ rows }: AdminLogsTableProps) {
           })}
         </tbody>
       </table>
+      {more}
     </div>
   );
 }

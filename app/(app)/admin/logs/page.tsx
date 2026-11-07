@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { requireAdminPageAccess } from "@/lib/admin-access";
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
-import { fetchAdminActionLogs, parseOrbitLogFilters } from "@/lib/admin-logs-data";
-import { baseCountryFromDisplay } from "@/lib/overview-country-display";
+import { parseOrbitLogFilters } from "@/lib/admin-logs-data";
+import { loadAdminLogsPage } from "@/actions/admin-logs";
 import { adminViewLogs } from "@/lib/admin-view";
 import { AdminLogsFilters } from "./components/AdminLogsFilters";
 import { AdminLogsTable } from "./components/AdminLogsTable";
@@ -30,17 +30,8 @@ export default async function AdminLogsPage({
     action: firstParam(params.action),
     resource: firstParam(params.resource),
   });
-  let rows = await fetchAdminActionLogs(filters);
-
-  if (viewer.role === "op" && viewer.scope) {
-    const allowed = new Set(viewer.scope.countries);
-    rows = rows.filter((row) => {
-      const countryRaw = row.details?.country;
-      if (typeof countryRaw !== "string" || !countryRaw.trim()) return false;
-      const base = baseCountryFromDisplay(countryRaw);
-      return allowed.has(base) || allowed.has(countryRaw.trim());
-    });
-  }
+  // First 50 only; the table asks for more as you scroll.
+  const firstPage = await loadAdminLogsPage(filters, null);
 
   return (
     <AdminWorkspace view={adminViewLogs()}>
@@ -55,7 +46,12 @@ export default async function AdminLogsPage({
           action={filters.action ?? "all"}
           resource={filters.resource ?? "all"}
         />
-        <AdminLogsTable rows={rows} />
+        <AdminLogsTable
+          key={`${filters.q}|${filters.action}|${filters.resource}`}
+          rows={firstPage.rows}
+          nextCursor={firstPage.nextCursor}
+          filters={filters}
+        />
       </div>
     </AdminWorkspace>
   );

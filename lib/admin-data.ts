@@ -5,7 +5,10 @@ import {
   getTodayCairoDate,
   normalizePgDateColumn,
 } from "@/lib/cairo-date";
-import { commandPalettePeopleFromRows } from "@/lib/admin-command-palette";
+import {
+  commandPalettePeopleFromRows,
+  type CommandPaletteAccountRow,
+} from "@/lib/admin-command-palette";
 import type {
   AdminEmployeeEditorBundle,
   AdminEmployeeListFilters,
@@ -20,7 +23,6 @@ import {
   fetchAlphaaEmployeesList,
 } from "@/lib/admin-alphaa-employees-data";
 import { adminEmployeeProjectLabel } from "@/lib/admin-view";
-import { fetchAdminAccountsByUserIds } from "@/lib/admin-accounts-data";
 import {
   TEMP_MANAGER_NAME_SQL,
   TEMP_TEAM_LEAD_NAME_SQL,
@@ -221,8 +223,17 @@ export async function fetchAdminEmployeesList(
       ) AS op_countries,
       u.current_level,
       (u.target_x_count + u.target_facebook_personal_count + u.target_facebook_umbrella_count
-        + u.target_instagram_count + u.target_tiktok_count)::int AS target_accounts_sum
+        + u.target_instagram_count + u.target_tiktok_count)::int AS target_accounts_sum,
+      COALESCE(acc.account_count, 0)::int AS account_count,
+      COALESCE(acc.plan_account_count, 0)::int AS plan_account_count
     FROM temp_users u
+    LEFT JOIN (
+      SELECT user_id,
+             count(*) AS account_count,
+             count(*) FILTER (WHERE is_spare = FALSE) AS plan_account_count
+        FROM temp_social_media_accounts
+       GROUP BY user_id
+    ) acc ON acc.user_id = u.id AND u.role = 'employee'
     LEFT JOIN temp_users tl ON tl.id = u.team_lead_id
     LEFT JOIN temp_users mgr ON mgr.id = u.manager_id
     LEFT JOIN temp_users tlm ON tlm.id = tl.manager_id
@@ -256,14 +267,11 @@ export async function fetchAdminEmployeesList(
       op_countries: string[] | null;
       current_level: number;
       target_accounts_sum: number;
+      account_count: number;
+      plan_account_count: number;
     }>(sql, params),
     fetchAlphaaEmployeesList(filters),
   ]);
-
-  const employeeIds = rows
-    .filter((r) => r.role === "employee")
-    .map((r) => r.id);
-  const accountsByUser = await fetchAdminAccountsByUserIds(employeeIds);
 
   const tempRows = rows.map((r) => {
     const country = r.country?.trim() || null;
@@ -312,7 +320,8 @@ export async function fetchAdminEmployeesList(
       countries,
       current_level: r.current_level,
       target_accounts_sum: r.target_accounts_sum,
-      accounts: r.role === "employee" ? (accountsByUser.get(r.id) ?? []) : [],
+      account_count: r.account_count,
+      plan_account_count: r.plan_account_count,
     };
   });
 
@@ -519,7 +528,21 @@ export async function fetchAdminEmployeeEditorBundle(
 export async function fetchAdminCommandPalettePeople(): Promise<
   CommandPalettePerson[]
 > {
-  const rows = await fetchAdminEmployeesList({});
-  return commandPalettePeopleFromRows(rows);
+  const [rows, accounts] = await Promise.all([
+    fetchAdminEmployeesList({}),
+    // Only the fields search matches on.
+    query<CommandPaletteAccountRow & { user_id: number }>(
+      `SELECT user_id, account_name, username, account_handle, account_url, platform
+         FROM temp_social_media_accounts
+        ORDER BY platform ASC, id ASC`
+    ),
+  ]);
+  const accountsByUser = new Map<number, CommandPaletteAccountRow[]>();
+  for (const account of accounts) {
+    const list = accountsByUser.get(account.user_id) ?? [];
+    list.push(account);
+    accountsByUser.set(account.user_id, list);
+  }
+  return commandPalettePeopleFromRows(rows, accountsByUser);
 }
 

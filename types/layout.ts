@@ -106,12 +106,10 @@ export type CommandPaletteGroup = {
   items: CommandPaletteItem[];
 };
 
-export type HeaderSearchProps = {
-  people: CommandPalettePerson[];
-};
-
 export type HeaderSearchPaletteProps = {
   people: CommandPalettePerson[];
+  /** True until the first list has loaded. */
+  loading?: boolean;
   onClose: () => void;
 };
 

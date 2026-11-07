@@ -65,8 +65,16 @@ export type OrbitLogListFilters = {
   resource?: OrbitLogResource | "all";
 };
 
-export type AdminLogsTableProps = {
+export type OrbitLogCursor = { createdAt: string; id: number };
+
+export type AdminLogsPage = {
   rows: OrbitActionLogRow[];
+  /** Where the next batch starts; null when there is nothing older. */
+  nextCursor: OrbitLogCursor | null;
+};
+
+export type AdminLogsTableProps = AdminLogsPage & {
+  filters: OrbitLogListFilters;
 };
 
 export type AdminLogsFiltersProps = {

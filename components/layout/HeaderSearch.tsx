@@ -1,13 +1,32 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { loadCommandPalettePeople } from "@/actions/search";
 import { AnimatePresence, motion } from "framer-motion";
 import { Search } from "lucide-react";
 import { HeaderSearchPalette } from "@/components/layout/HeaderSearchPalette";
-import type { HeaderSearchProps } from "@/types/layout";
+import type { CommandPalettePerson } from "@/types/layout";
 
-export function HeaderSearch({ people }: HeaderSearchProps) {
+export function HeaderSearch() {
   const [open, setOpen] = useState(false);
+  // Loaded each time search opens; the last list shows meanwhile.
+  const [people, setPeople] = useState<CommandPalettePerson[] | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    loadCommandPalettePeople().then(
+      (list) => {
+        if (!cancelled) setPeople(list);
+      },
+      () => {
+        if (!cancelled) setPeople((prev) => prev ?? []);
+      }
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -65,7 +84,8 @@ export function HeaderSearch({ people }: HeaderSearchProps) {
       <AnimatePresence>
         {open ? (
           <HeaderSearchPalette
-            people={people}
+            people={people ?? []}
+            loading={people === null}
             onClose={() => setOpen(false)}
           />
         ) : null}

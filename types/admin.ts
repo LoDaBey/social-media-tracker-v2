@@ -52,7 +52,10 @@ export type AdminEmployeeListRow = {
   countries: string[];
   current_level: number;
   target_accounts_sum: number;
-  accounts: AdminSocialAccountListItem[];
+  /** All accounts (incl. spare). Accounts themselves load when the row opens. */
+  account_count: number;
+  /** Non-spare accounts. */
+  plan_account_count: number;
 };
 
 export type EmployeeCreateProjectOption = {
