@@ -2,8 +2,12 @@
  * Edits for Main (ALPHAA) holders and accounts.
  * Main holders are temp_users with region = 'Alphaa'; their accounts are in
  * temp_social_media_accounts. Nothing here touches the old Alpha tables.
+ * Person edits (profile / active / delete) stay limited to region 'Alphaa'.
+ * Single-account edits also accept people who are additionally Main handlers
+ * (main_country set), so their Main accounts can be managed from Main screens.
  */
 import { pool, queryOne } from "@/lib/db";
+import { ALPHAA_REGION_WHERE } from "@/lib/alphaa-platform-sql";
 import { mapAlphaaRole } from "@/lib/admin-alphaa-roles";
 import { uniqueAccountUrlError } from "@/lib/social-account-validation";
 import { baseCountryFromDisplay } from "@/lib/overview-country-display";
@@ -175,7 +179,7 @@ export async function updateAlphaaSocialAccountRow(
        FROM temp_social_media_accounts sma
        INNER JOIN temp_users u ON u.id = sma.user_id
       WHERE sma.id = $1
-        AND u.region = 'Alphaa'`,
+        AND ${ALPHAA_REGION_WHERE}`,
     [accountId]
   );
   if (!existing) return { error: "Account not found." };
@@ -232,7 +236,7 @@ export async function deleteAlphaaSocialAccountRow(
         USING temp_users u
        WHERE u.id = sma.user_id
          AND sma.id = $1
-         AND u.region = 'Alphaa'`,
+         AND ${ALPHAA_REGION_WHERE}`,
       [accountId]
     );
     if (!result.rowCount) return { error: "Account not found." };
@@ -253,7 +257,7 @@ export async function setAlphaaSocialAccountSpareRow(
          FROM temp_users u
         WHERE u.id = sma.user_id
           AND sma.id = $1
-          AND u.region = 'Alphaa'`,
+          AND ${ALPHAA_REGION_WHERE}`,
       [accountId, isSpare]
     );
     if (!result.rowCount) return { error: "Account not found." };

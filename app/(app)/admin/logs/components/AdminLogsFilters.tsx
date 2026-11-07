@@ -1,8 +1,7 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useTransition } from "react";
 import { Search } from "lucide-react";
+import { useInstantSearchParams } from "@/hooks/useInstantSearchParams";
 import {
   ORBIT_LOG_ACTIONS,
   ORBIT_LOG_RESOURCES,
@@ -43,21 +42,23 @@ const RESOURCE_LABELS: Record<(typeof ORBIT_LOG_RESOURCES)[number] | "all", stri
 const selectClass =
   "h-10 cursor-pointer rounded-lg outline-none border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 text-[14px] font-medium text-[var(--color-ink)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]";
 
-export function AdminLogsFilters({ q, action, resource }: AdminLogsFiltersProps) {
-  const router = useRouter();
-  const sp = useSearchParams();
-  const [, startTransition] = useTransition();
+export function AdminLogsFilters({
+  q,
+  action: serverAction,
+  resource: serverResource,
+}: AdminLogsFiltersProps) {
+  const { params, update, isPending } = useInstantSearchParams();
+  // Selects show the new choice at once; the page data follows.
+  // While a change is on its way, a missing param means "all".
+  const action = params.get("action") ?? (isPending ? "all" : serverAction);
+  const resource = params.get("resource") ?? (isPending ? "all" : serverResource);
 
   function push(next: Record<string, string | undefined>) {
-    const params = new URLSearchParams(sp.toString());
+    const patch: Record<string, string | null> = {};
     for (const [key, value] of Object.entries(next)) {
-      if (!value || value === "all") params.delete(key);
-      else params.set(key, value);
+      patch[key] = !value || value === "all" ? null : value;
     }
-    const qs = params.toString();
-    startTransition(() => {
-      router.push(qs ? `/admin/logs?${qs}` : "/admin/logs");
-    });
+    update(patch);
   }
 
   return (

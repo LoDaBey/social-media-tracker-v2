@@ -228,6 +228,8 @@ async function fetchTempAdminExtract(
   const where: string[] = [
     `LOWER(TRIM(u.role)) = ANY($${params.length}::text[])`,
     `u.is_active = TRUE`,
+    // Accounts of people who are also Main handlers are listed under Main only.
+    `NULLIF(TRIM(u.main_country), '') IS NULL`,
   ];
 
   appendTempUserRegionFilter(filters, params, where);

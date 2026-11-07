@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useMemo } from "react";
+import { useInstantSearchParams } from "@/hooks/useInstantSearchParams";
 import { EmployeesToolbarSelect } from "@/app/(app)/admin/employees/components/EmployeesToolbarSelect";
 import {
   ALL_SETUP_COUNTRIES,
@@ -28,9 +28,7 @@ const REGION_OPTIONS = [
 ];
 
 export function EmployeesToolbarFilters() {
-  const router = useRouter();
-  const sp = useSearchParams();
-  const [, startTransition] = useTransition();
+  const { params: sp, update: push } = useInstantSearchParams();
   const role = sp.get("role") ?? "";
   const region = employeeListRegionFromSlug(sp.get("region") ?? undefined);
   const countryRaw = sp.get("country") ?? "";
@@ -47,18 +45,6 @@ export function EmployeesToolbarFilters() {
       ].sort((a, b) => a.localeCompare(b)),
     [region]
   );
-
-  function push(next: Record<string, string | undefined>) {
-    const params = new URLSearchParams(sp.toString());
-    for (const [key, value] of Object.entries(next)) {
-      if (!value) params.delete(key);
-      else params.set(key, value);
-    }
-    const query = params.toString();
-    startTransition(() => {
-      router.push(query ? `/admin/employees?${query}` : "/admin/employees");
-    });
-  }
 
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-2">

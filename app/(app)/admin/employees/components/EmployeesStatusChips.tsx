@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { LayoutGroup, motion } from "framer-motion";
-import { useSearchParams } from "next/navigation";
+import { useInstantSearchParams } from "@/hooks/useInstantSearchParams";
 import { parseEmployeeListStatus } from "@/lib/admin-employee-list";
 import type {
   EmployeeListStatusFilter,
@@ -21,7 +21,7 @@ const CHIPS: {
 ];
 
 export function EmployeesStatusChips({ counts }: EmployeesStatusChipsProps) {
-  const sp = useSearchParams();
+  const { params: sp, update } = useInstantSearchParams();
   const current = parseEmployeeListStatus(sp.get("status") ?? undefined);
 
   function hrefFor(status: EmployeeListStatusFilter) {
@@ -47,6 +47,11 @@ export function EmployeesStatusChips({ counts }: EmployeesStatusChipsProps) {
             <Link
               key={chip.status}
               href={hrefFor(chip.status)}
+              onClick={(event) => {
+                // Highlight now; the URL follows in the background.
+                event.preventDefault();
+                update({ status: chip.status === "all" ? null : chip.status });
+              }}
               aria-label={`Show ${chip.label.toLowerCase()} people, ${count}`}
               aria-current={selected ? "true" : undefined}
               className={`relative inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] ${

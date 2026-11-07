@@ -56,14 +56,17 @@ async function resolveViewerRole(
     const row = await queryOne<{ role: string }>(
       `SELECT role
          FROM temp_users
-        WHERE id = $1 AND is_active = TRUE`,
+        WHERE id = $1
+          AND is_active = TRUE
+          AND employment_status <> 'deactivated'`,
       [userId]
     );
-    if (row?.role) return normalizeRoleValue(row.role);
+    // Deactivated or deleted: no admin access, even with an old session role.
+    return row?.role ? normalizeRoleValue(row.role) : undefined;
   } catch {
-    // Fall back to the session role if the DB lookup fails.
+    // Fall back to the session role only if the DB lookup itself fails.
+    return sessionRole ? normalizeRoleValue(sessionRole) : undefined;
   }
-  return sessionRole ? normalizeRoleValue(sessionRole) : undefined;
 }
 
 async function loadPermissions(

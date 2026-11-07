@@ -49,8 +49,42 @@ const setupCountrySchema = z
 async function requireAdminSession(
   action: AdminPermissionAction = "canUpdate"
 ) {
-  const { userId: adminId } = await requireFullAdminActor("employees", action);
-  return { adminId };
+  const { userId: adminId, role: actorRole } = await requireFullAdminActor(
+    "employees",
+    action
+  );
+  return { adminId, actorRole };
+}
+
+const ADMIN_ROLE_ONLY_ERROR =
+  "Only an Admin can give the Admin role or change an Admin's account.";
+
+/**
+ * Only an Admin may create an Admin, promote someone to Admin, or change an
+ * existing Admin. Stops Heads of Department (or anyone with custom employee
+ * permissions) from making themselves or others Admin.
+ */
+function adminRoleChangeBlocked(
+  actorRole: string,
+  targetCurrentRole: string | null | undefined,
+  newRole?: string | null
+): boolean {
+  if (actorRole === "admin") return false;
+  return targetCurrentRole === "admin" || newRole === "admin";
+}
+
+async function currentRoleOf(user_id: number): Promise<string | null> {
+  const row = await queryOne<{ role: string }>(
+    `SELECT role FROM temp_users WHERE id = $1`,
+    [user_id]
+  );
+  return row?.role ?? null;
+}
+
+async function assertMayChangeUser(actorRole: string, user_id: number) {
+  if (adminRoleChangeBlocked(actorRole, await currentRoleOf(user_id))) {
+    throw new Error(ADMIN_ROLE_ONLY_ERROR);
+  }
 }
 
 function revalidateAdminEmployee(userId: number) {
@@ -165,12 +199,15 @@ export async function createEmployee(
 ): Promise<CreateEmployeeResult> {
   let client: PoolClient | undefined;
   try {
-    await requireAdminSession("canCreate");
+    const { actorRole } = await requireAdminSession("canCreate");
     const parsed = createEmployeeSchema.safeParse(payload);
     if (!parsed.success) {
       return { error: publicAdminMutationError(parsed.error) };
     }
     const p = parsed.data;
+    if (adminRoleChangeBlocked(actorRole, null, p.role)) {
+      return { error: ADMIN_ROLE_ONLY_ERROR };
+    }
     const today = getTodayCairoDate();
     const password_hash = await bcrypt.hash(p.password, 10);
     const role: Role = p.role ?? "employee";
@@ -427,9 +464,12 @@ export async function updateEmployeeProfile(
   user_id: number,
   payload: UpdateEmployeeProfilePayload
 ): Promise<void> {
-  await requireAdminSession();
+  const { actorRole } = await requireAdminSession();
   if (!Number.isFinite(user_id)) throw new Error("Invalid user.");
   const p = updateProfileSchema.parse(payload);
+  if (adminRoleChangeBlocked(actorRole, await currentRoleOf(user_id), p.role)) {
+    throw new Error(ADMIN_ROLE_ONLY_ERROR);
+  }
 
   let managerCountries: string[] = [];
   let opCountries: string[] = [];
@@ -570,8 +610,9 @@ export async function setEmployeeActive(
   user_id: number,
   is_active: boolean
 ): Promise<void> {
-  await requireAdminSession();
+  const { actorRole } = await requireAdminSession();
   if (!Number.isFinite(user_id)) throw new Error("Invalid user.");
+  await assertMayChangeUser(actorRole, user_id);
 
   await pool.query(`UPDATE temp_users SET is_active = $2 WHERE id = $1`, [
     user_id,
@@ -590,8 +631,9 @@ export async function setEmployeeEmploymentStatus(
   user_id: number,
   employment_status: "active" | "on_hold" | "deactivated"
 ): Promise<void> {
-  await requireAdminSession();
+  const { actorRole } = await requireAdminSession();
   if (!Number.isFinite(user_id)) throw new Error("Invalid user.");
+  await assertMayChangeUser(actorRole, user_id);
 
   const parsed = z.enum(["active", "on_hold", "deactivated"]).safeParse(employment_status);
   if (!parsed.success) throw new Error("Invalid status.");
@@ -613,8 +655,9 @@ export async function setEmployeeCode(
   user_id: number,
   employee_code: string | null
 ): Promise<void> {
-  await requireAdminSession();
+  const { actorRole } = await requireAdminSession();
   if (!Number.isFinite(user_id)) throw new Error("Invalid user.");
+  await assertMayChangeUser(actorRole, user_id);
 
   const parsed = z
     .union([z.string(), z.null()])
@@ -650,7 +693,7 @@ export async function getAdminEmployeeEditorBundle(
 }
 
 export async function deleteEmployee(user_id: number): Promise<void> {
-  const { adminId } = await requireAdminSession("canDelete");
+  const { adminId, actorRole } = await requireAdminSession("canDelete");
   if (!Number.isFinite(user_id)) throw new Error("Invalid user.");
   if (user_id === adminId) {
     throw new Error("You cannot delete your own account.");
@@ -661,6 +704,9 @@ export async function deleteEmployee(user_id: number): Promise<void> {
     [user_id]
   );
   if (!user) throw new Error("User not found.");
+  if (adminRoleChangeBlocked(actorRole, user.role)) {
+    throw new Error(ADMIN_ROLE_ONLY_ERROR);
+  }
 
   if (user.role === "admin") {
     const remaining = await queryOne<{ c: string }>(

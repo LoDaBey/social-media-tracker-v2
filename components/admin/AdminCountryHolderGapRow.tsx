@@ -6,7 +6,6 @@ import {
   COVERAGE_COUNTRY_CELL,
   COVERAGE_LANGUAGE_CELL,
 } from "@/lib/admin-coverage-table-layout";
-import { holderGapSummary, holderHasCoverageGap } from "@/lib/admin-coverage-gaps";
 import { adminEmployeeHref } from "@/lib/admin-view";
 import type { AdminCountryHolderGapRowProps } from "@/types/admin";
 
@@ -16,14 +15,9 @@ export function AdminCountryHolderGapRow({
   language,
   showAlphaaPlatforms = false,
 }: AdminCountryHolderGapRowProps) {
-  const hasGap = holderHasCoverageGap(holder);
-  const summary = hasGap ? holderGapSummary(holder) : null;
-  const rowBg = hasGap
-    ? "bg-[var(--color-coral)]/12"
-    : "bg-[var(--color-cream-tint)]/50";
-  const stickyBg = hasGap
-    ? "bg-[#FDE8E6]"
-    : "bg-[var(--color-cream-tint)]";
+  // Gaps already show in each platform's count cell, so the row stays neutral.
+  const rowBg = "bg-[var(--color-cream-tint)]/50";
+  const stickyBg = "bg-[var(--color-cream-tint)]";
 
   return (
     <tr className={`border-t border-[var(--color-hairline)] ${rowBg}`}>
@@ -47,11 +41,6 @@ export function AdminCountryHolderGapRow({
           ) : (
             holder.fullName
           )}
-          {summary ? (
-            <p className="mt-1.5 inline-flex max-w-full rounded-md bg-[var(--color-coral)] px-2 py-1 text-[11px] font-extrabold leading-snug text-white shadow-[0_0_0_1px_rgba(180,40,40,.35)]">
-              {summary}
-            </p>
-          ) : null}
         </div>
       </th>
       <td className={`text-[13px] text-[var(--color-muted)] ${COVERAGE_LANGUAGE_CELL}`}>

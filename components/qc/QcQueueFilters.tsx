@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
+import { useInstantSearchParams } from "@/hooks/useInstantSearchParams";
 import {
   PLATFORM_LABELS,
   type Platform,
@@ -25,32 +26,15 @@ const STATUS_CHIPS: { id: QcStatusGroup; label: string }[] = [
   { id: "rejected", label: "Rejected" },
 ];
 
-function buildSearchString(
-  current: URLSearchParams,
-  patch: Record<string, string | null>
-) {
-  const next = new URLSearchParams(current);
-  for (const [key, value] of Object.entries(patch)) {
-    if (value === null || value === "") next.delete(key);
-    else next.set(key, value);
-  }
-  next.delete("selected");
-  const qs = next.toString();
-  return qs;
-}
-
 export function QcQueueFilters() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  const initialQ = searchParams.get("q") ?? "";
-  const activePlatform = (searchParams.get("platform") ?? "all") as PlatformChip["id"];
-  const activeStatus = (searchParams.get("status") ?? "pending") as QcStatusGroup;
+  const { params, update } = useInstantSearchParams();
+  // The search box syncs from the real URL (back / forward), not the instant copy.
+  const initialQ = useSearchParams().get("q") ?? "";
+  const activePlatform = (params.get("platform") ?? "all") as PlatformChip["id"];
+  const activeStatus = (params.get("status") ?? "pending") as QcStatusGroup;
 
   const [lastInitialQ, setLastInitialQ] = useState(initialQ);
   const [draftQ, setDraftQ] = useState(initialQ);
-  const [, startTransition] = useTransition();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   if (lastInitialQ !== initialQ) {
@@ -59,10 +43,8 @@ export function QcQueueFilters() {
   }
 
   function pushPatch(patch: Record<string, string | null>) {
-    const qs = buildSearchString(searchParams, patch);
-    startTransition(() => {
-      router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-    });
+    // Changing a filter closes the open item, as before.
+    update({ ...patch, selected: null });
   }
 
   function onChangeSearch(value: string) {
