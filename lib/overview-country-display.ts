@@ -3,10 +3,23 @@ import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 /** Countries shown twice on Overview between Africa temp + Main legacy. */
 export const DUAL_REGION_COUNTRIES = ["Sudan"] as const;
 
+/** Countries that also appear under Main and Asia (Employees / Extract). */
+export const MAIN_ASIA_COUNTRIES = ["Palestine"] as const;
+
 export type OverviewCountrySource = "Africa" | "Alphaa";
 
 export function isDualRegionCountry(country: string) {
   return (DUAL_REGION_COUNTRIES as readonly string[]).includes(country);
+}
+
+export function isMainAsiaCountry(country: string) {
+  return (MAIN_ASIA_COUNTRIES as readonly string[]).includes(country);
+}
+
+/** True when the country needs a (Main)/(Africa)/(Asia) suffix to disambiguate. */
+export function isAmbiguousEmployeeCountry(country: string) {
+  const base = baseCountryFromDisplay(country);
+  return isDualRegionCountry(base) || isMainAsiaCountry(base);
 }
 
 /** Normalize Alphaa → Main for Overview suffixes. */
@@ -28,8 +41,67 @@ export function overviewDisplayCountry(
   country: string,
   source: OverviewCountrySource
 ): string {
-  if (!isDualRegionCountry(country)) return country;
-  return overviewLabeledCountry(country, source);
+  if (isDualRegionCountry(country)) {
+    return overviewLabeledCountry(country, source);
+  }
+  if (isMainAsiaCountry(country) && source === "Alphaa") {
+    return overviewLabeledCountry(country, MAIN_PROJECT_LABEL);
+  }
+  return country;
+}
+
+/**
+ * Employees table: always show (Africa)/(Main)/(Asia) for countries that exist
+ * under more than one project so managers like Mariam are unambiguous.
+ */
+export function employeeListCountryLabel(
+  country: string,
+  context: { source: "temp" | "alphaa"; region?: string | null }
+): string {
+  const raw = country.trim();
+  if (!raw) return raw;
+  const base = baseCountryFromDisplay(raw);
+  if (base !== raw) return raw;
+  if (!isAmbiguousEmployeeCountry(base)) return base;
+
+  if (context.source === "alphaa") {
+    return overviewLabeledCountry(base, MAIN_PROJECT_LABEL);
+  }
+
+  const region = (context.region ?? "").trim().toLowerCase();
+  if (region === "asia") {
+    return overviewLabeledCountry(base, "Asia");
+  }
+  if (region === "alphaa" || region === "main") {
+    return overviewLabeledCountry(base, MAIN_PROJECT_LABEL);
+  }
+  if (
+    region === "africa" ||
+    region === "europe" ||
+    region === "balkan"
+  ) {
+    if (isDualRegionCountry(base)) {
+      return overviewLabeledCountry(base, "Africa");
+    }
+    if (isMainAsiaCountry(base)) {
+      return overviewLabeledCountry(base, "Asia");
+    }
+  }
+
+  if (isDualRegionCountry(base)) {
+    return overviewLabeledCountry(base, "Africa");
+  }
+  if (isMainAsiaCountry(base)) {
+    return overviewLabeledCountry(base, MAIN_PROJECT_LABEL);
+  }
+  return base;
+}
+
+export function mapEmployeeListCountries(
+  countries: string[],
+  context: { source: "temp" | "alphaa"; region?: string | null }
+): string[] {
+  return countries.map((country) => employeeListCountryLabel(country, context));
 }
 
 /** Strip Overview project suffix so flags and filters match the base country. */

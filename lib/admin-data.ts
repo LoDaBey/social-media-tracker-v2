@@ -26,6 +26,7 @@ import {
   TEMP_TEAM_LEAD_NAME_SQL,
 } from "@/lib/admin-employee-reporting";
 import { fetchManagerOptions } from "@/lib/manager-data";
+import { mapEmployeeListCountries } from "@/lib/overview-country-display";
 import { setupCountriesForRegion } from "@/lib/setup-options";
 import type { TempUser } from "@/types/db";
 
@@ -235,13 +236,18 @@ export async function fetchAdminEmployeesList(
 
   const tempRows = rows.map((r) => {
     const country = r.country?.trim() || null;
+    const region = r.region?.trim() || null;
     const managerCountries = r.manager_countries ?? [];
-    const countries =
+    const rawCountries =
       r.role === "manager" && managerCountries.length > 0
         ? managerCountries
         : country
           ? [country]
           : [];
+    const countries = mapEmployeeListCountries(rawCountries, {
+      source: "temp",
+      region,
+    });
     return {
       id: r.id,
       source: "temp" as const,
@@ -257,8 +263,8 @@ export async function fetchAdminEmployeesList(
       manager_name: r.manager_name,
       op_id: r.op_id,
       op_name: r.op_name,
-      region: r.region?.trim() || null,
-      country,
+      region,
+      country: countries[0] ?? country,
       language: r.language,
       countries,
       current_level: r.current_level,

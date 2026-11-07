@@ -10,7 +10,7 @@ import type { CountryFlagProps } from "@/types/setup";
 type FlagComponent = ComponentType<SVGProps<SVGSVGElement>>;
 
 /** ISO 3166-1 alpha-2 codes for setup countries. */
-const COUNTRY_ISO: Record<(typeof ALL_SETUP_COUNTRIES)[number], string> = {
+const SETUP_COUNTRY_ISO: Record<(typeof ALL_SETUP_COUNTRIES)[number], string> = {
   Angola: "AO",
   Borkina: "BF",
   Cameroon: "CM",
@@ -61,6 +61,16 @@ const COUNTRY_ISO: Record<(typeof ALL_SETUP_COUNTRIES)[number], string> = {
   Georgia: "GE",
 };
 
+/** Legacy Main roster countries that are not in Strategy setup lists. */
+const LEGACY_COUNTRY_ISO: Record<string, string> = {
+  Egypt: "EG",
+};
+
+const COUNTRY_ISO: Record<string, string> = {
+  ...SETUP_COUNTRY_ISO,
+  ...LEGACY_COUNTRY_ISO,
+};
+
 const FLAGS_BY_ISO = Flags as Record<string, FlagComponent | undefined>;
 
 /** Stable flag components, resolved once at module load. */
@@ -71,7 +81,8 @@ for (const [name, iso] of Object.entries(COUNTRY_ISO)) {
 }
 
 export function countryIsoCode(country: string): string | null {
-  return COUNTRY_ISO[country as (typeof ALL_SETUP_COUNTRIES)[number]] ?? null;
+  const base = baseCountryFromDisplay(country);
+  return COUNTRY_ISO[base] ?? null;
 }
 
 export function CountryFlag({ country, title, className }: CountryFlagProps) {

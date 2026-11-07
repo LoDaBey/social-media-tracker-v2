@@ -10,6 +10,8 @@ import {
 import {
   baseCountryFromDisplay,
   isDualRegionCountry,
+  isMainAsiaCountry,
+  MAIN_ASIA_COUNTRIES,
   overviewDisplayCountry,
   overviewLabeledCountry,
 } from "@/lib/overview-country-display";
@@ -34,12 +36,9 @@ export const EXTRACT_ROLES: AdminExtractRoleFilter[] = EXTRACT_ROLE_OPTIONS.map(
   (option) => option.value
 );
 
-/** Countries that appear under both Main and Asia in Data extract. */
-export const EXTRACT_MAIN_ASIA_COUNTRIES = ["Palestine"] as const;
-
-export function isExtractMainAsiaCountry(country: string) {
-  return (EXTRACT_MAIN_ASIA_COUNTRIES as readonly string[]).includes(country);
-}
+/** @deprecated Use MAIN_ASIA_COUNTRIES / isMainAsiaCountry */
+export const EXTRACT_MAIN_ASIA_COUNTRIES = MAIN_ASIA_COUNTRIES;
+export const isExtractMainAsiaCountry = isMainAsiaCountry;
 
 export function emptyAdminExtractFilters(): AdminExtractFilters {
   return {
