@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { adminRoleBadge } from "@/lib/admin-view";
 import { EmployeeCountryCell } from "@/components/admin/EmployeeCountryCell";
+import { EmployeeProjectCell } from "@/components/admin/EmployeeProjectCell";
 import { EmployeeActiveToggle } from "@/components/admin/EmployeeActiveToggle";
 import { EmployeeDeleteButton } from "@/components/admin/EmployeeDeleteButton";
 import { EmployeeViewButton } from "@/components/admin/EmployeeViewButton";
@@ -114,6 +115,9 @@ export function EmployeeTableRow({
           </div>
         </td>
         <td className="px-4 py-3 align-top">
+          <EmployeeProjectCell project={row.project} />
+        </td>
+        <td className="px-4 py-3 align-top">
           <EmployeeCountryCell countries={row.countries} />
         </td>
         <td className="px-4 py-3 text-[14px] text-[var(--color-ink)]">
@@ -177,7 +181,7 @@ export function EmployeeTableRow({
       {canExpand && expanded ? (
         <tr className="border-b border-[var(--color-hairline)] bg-[var(--color-cream-tint)]/70">
           <td
-            colSpan={8}
+            colSpan={9}
             className="px-4 py-4"
             id={panelId}
             onClick={(e) => e.stopPropagation()}

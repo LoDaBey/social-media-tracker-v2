@@ -28,6 +28,7 @@ import {
 import { fetchEmployeeCreateProjectOptions } from "@/lib/employee-create-projects-data";
 import { fetchManagerOptions } from "@/lib/manager-data";
 import { mapEmployeeListCountries } from "@/lib/overview-country-display";
+import { regionDisplayLabel } from "@/lib/project-labels";
 import { setupCountriesForRegion } from "@/lib/setup-options";
 import type { TempUser } from "@/types/db";
 
@@ -185,6 +186,8 @@ export async function fetchAdminEmployeesList(
       u.region,
       u.country,
       u.language,
+      u.op_project_slug,
+      proj.name AS op_project_name,
       COALESCE(
         (
           SELECT ARRAY_AGG(mc.country ORDER BY mc.country)
@@ -193,6 +196,14 @@ export async function fetchAdminEmployeesList(
         ),
         ARRAY[]::varchar[]
       ) AS manager_countries,
+      COALESCE(
+        (
+          SELECT ARRAY_AGG(oc.country ORDER BY oc.country)
+            FROM temp_op_countries oc
+           WHERE oc.user_id = u.id
+        ),
+        ARRAY[]::varchar[]
+      ) AS op_countries,
       u.current_level,
       (u.target_x_count + u.target_facebook_personal_count + u.target_facebook_umbrella_count
         + u.target_instagram_count + u.target_tiktok_count)::int AS target_accounts_sum
@@ -201,6 +212,7 @@ export async function fetchAdminEmployeesList(
     LEFT JOIN temp_users mgr ON mgr.id = u.manager_id
     LEFT JOIN temp_users tlm ON tlm.id = tl.manager_id
     LEFT JOIN temp_users op_u ON op_u.id = u.op_id
+    LEFT JOIN strategy_projects proj ON proj.slug = u.op_project_slug
     WHERE ${where.join(" AND ")}
     ORDER BY u.full_name ASC
   `;
@@ -223,7 +235,10 @@ export async function fetchAdminEmployeesList(
       region: string | null;
       country: string | null;
       language: string | null;
+      op_project_slug: string | null;
+      op_project_name: string | null;
       manager_countries: string[] | null;
+      op_countries: string[] | null;
       current_level: number;
       target_accounts_sum: number;
     }>(sql, params),
@@ -239,16 +254,27 @@ export async function fetchAdminEmployeesList(
     const country = r.country?.trim() || null;
     const region = r.region?.trim() || null;
     const managerCountries = r.manager_countries ?? [];
+    const opCountries = r.op_countries ?? [];
     const rawCountries =
       r.role === "manager" && managerCountries.length > 0
         ? managerCountries
-        : country
-          ? [country]
-          : [];
+        : r.role === "op" && opCountries.length > 0
+          ? opCountries
+          : country
+            ? [country]
+            : [];
     const countries = mapEmployeeListCountries(rawCountries, {
       source: "temp",
       region,
     });
+    const project =
+      r.role === "op"
+        ? r.op_project_name?.trim() ||
+          r.op_project_slug?.trim() ||
+          null
+        : region
+          ? regionDisplayLabel(region)
+          : null;
     return {
       id: r.id,
       source: "temp" as const,
@@ -265,6 +291,7 @@ export async function fetchAdminEmployeesList(
       op_id: r.op_id,
       op_name: r.op_name,
       region,
+      project,
       country: countries[0] ?? country,
       language: r.language,
       countries,
