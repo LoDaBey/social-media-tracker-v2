@@ -54,7 +54,7 @@ export default async function AdminStrategyPage({ searchParams }: StrategyPagePr
         projects={projects}
         activeProject={activeProject}
         regionOptions={regionOptions}
-        canEdit={viewer.canEdit}
+        canEdit={viewer.canEditStrategy}
       />
     </AdminWorkspace>
   );

@@ -3,7 +3,7 @@ export const runtime = "nodejs";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireFullAdminActor } from "@/lib/admin-access";
+import { requireStrategyAdminActor } from "@/lib/admin-access";
 import { publicAdminMutationError } from "@/lib/admin-action-error";
 import { logOrbitAction } from "@/lib/orbit-log";
 import { createStrategySubProject } from "@/lib/strategy-projects-data";
@@ -21,12 +21,12 @@ type RouteContext = {
 
 export async function POST(request: Request, context: RouteContext) {
   try {
-    await requireFullAdminActor();
+    await requireStrategyAdminActor();
   } catch {
     return NextResponse.json(
       {
         ok: false,
-        error: "Unauthorized — admin or Head of Department only.",
+        error: "Unauthorized — admin only.",
       } satisfies StrategyCreateSubProjectResult,
       { status: 401 }
     );

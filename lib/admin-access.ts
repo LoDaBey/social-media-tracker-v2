@@ -4,6 +4,7 @@ import { fetchOpAccessScope } from "@/lib/op-scope";
 import {
   isAdminWorkspaceRole,
   isFullAdminRole,
+  isStrategyMutatorRole,
   normalizeRoleValue,
 } from "@/lib/role-hierarchy";
 import type { OpAccessScope } from "@/types/admin";
@@ -14,13 +15,20 @@ export type AdminViewer = {
   role: "admin" | "hoo" | "op";
   /** Null for full admin/HOO access; set for Operation Managers. */
   scope: OpAccessScope | null;
-  /** Admin and HOO may mutate; OP is read-only across admin surfaces. */
+  /** Admin and HOO may mutate most admin surfaces; OP is read-only. */
   canEdit: boolean;
+  /** Strategy project/country mutations — Admin only. */
+  canEditStrategy: boolean;
 };
 
 export type FullAdminActor = {
   userId: number;
   role: "admin" | "hoo";
+};
+
+export type StrategyAdminActor = {
+  userId: number;
+  role: "admin";
 };
 
 async function resolveViewerRole(
@@ -52,11 +60,13 @@ export async function requireAdminViewer(): Promise<AdminViewer> {
   }
 
   if (isFullAdminRole(role)) {
+    const normalized = normalizeRoleValue(role) === "hoo" ? "hoo" : "admin";
     return {
       userId,
-      role: normalizeRoleValue(role) === "hoo" ? "hoo" : "admin",
+      role: normalized,
       scope: null,
       canEdit: true,
+      canEditStrategy: normalized === "admin",
     };
   }
 
@@ -66,6 +76,7 @@ export async function requireAdminViewer(): Promise<AdminViewer> {
     role: "op",
     scope: scope ?? { projectSlug: "", region: "Africa", countries: [] },
     canEdit: false,
+    canEditStrategy: false,
   };
 }
 
@@ -78,8 +89,8 @@ export async function getAdminViewerOrNull(): Promise<AdminViewer | null> {
 }
 
 /**
- * Live DB role check for mutations (Strategy create/delete/save, etc.).
- * Do not trust JWT alone — HOO must keep full admin edit rights.
+ * Live DB role check for admin/HOO mutations (employees, spare, sync, etc.).
+ * Do not trust JWT alone.
  */
 export async function requireFullAdminActor(): Promise<FullAdminActor> {
   const session = await auth();
@@ -97,4 +108,20 @@ export async function requireFullAdminActor(): Promise<FullAdminActor> {
     userId,
     role: normalizeRoleValue(role) === "hoo" ? "hoo" : "admin",
   };
+}
+
+/** Strategy create / save / delete / add country — Admin only. */
+export async function requireStrategyAdminActor(): Promise<StrategyAdminActor> {
+  const session = await auth();
+  const userId = Number(session?.user?.id);
+  if (!Number.isFinite(userId)) {
+    throw new Error("Unauthorized — admin only.");
+  }
+
+  const role = await resolveViewerRole(userId, session?.user?.role);
+  if (!isStrategyMutatorRole(role)) {
+    throw new Error("Unauthorized — admin only.");
+  }
+
+  return { userId, role: "admin" };
 }

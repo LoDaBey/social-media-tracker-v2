@@ -34,6 +34,11 @@ export function isFullAdminRole(role: string | null | undefined): boolean {
   return value === "admin" || value === "hoo";
 }
 
+/** Strategy create / edit / delete / add country — Admin only (HOO is read-only). */
+export function isStrategyMutatorRole(role: string | null | undefined): boolean {
+  return normalizeRoleValue(role) === "admin";
+}
+
 /** Roles that use the admin workspace (nav + /admin pages). */
 export function isAdminWorkspaceRole(role: string | null | undefined): boolean {
   const value = normalizeRoleValue(role);

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { requireFullAdminActor } from "@/lib/admin-access";
+import { requireStrategyAdminActor } from "@/lib/admin-access";
 import { publicAdminMutationError } from "@/lib/admin-action-error";
 import { saveStrategyCountry } from "@/lib/strategy-plans-data";
 import {
@@ -25,7 +25,7 @@ const saveSchema = z.object({
 });
 
 async function requireAdmin() {
-  await requireFullAdminActor();
+  await requireStrategyAdminActor();
 }
 
 function revalidateStrategy() {
