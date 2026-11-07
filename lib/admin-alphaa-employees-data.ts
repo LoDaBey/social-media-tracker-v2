@@ -54,8 +54,14 @@ function alphaaRoleSql(role: AdminEmployeeListFilters["role"]): string | null {
   if (role === "employee") return `'handler'`;
   if (role === "team_lead") return `'team leader'`;
   if (role === "manager") return `'manager'`;
-  if (role === "op") return `'op'`;
   return null;
+}
+
+/** Roles that exist only on Orbit and never on the Main (ALPHAA) users table. */
+function isOrbitOnlyEmployeeListRole(
+  role: AdminEmployeeListFilters["role"]
+): boolean {
+  return role === "op" || role === "hoo";
 }
 
 export function canonicalAlphaaCountry(value: string) {
@@ -144,7 +150,7 @@ export async function fetchAlphaaEmployeesList(
   filters: AdminEmployeeListFilters
 ): Promise<AdminEmployeeListRow[]> {
   if (filters.region === "Africa" || filters.region === "Europe") return [];
-  if (filters.role === "op") return [];
+  if (isOrbitOnlyEmployeeListRole(filters.role)) return [];
   if (filters.teamLeadId != null) return [];
 
   const q = filters.q?.trim() ?? "";
