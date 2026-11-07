@@ -3,7 +3,7 @@ import { ALPHAA_SETUP_COUNTRIES } from "@/lib/setup-options";
 import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import {
   baseCountryFromDisplay,
-  overviewDisplayCountry,
+  mapEmployeeListCountries,
 } from "@/lib/overview-country-display";
 import {
   mapAlphaaScope,
@@ -270,11 +270,12 @@ export async function fetchAlphaaEmployeesList(
   return rows.map((row) => {
     const accounts = accountsByUser.get(row.id) ?? [];
     const accountCountries = uniqueCountries(countriesByUser.get(row.id) ?? []);
-    const countries = (
+    const countries = mapEmployeeListCountries(
       accountCountries.length > 0
         ? accountCountries
-        : uniqueCountries([row.country])
-    ).map((value) => overviewDisplayCountry(value, "Alphaa"));
+        : uniqueCountries([row.country]),
+      { source: "alphaa", region: "Alphaa" }
+    );
     const planAccounts = accounts.filter((account) => !account.is_spare).length;
     const isActive = alphaaEmployeeIsActive(row.is_active, accounts);
     return {
@@ -350,11 +351,12 @@ export async function fetchAlphaaEmployeeById(
   const accountCountries = uniqueCountries(
     accountCountryRows.map((row) => row.country)
   );
-  const countries = (
+  const countries = mapEmployeeListCountries(
     accountCountries.length > 0
       ? accountCountries
-      : uniqueCountries([user.country])
-  ).map((value) => overviewDisplayCountry(value, "Alphaa"));
+      : uniqueCountries([user.country]),
+    { source: "alphaa", region: "Alphaa" }
+  );
   return {
     id: user.id,
     fullName:
