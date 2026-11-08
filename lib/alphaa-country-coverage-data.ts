@@ -4,6 +4,11 @@ import {
 } from "@/lib/alphaa-coverage-platforms";
 import { query } from "@/lib/db";
 import {
+  addMainScopeActual,
+  mainScopeOfAccount,
+  type MainScopeActuals,
+} from "@/lib/main-scope-coverage";
+import {
   ALPHAA_COVERAGE_ACCOUNT_WHERE,
   ALPHAA_LEGACY_COUNTRY,
   ALPHAA_PLATFORM_IS_FACEBOOK_PERSONAL,
@@ -258,4 +263,50 @@ export async function fetchAlphaaHolderActuals(
   }
 
   return holdersByCountry;
+}
+
+/**
+ * Main tab personal / umbrella split: live non-spare accounts per person,
+ * platform and account_scope (same filters as the counts above).
+ */
+export async function fetchAlphaaScopeActuals(countries: string[]): Promise<{
+  byCountry: Map<string, MainScopeActuals>;
+  byUser: Map<number, MainScopeActuals>;
+}> {
+  const byCountry = new Map<string, MainScopeActuals>();
+  const byUser = new Map<number, MainScopeActuals>();
+  if (countries.length === 0) return { byCountry, byUser };
+
+  const rows = await query<{
+    user_id: number;
+    country: string;
+    platform: string;
+    account_scope: string | null;
+    n: number;
+  }>(
+    `SELECT u.id AS user_id,
+            ${ALPHAA_LEGACY_COUNTRY} AS country,
+            sma.platform,
+            sma.account_scope,
+            COUNT(sma.id)::int AS n
+       FROM temp_social_media_accounts sma
+       INNER JOIN temp_users u ON u.id = sma.user_id
+      WHERE ${ALPHAA_COVERAGE_ACCOUNT_WHERE}
+        AND ${countrySqlClause(1)}
+      GROUP BY u.id, ${ALPHAA_LEGACY_COUNTRY}, sma.platform, sma.account_scope`,
+    [countries]
+  );
+
+  for (const row of rows) {
+    const mapped = mainScopeOfAccount(row.platform, row.account_scope);
+    if (!mapped) continue;
+    const countryKey = row.country.trim().toLowerCase();
+    const forCountry = byCountry.get(countryKey) ?? {};
+    addMainScopeActual(forCountry, mapped.platform, mapped.scope, row.n);
+    byCountry.set(countryKey, forCountry);
+    const forUser = byUser.get(row.user_id) ?? {};
+    addMainScopeActual(forUser, mapped.platform, mapped.scope, row.n);
+    byUser.set(row.user_id, forUser);
+  }
+  return { byCountry, byUser };
 }

@@ -531,6 +531,8 @@ export function adminCountryPlanFromTargets(input: {
       Object.keys(extraPlatforms).length > 0 ? extraPlatforms : undefined,
     totalAccounts: input.totalAccounts,
     handlerSeat: hasHandlerTemplate ? handlerSeat : undefined,
+    projectTargets: input.projectTargets,
+    handlerTargets: hasHandlerTemplate ? input.handlerTargets : undefined,
   };
 }
 

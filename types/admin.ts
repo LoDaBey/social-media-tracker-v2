@@ -1,7 +1,7 @@
 import type { SetupRegion } from "@/lib/setup-options";
 import type { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import type { Platform, Role, EmploymentStatus, AccountScope } from "@/types/db";
-import type { StrategyPlatformKey } from "@/types/strategy";
+import type { StrategyPlatformKey, StrategyScopeCounts } from "@/types/strategy";
 import type { ReactNode } from "react";
 
 export type EmployeeListStatusFilter = "all" | "active" | "on_hold" | "inactive";
@@ -435,6 +435,23 @@ export type AdminCountryPlan = {
   extraPlatforms?: AlphaaExtraPlatformCounts;
   /** Per-handler template from strategy tables. Same quota for every seat. */
   handlerSeat?: AdminCountrySeatQuota;
+  /** Raw per-scope targets (Main tab personal / umbrella split). */
+  projectTargets?: StrategyScopeCounts;
+  handlerTargets?: StrategyScopeCounts;
+};
+
+export type MainScopeKey = "personal" | "umbrella" | "native";
+
+/** Main tab: per platform, per scope actual / target. */
+export type MainScopeCoverage = Partial<
+  Record<StrategyPlatformKey, Partial<Record<MainScopeKey, AdminCoverageCount>>>
+>;
+
+/** One platform group in the Main table and the sub-columns under it. */
+export type MainScopeColumn = {
+  platform: StrategyPlatformKey;
+  /** Empty → a single cell (platform has no accounts or targets). */
+  scopes: MainScopeKey[];
 };
 
 export type AdminCoverageCount = {
@@ -455,6 +472,8 @@ export type AdminCountryCoverageHolder = {
   tiktok: AdminCoverageCount;
   totalAccounts: AdminCoverageCount;
   extraPlatforms?: AlphaaExtraPlatformCoverage;
+  /** Main tab only: personal / umbrella split per platform. */
+  scopes?: MainScopeCoverage;
 };
 
 export type AdminCountryCoverageRow = {
@@ -469,6 +488,8 @@ export type AdminCountryCoverageRow = {
   tiktok: AdminCoverageCount;
   totalAccounts: AdminCoverageCount;
   extraPlatforms?: AlphaaExtraPlatformCoverage;
+  /** Main tab only: personal / umbrella split per platform. */
+  scopes?: MainScopeCoverage;
   holders: AdminCountryCoverageHolder[];
 };
 
@@ -631,6 +652,8 @@ export type AdminCoveragePlatformHeadCellProps = {
 export type AdminCountryCoverageRowProps = {
   row: AdminCountryCoverageRow;
   showAlphaaPlatforms?: boolean;
+  /** Main tab: personal / umbrella sub-columns (replaces the plain platform cells). */
+  scopeColumns?: MainScopeColumn[];
 };
 
 export type AdminCountryHolderGapRowProps = {
@@ -638,6 +661,7 @@ export type AdminCountryHolderGapRowProps = {
   country: string;
   language: string;
   showAlphaaPlatforms?: boolean;
+  scopeColumns?: MainScopeColumn[];
 };
 
 export type AlphaaCoveragePlatformColumnsProps = {

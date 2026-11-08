@@ -16,13 +16,117 @@ import {
 } from "@/lib/admin-coverage-table-layout";
 import { ALPHAA_EXTRA_PLATFORM_KEYS } from "@/lib/alphaa-coverage-platforms";
 import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
-import type { AdminCountryCoverageTableProps } from "@/types/admin";
+import {
+  mainScopeColumns,
+  mainScopeSubColumnCount,
+} from "@/lib/main-scope-coverage";
+import {
+  MainScopeBodyCells,
+  MainScopeColGroup,
+  MainScopeGroupHeadCells,
+  MainScopeSubHeadCells,
+} from "@/components/admin/MainScopeCoverageCells";
+import type {
+  AdminCountryCoverageTableProps,
+  MainScopeColumn,
+} from "@/types/admin";
+
+/**
+ * Main tab: one column per platform, split underneath into personal / umbrella
+ * (or a single native cell), so each scope shows its own actual / target.
+ */
+function MainScopeCoverageTable({
+  rows,
+  totals,
+  columns,
+}: AdminCountryCoverageTableProps & { columns: MainScopeColumn[] }) {
+  const subColumns = mainScopeSubColumnCount(columns);
+  const minWidth = 220 + 104 + 92 * 2 + 84 * subColumns;
+  const fixed = `${COVERAGE_HEAD_CELL} align-bottom`;
+
+  return (
+    <div className="overflow-x-auto rounded-[16px] border border-[var(--color-hairline)] bg-[var(--color-surface)]">
+      <table className="w-full table-fixed border-collapse text-left" style={{ minWidth }}>
+        <colgroup>
+          <col className={COVERAGE_COL.country} />
+          <col className={COVERAGE_COL.language} />
+          <col className={COVERAGE_COL.metric} />
+          <MainScopeColGroup columns={columns} />
+          <col className={COVERAGE_COL.metric} />
+        </colgroup>
+        <thead>
+          <tr className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
+            <th
+              scope="col"
+              rowSpan={2}
+              className={`sticky left-0 z-[1] bg-[var(--color-surface)] align-bottom ${COVERAGE_COUNTRY_CELL}`}
+            >
+              Country
+            </th>
+            <th scope="col" rowSpan={2} className={`align-bottom ${COVERAGE_LANGUAGE_CELL}`}>
+              Language
+            </th>
+            <th scope="col" rowSpan={2} className={fixed}>
+              Resources
+            </th>
+            <MainScopeGroupHeadCells columns={columns} />
+            <th scope="col" rowSpan={2} className={`${fixed} border-l border-[var(--color-hairline)]`}>
+              Total
+            </th>
+          </tr>
+          <tr>
+            <MainScopeSubHeadCells columns={columns} />
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <AdminCountryCoverageRow
+              key={row.country}
+              row={row}
+              showAlphaaPlatforms
+              scopeColumns={columns}
+            />
+          ))}
+        </tbody>
+        <tfoot>
+          <tr className="border-t-2 border-[var(--color-hairline)] bg-[var(--color-cream-tint)]">
+            <th
+              scope="row"
+              className={`sticky left-0 z-[1] bg-[var(--color-cream-tint)] text-[13px] font-extrabold text-[var(--color-ink)] ${COVERAGE_COUNTRY_CELL}`}
+            >
+              Total
+            </th>
+            <td className={`text-[13px] text-[var(--color-muted)] ${COVERAGE_LANGUAGE_CELL}`}>
+              —
+            </td>
+            <td className={COVERAGE_BODY_CELL}>
+              <AdminCoverageCountCell count={totals.resources} label="Total employees" />
+            </td>
+            <MainScopeBodyCells columns={columns} scopes={totals.scopes} labelPrefix="Total" />
+            <td className={COVERAGE_BODY_CELL}>
+              <AdminCoverageCountCell count={totals.totalAccounts} label="Grand total accounts" />
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  );
+}
 
 export function AdminCountryCoverageTable({
   rows,
   totals,
   showAlphaaPlatforms = false,
 }: AdminCountryCoverageTableProps) {
+  if (showAlphaaPlatforms && totals.scopes) {
+    const columns = mainScopeColumns([
+      totals.scopes,
+      ...rows.map((row) => row.scopes),
+      ...rows.flatMap((row) => row.holders.map((holder) => holder.scopes)),
+    ]);
+    return <MainScopeCoverageTable rows={rows} totals={totals} columns={columns} />;
+  }
+
   const colSpan = coverageColumnCount(showAlphaaPlatforms);
   const minWidth = coverageTableMinWidth(showAlphaaPlatforms);
 
