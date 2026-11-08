@@ -1,8 +1,14 @@
 import {
   fetchAlphaaCountryActuals,
   fetchAlphaaHolderActuals,
+  fetchAlphaaScopeActuals,
   fetchAlphaaSpareCount,
 } from "@/lib/alphaa-country-coverage-data";
+import {
+  addCreditedMainScopes,
+  buildMainScopes,
+  seatScopeTargets,
+} from "@/lib/main-scope-coverage";
 import { splitAlphaaCountryPlanSeats } from "@/lib/alphaa-country-targets";
 import {
   ALPHAA_EXTRA_PLATFORM_KEYS,
@@ -46,7 +52,9 @@ import type {
   AlphaaExtraPlatformCounts,
   AlphaaExtraPlatformCoverage,
   AlphaaExtraPlatformKey,
+  MainScopeCoverage,
 } from "@/types/admin";
+import type { MainScopeActuals } from "@/lib/main-scope-coverage";
 
 type CountryActuals = TempCountryActuals & {
   extraPlatforms?: Record<AlphaaExtraPlatformKey, number>;
@@ -289,6 +297,34 @@ function toRow(
   };
 }
 
+/** Main tab: attach the personal / umbrella split to a country row and its holders. */
+function withMainScopes(
+  row: AdminCountryCoverageRow,
+  plan: AdminCountryPlan,
+  actuals: {
+    byCountry: Map<string, MainScopeActuals>;
+    byUser: Map<number, MainScopeActuals>;
+  }
+): AdminCountryCoverageRow {
+  const countryActuals = actuals.byCountry.get(
+    baseCountryFromDisplay(row.country).trim().toLowerCase()
+  );
+  const seats = row.holders.length;
+  return {
+    ...row,
+    scopes: buildMainScopes(countryActuals, plan.projectTargets),
+    holders: row.holders.map((holder, index) => ({
+      ...holder,
+      scopes: buildMainScopes(
+        holder.id != null ? actuals.byUser.get(holder.id) : undefined,
+        // Same seat targets as the plain cells: handler template, else an even share.
+        plan.handlerTargets ??
+          seatScopeTargets(plan.projectTargets, index, Math.min(plan.resources, seats))
+      ),
+    })),
+  };
+}
+
 function addCreditedExtraPlatforms(
   left: AlphaaExtraPlatformCoverage | undefined,
   right: AlphaaExtraPlatformCoverage | undefined
@@ -478,7 +514,15 @@ export async function fetchAdminCountryCoverage(
     fetchAlphaa,
   } = await splitCoverageCountries(countryFilter, filter?.region);
 
-  const [tempCoverage, alphaaActualByCountry, alphaaHoldersByCountry, alphaaSpareCount] =
+  // Main tab only: personal / umbrella split per platform.
+  const wantScopes = filter?.region === "Alphaa" && fetchAlphaa;
+  const [
+    tempCoverage,
+    alphaaActualByCountry,
+    alphaaHoldersByCountry,
+    alphaaSpareCount,
+    alphaaScopeActuals,
+  ] =
     await Promise.all([
       fetchTemp
         ? fetchTempCountryCoverage(tempCountries, {
@@ -500,6 +544,7 @@ export async function fetchAdminCountryCoverage(
       fetchAlphaa
         ? fetchAlphaaSpareCount(alphaaCountries)
         : Promise.resolve(0),
+      wantScopes ? fetchAlphaaScopeActuals(alphaaCountries) : Promise.resolve(null),
     ]);
 
   const actualByCountry = new Map<string, CountryActuals>();
@@ -615,20 +660,22 @@ export async function fetchAdminCountryCoverage(
     const people = holdersByCountry.get(plan.country) ?? [];
     actualByCountry.delete(plan.country);
     holdersByCountry.delete(plan.country);
-    return toRow(plan, actuals, people, true);
+    const row = toRow(plan, actuals, people, true);
+    return alphaaScopeActuals ? withMainScopes(row, plan, alphaaScopeActuals) : row;
   });
 
   const extraCountries = [...new Set([...actualByCountry.keys(), ...holdersByCountry.keys()])]
     .filter((country) => allowedCountries === null || allowedCountries.has(country))
     .sort((a, b) => a.localeCompare(b));
   for (const country of extraCountries) {
+    const row = toRow(
+      emptyPlan(country),
+      actualByCountry.get(country) ?? EMPTY_ACTUALS,
+      holdersByCountry.get(country) ?? [],
+      false
+    );
     coverageRows.push(
-      toRow(
-        emptyPlan(country),
-        actualByCountry.get(country) ?? EMPTY_ACTUALS,
-        holdersByCountry.get(country) ?? [],
-        false
-      )
+      alphaaScopeActuals ? withMainScopes(row, emptyPlan(country), alphaaScopeActuals) : row
     );
   }
 
@@ -652,6 +699,9 @@ export async function fetchAdminCountryCoverage(
       tiktok: addCreditedCount(sum.tiktok, row.tiktok),
       extraPlatforms: addCreditedExtraPlatforms(sum.extraPlatforms, row.extraPlatforms),
       totalAccounts: addResourceTotal(sum.totalAccounts, row.totalAccounts),
+      scopes: alphaaScopeActuals
+        ? addCreditedMainScopes(sum.scopes ?? {}, row.scopes)
+        : undefined,
     }),
     {
       resources: count(0, 0),
@@ -662,6 +712,7 @@ export async function fetchAdminCountryCoverage(
       tiktok: count(0, 0),
       extraPlatforms: undefined as AlphaaExtraPlatformCoverage | undefined,
       totalAccounts: count(0, 0),
+      scopes: undefined as MainScopeCoverage | undefined,
     }
   );
 

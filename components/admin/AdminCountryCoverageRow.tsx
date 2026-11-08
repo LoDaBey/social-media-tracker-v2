@@ -7,6 +7,8 @@ import { CountryFlag } from "@/lib/country-icons";
 import { AdminCoverageCountCell } from "@/components/admin/AdminCoverageCountCell";
 import { AdminCountryHolderGapRow } from "@/components/admin/AdminCountryHolderGapRow";
 import { AlphaaCoveragePlatformBodyCells } from "@/components/admin/AlphaaCoveragePlatformColumns";
+import { MainScopeBodyCells } from "@/components/admin/MainScopeCoverageCells";
+import { mainScopeSubColumnCount } from "@/lib/main-scope-coverage";
 import {
   COVERAGE_BODY_CELL,
   COVERAGE_COUNTRY_CELL,
@@ -18,6 +20,7 @@ import type { AdminCountryCoverageRowProps } from "@/types/admin";
 export function AdminCountryCoverageRow({
   row,
   showAlphaaPlatforms = false,
+  scopeColumns,
 }: AdminCountryCoverageRowProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -71,39 +74,49 @@ export function AdminCountryCoverageRow({
         <td className={COVERAGE_BODY_CELL}>
           <AdminCoverageCountCell count={row.resources} label={`${row.country} employees`} />
         </td>
-        <td className={COVERAGE_BODY_CELL}>
-          <AdminCoverageCountCell count={row.x} label={`${row.country} X accounts`} />
-        </td>
-        <td className={COVERAGE_BODY_CELL}>
-          <AdminCoverageCountCell
-            count={row.facebookPersonal}
-            label={`${row.country} Facebook personal accounts`}
-          />
-        </td>
-        <td className={COVERAGE_BODY_CELL}>
-          <AdminCoverageCountCell
-            count={row.facebookUmbrella}
-            label={`${row.country} Facebook umbrella accounts`}
-          />
-        </td>
-        <td className={COVERAGE_BODY_CELL}>
-          <AdminCoverageCountCell
-            count={row.instagram}
-            label={`${row.country} Instagram accounts`}
-          />
-        </td>
-        <td className={COVERAGE_BODY_CELL}>
-          <AdminCoverageCountCell
-            count={row.tiktok}
-            label={`${row.country} TikTok accounts`}
-          />
-        </td>
-        {showAlphaaPlatforms ? (
-          <AlphaaCoveragePlatformBodyCells
-            platforms={row.extraPlatforms}
+        {scopeColumns ? (
+          <MainScopeBodyCells
+            columns={scopeColumns}
+            scopes={row.scopes}
             labelPrefix={row.country}
           />
-        ) : null}
+        ) : (
+          <>
+          <td className={COVERAGE_BODY_CELL}>
+            <AdminCoverageCountCell count={row.x} label={`${row.country} X accounts`} />
+          </td>
+          <td className={COVERAGE_BODY_CELL}>
+            <AdminCoverageCountCell
+              count={row.facebookPersonal}
+              label={`${row.country} Facebook personal accounts`}
+            />
+          </td>
+          <td className={COVERAGE_BODY_CELL}>
+            <AdminCoverageCountCell
+              count={row.facebookUmbrella}
+              label={`${row.country} Facebook umbrella accounts`}
+            />
+          </td>
+          <td className={COVERAGE_BODY_CELL}>
+            <AdminCoverageCountCell
+              count={row.instagram}
+              label={`${row.country} Instagram accounts`}
+            />
+          </td>
+          <td className={COVERAGE_BODY_CELL}>
+            <AdminCoverageCountCell
+              count={row.tiktok}
+              label={`${row.country} TikTok accounts`}
+            />
+          </td>
+          {showAlphaaPlatforms ? (
+            <AlphaaCoveragePlatformBodyCells
+              platforms={row.extraPlatforms}
+              labelPrefix={row.country}
+            />
+          ) : null}
+          </>
+        )}
         <td className={COVERAGE_BODY_CELL}>
           <AdminCoverageCountCell
             count={row.totalAccounts}
@@ -120,12 +133,17 @@ export function AdminCountryCoverageRow({
                 country={row.country}
                 language={row.language}
                 showAlphaaPlatforms={showAlphaaPlatforms}
+                scopeColumns={scopeColumns}
               />
             ))
           : (
               <tr className="border-t border-[var(--color-hairline)] bg-[var(--color-cream-tint)]/40">
                 <td
-                  colSpan={coverageColumnCount(showAlphaaPlatforms)}
+                  colSpan={
+                    scopeColumns
+                      ? 4 + mainScopeSubColumnCount(scopeColumns)
+                      : coverageColumnCount(showAlphaaPlatforms)
+                  }
                   className="px-4 py-4 pl-14 text-[13px] text-[var(--color-muted)]"
                 >
                   No account holders in {row.country} yet.

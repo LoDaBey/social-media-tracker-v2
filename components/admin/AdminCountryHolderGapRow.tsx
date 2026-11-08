@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AdminCoverageCountCell } from "@/components/admin/AdminCoverageCountCell";
 import { AlphaaCoveragePlatformBodyCells } from "@/components/admin/AlphaaCoveragePlatformColumns";
+import { MainScopeBodyCells } from "@/components/admin/MainScopeCoverageCells";
 import {
   COVERAGE_BODY_CELL,
   COVERAGE_COUNTRY_CELL,
@@ -14,6 +15,7 @@ export function AdminCountryHolderGapRow({
   country,
   language,
   showAlphaaPlatforms = false,
+  scopeColumns,
 }: AdminCountryHolderGapRowProps) {
   // Gaps already show in each platform's count cell, so the row stays neutral.
   const rowBg = "bg-[var(--color-cream-tint)]/50";
@@ -49,42 +51,52 @@ export function AdminCountryHolderGapRow({
       <td className={`text-[13px] text-[var(--color-muted)] ${COVERAGE_BODY_CELL}`}>
         —
       </td>
-      <td className={COVERAGE_BODY_CELL}>
-        <AdminCoverageCountCell
-          count={holder.x}
-          label={`${holder.fullName} X accounts`}
-        />
-      </td>
-      <td className={COVERAGE_BODY_CELL}>
-        <AdminCoverageCountCell
-          count={holder.facebookPersonal}
-          label={`${holder.fullName} Facebook personal accounts`}
-        />
-      </td>
-      <td className={COVERAGE_BODY_CELL}>
-        <AdminCoverageCountCell
-          count={holder.facebookUmbrella}
-          label={`${holder.fullName} Facebook umbrella accounts`}
-        />
-      </td>
-      <td className={COVERAGE_BODY_CELL}>
-        <AdminCoverageCountCell
-          count={holder.instagram}
-          label={`${holder.fullName} Instagram accounts`}
-        />
-      </td>
-      <td className={COVERAGE_BODY_CELL}>
-        <AdminCoverageCountCell
-          count={holder.tiktok}
-          label={`${holder.fullName} TikTok accounts`}
-        />
-      </td>
-      {showAlphaaPlatforms ? (
-        <AlphaaCoveragePlatformBodyCells
-          platforms={holder.extraPlatforms}
+      {scopeColumns ? (
+        <MainScopeBodyCells
+          columns={scopeColumns}
+          scopes={holder.scopes}
           labelPrefix={holder.fullName}
         />
-      ) : null}
+      ) : (
+        <>
+        <td className={COVERAGE_BODY_CELL}>
+          <AdminCoverageCountCell
+            count={holder.x}
+            label={`${holder.fullName} X accounts`}
+          />
+        </td>
+        <td className={COVERAGE_BODY_CELL}>
+          <AdminCoverageCountCell
+            count={holder.facebookPersonal}
+            label={`${holder.fullName} Facebook personal accounts`}
+          />
+        </td>
+        <td className={COVERAGE_BODY_CELL}>
+          <AdminCoverageCountCell
+            count={holder.facebookUmbrella}
+            label={`${holder.fullName} Facebook umbrella accounts`}
+          />
+        </td>
+        <td className={COVERAGE_BODY_CELL}>
+          <AdminCoverageCountCell
+            count={holder.instagram}
+            label={`${holder.fullName} Instagram accounts`}
+          />
+        </td>
+        <td className={COVERAGE_BODY_CELL}>
+          <AdminCoverageCountCell
+            count={holder.tiktok}
+            label={`${holder.fullName} TikTok accounts`}
+          />
+        </td>
+        {showAlphaaPlatforms ? (
+          <AlphaaCoveragePlatformBodyCells
+            platforms={holder.extraPlatforms}
+            labelPrefix={holder.fullName}
+          />
+        ) : null}
+        </>
+      )}
       <td className={COVERAGE_BODY_CELL}>
         <AdminCoverageCountCell
           count={holder.totalAccounts}
