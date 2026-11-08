@@ -13,7 +13,13 @@ import {
   spareAccountsForCountries,
   spareMarkHoldersForCountries,
 } from "@/lib/admin-spare";
-import { fetchManagerCountries, fetchManagerHomeGroups } from "@/lib/manager-data";
+import {
+  fetchManagerCountries,
+  fetchManagerHomeGroups,
+  fetchManagerRegion,
+} from "@/lib/manager-data";
+import { sameProject } from "@/lib/project-region-sql";
+import { adminRegionFromSlug } from "@/lib/region-config";
 import { homePathForRole } from "@/lib/setup-complete";
 import type { Role } from "@/types/db";
 
@@ -31,15 +37,22 @@ export default async function ManagerHomePage() {
   const managerId = Number(session.user.id);
   if (!Number.isFinite(managerId)) redirect("/login");
 
-  const [groups, countries] = await Promise.all([
+  const [groups, countries, managerRegion] = await Promise.all([
     fetchManagerHomeGroups(managerId),
     fetchManagerCountries(managerId),
+    fetchManagerRegion(managerId),
   ]);
   const [coverage, spareAccounts, spareHolders] = await Promise.all([
-    fetchAdminCountryCoverage({ countries }),
+    // Same project only: Palestine / Sudan / Somalia are in two projects.
+    fetchAdminCountryCoverage({
+      countries,
+      region: managerRegion ? adminRegionFromSlug(managerRegion) : undefined,
+    }),
     fetchAdminSpareAccounts(),
     fetchAdminSpareMarkHolders(),
   ]);
+  const inManagerProject = (item: { source: string; region: string | null }) =>
+    sameProject(item.source === "alphaa" ? "Alphaa" : item.region, managerRegion);
 
   return (
     <main className="w-full">
@@ -47,8 +60,14 @@ export default async function ManagerHomePage() {
         <ManagerHome
           groups={groups}
           coverage={coverage}
-          spareAccounts={spareAccountsForCountries(spareAccounts, countries)}
-          spareHolders={spareMarkHoldersForCountries(spareHolders, countries)}
+          spareAccounts={spareAccountsForCountries(
+            spareAccounts.filter(inManagerProject),
+            countries
+          )}
+          spareHolders={spareMarkHoldersForCountries(
+            spareHolders.filter(inManagerProject),
+            countries
+          )}
         />
       </Suspense>
     </main>

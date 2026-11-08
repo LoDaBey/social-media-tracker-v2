@@ -136,10 +136,14 @@ export function EmployeeForm({
   function changeRegion(region: string) {
     setForm((f) => {
       const allowed = setupCountriesForRegion(region as SetupRegion) as readonly string[];
+      const moved = region !== f.region;
       return {
         ...f,
         region,
         country: allowed.includes(f.country) ? f.country : "",
+        // Managers / team leads belong to one project: drop the old project's pick.
+        manager_id: moved && f.role !== "manager" ? null : f.manager_id,
+        team_lead_id: moved ? null : f.team_lead_id,
       };
     });
   }

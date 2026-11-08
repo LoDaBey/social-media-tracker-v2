@@ -20,6 +20,7 @@ import {
   isSetupCountry,
   isSetupLanguage,
   setupRegionForCountry,
+  setupRegionsForCountry,
 } from "@/lib/setup-options";
 import type {
   BulkImportAccountDraft,
@@ -155,10 +156,13 @@ async function importTempHolderAccounts(input: {
   );
   if (!employee) return { error: "Account holder not found." };
 
-  // Main (ALPHAA) holders stay in Main; Sudan / Somalia would otherwise map to Africa.
+  // Keep the holder's project when the country is in it. Sudan / Somalia (Africa +
+  // Main) and Palestine (Main + Asia) would otherwise be re-guessed and move them.
+  const currentRegion = employee.region?.trim() ?? "";
   const region =
-    employee.region === "Alphaa" && isAlphaaCountry(input.country)
-      ? "Alphaa"
+    currentRegion &&
+    setupRegionsForCountry(input.country).some((r) => r === currentRegion)
+      ? currentRegion
       : setupRegionForCountry(input.country);
 
   const client = await pool.connect();

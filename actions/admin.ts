@@ -23,7 +23,6 @@ import {
 import { fetchEmployeeCreateProjectOptions } from "@/lib/employee-create-projects-data";
 import { isEuropeCountry } from "@/lib/region-config";
 import {
-  isAlphaaCountry,
   isSetupCountry,
   setupRegionForCountry,
   setupRegionsForCountry,
@@ -293,7 +292,12 @@ export async function createEmployee(
       manager_id: p.manager_id ?? null,
       op_id: p.op_id ?? null,
     });
-    const reportingCheck = await assertValidReporting(client, role, reportingInput);
+    const reportingCheck = await assertValidReporting(
+      client,
+      role,
+      reportingInput,
+      assignedRegion
+    );
     if (reportingCheck.error) {
       await client.query("ROLLBACK");
       return { error: reportingCheck.error };
@@ -531,38 +535,45 @@ export async function updateEmployeeProfile(
       throw new Error("Email already in use.");
     }
 
+    // Decide the project before checking the manager. A country can be in two
+    // projects (Sudan / Somalia: Africa + Main, Palestine: Main + Asia), so:
+    // 1) the project picked in the form wins, 2) else the person keeps their
+    // current project if their country is in it, 3) else guess from the country.
+    if (p.role !== "op") {
+      const countriesForProject =
+        p.role === "manager" ? managerCountries : [primaryCountry];
+      const fits = (region: string) =>
+        countriesForProject.some((c) =>
+          setupRegionsForCountry(c).some((r) => r === region)
+        );
+      const current = await client.query<{ region: string | null }>(
+        `SELECT region FROM temp_users WHERE id = $1`,
+        [user_id]
+      );
+      const currentRegion = current.rows[0]?.region?.trim() ?? "";
+      if (p.region && fits(p.region)) {
+        assignedRegion = p.region;
+      } else if (currentRegion && fits(currentRegion)) {
+        assignedRegion = currentRegion as typeof assignedRegion;
+      }
+    }
+
     const reportingInput = normalizeReportingForRole(p.role, {
       team_lead_id: p.team_lead_id,
       manager_id: p.manager_id,
       op_id: p.op_id,
     });
-    const reportingCheck = await assertValidReporting(client, p.role, reportingInput);
+    const reportingCheck = await assertValidReporting(
+      client,
+      p.role,
+      reportingInput,
+      assignedRegion
+    );
     if (reportingCheck.error) {
       throw new Error(reportingCheck.error);
     }
     const { team_lead_id: teamLeadId, manager_id: managerId, op_id: opId } =
       reportingCheck.normalized;
-
-    // Main (ALPHAA) people keep their project when saved. Sudan / Somalia are also
-    // Africa countries, so re-deriving the region from the country would move them.
-    if (p.role !== "op" && isAlphaaCountry(primaryCountry)) {
-      const current = await client.query<{ region: string | null }>(
-        `SELECT region FROM temp_users WHERE id = $1`,
-        [user_id]
-      );
-      if (current.rows[0]?.region === "Alphaa") assignedRegion = "Alphaa";
-    }
-    // When the country is in two projects (Palestine: Main / Asia), keep the one chosen.
-    if (p.role === "manager" && p.region) {
-      if (managerCountries.some((c) => setupRegionsForCountry(c).includes(p.region!))) {
-        assignedRegion = p.region;
-      }
-    } else if (p.role !== "op" && p.region) {
-      const chosen = setupRegionsForCountry(primaryCountry).find(
-        (region) => region === p.region
-      );
-      if (chosen) assignedRegion = chosen;
-    }
 
     await client.query(
       `UPDATE temp_users SET
