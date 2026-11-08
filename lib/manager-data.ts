@@ -5,6 +5,7 @@ import {
 } from "@/lib/alphaa-platform-sql";
 import { spareItemMatchesCountries } from "@/lib/admin-spare";
 import { managerEmployeeScopeSql } from "@/lib/manager-employee-scope";
+import { sameProject } from "@/lib/project-region-sql";
 import type { AdminEmployeeSource } from "@/types/admin";
 import { targetsFromCounts } from "@/lib/setup-complete";
 import { totalAssignedAccountTarget } from "@/lib/setup-facebook";
@@ -27,6 +28,15 @@ export async function fetchManagerCountries(
     [managerId]
   );
   return rows.map((r) => r.country);
+}
+
+/** The Country Manager's own project (temp_users.region). */
+export async function fetchManagerRegion(managerId: number): Promise<string | null> {
+  const row = await queryOne<{ region: string | null }>(
+    `SELECT region FROM temp_users WHERE id = $1`,
+    [managerId]
+  );
+  return row?.region ?? null;
 }
 
 export async function fetchManagerOptions(): Promise<ManagerOption[]> {
@@ -183,15 +193,18 @@ export async function assertManagerCanViewHolder(
   const managerCountries = await fetchManagerCountries(managerId);
   if (!managerCountries.length) return false;
 
+  const managerRegion = await fetchManagerRegion(managerId);
+
   if (source === "temp") {
-    const row = await queryOne<{ country: string | null }>(
-      `SELECT country
+    const row = await queryOne<{ country: string | null; region: string | null }>(
+      `SELECT country, region
          FROM temp_users
         WHERE id = $1
           AND role = 'employee'
           AND is_active = TRUE`,
       [holderId]
     );
+    if (!sameProject(row?.region, managerRegion)) return false;
     return spareItemMatchesCountries(
       { country: row?.country ?? null, projects: row?.country ? [row.country] : [] },
       managerCountries
@@ -199,6 +212,7 @@ export async function assertManagerCanViewHolder(
   }
 
   // Main (ALPHAA) holder: region 'Alphaa' or also a Main handler (main_country).
+  if (!sameProject("Alphaa", managerRegion)) return false;
   const row = await queryOne<{ country: string | null }>(
     `SELECT ${ALPHAA_LEGACY_COUNTRY} AS country
        FROM temp_users u
@@ -237,6 +251,7 @@ export async function assertManagerCanSpareAccount(
     if (region !== "africa" && region !== "europe" && region !== "balkan") {
       return false;
     }
+    if (!sameProject(row.region, await fetchManagerRegion(managerId))) return false;
     return spareItemMatchesCountries(
       { country: row.country, projects: row.country ? [row.country] : [] },
       managerCountries
@@ -244,6 +259,7 @@ export async function assertManagerCanSpareAccount(
   }
 
   // Main (ALPHAA) account: owned by a Main holder (region 'Alphaa' or main_country).
+  if (!sameProject("Alphaa", await fetchManagerRegion(managerId))) return false;
   const row = await queryOne<{ country: string | null }>(
     `SELECT ${ALPHAA_LEGACY_COUNTRY} AS country
        FROM temp_social_media_accounts sma

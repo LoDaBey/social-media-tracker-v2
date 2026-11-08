@@ -124,6 +124,10 @@ export function CreateEmployeeForm({
     setProjectSlug(nextSlug);
     setCountry("");
     setOpCountries([]);
+    // Managers / team leads belong to one project: drop the old project's pick.
+    setEmployeeManagerId(null);
+    setEmployeeTeamLeadId(null);
+    if (role === "team_lead") setSupervisorId("");
     setFieldErrors((prev) => ({
       ...prev,
       project_slug: undefined,

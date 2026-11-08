@@ -8,6 +8,15 @@ import {
   type ReportingFields,
 } from "@/lib/role-hierarchy";
 import type { Role } from "@/types/db";
+import { sameProject } from "@/lib/project-region-sql";
+
+async function projectOf(client: PoolClient, userId: number): Promise<string | null> {
+  const row = await client.query<{ region: string | null }>(
+    `SELECT region FROM temp_users WHERE id = $1`,
+    [userId]
+  );
+  return row.rows[0]?.region ?? null;
+}
 
 async function assertActiveUserHasRole(
   client: PoolClient,
@@ -42,7 +51,9 @@ async function withEmployeeManagerFromTeamLead(
 export async function assertValidReporting(
   client: PoolClient,
   userRole: Role,
-  fields: ReportingFields
+  fields: ReportingFields,
+  /** The person's project; their Country Manager / Team Leader must be in it. */
+  projectRegion?: string | null
 ): Promise<{ normalized: ReportingFields; error: string | null }> {
   let normalized = normalizeReportingForRole(userRole, fields);
   if (userRole === "employee") {
@@ -65,6 +76,15 @@ export async function assertValidReporting(
           error: `Selected ${ROLE_LABELS.manager} is invalid.`,
         };
       }
+      if (
+        projectRegion &&
+        !sameProject(await projectOf(client, normalized.manager_id), projectRegion)
+      ) {
+        return {
+          normalized,
+          error: `Selected ${ROLE_LABELS.manager} is in another project. Pick one from this project.`,
+        };
+      }
     }
 
     if (normalized.team_lead_id) {
@@ -81,6 +101,15 @@ export async function assertValidReporting(
         return {
           normalized,
           error: `Selected ${ROLE_LABELS.team_lead} is invalid.`,
+        };
+      }
+      if (
+        projectRegion &&
+        !sameProject(await projectOf(client, normalized.team_lead_id), projectRegion)
+      ) {
+        return {
+          normalized,
+          error: `Selected ${ROLE_LABELS.team_lead} is in another project. Pick one from this project.`,
         };
       }
       const teamLeadManagerId = teamLead.rows[0].manager_id;
@@ -116,6 +145,17 @@ export async function assertValidReporting(
     return {
       normalized,
       error: `Selected ${ROLE_LABELS[supervisorRole]} is invalid.`,
+    };
+  }
+  // Team Leader → their Country Manager must be in the same project.
+  if (
+    userRole === "team_lead" &&
+    projectRegion &&
+    !sameProject(await projectOf(client, supervisorId), projectRegion)
+  ) {
+    return {
+      normalized,
+      error: `Selected ${ROLE_LABELS[supervisorRole]} is in another project. Pick one from this project.`,
     };
   }
 

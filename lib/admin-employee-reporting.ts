@@ -1,9 +1,12 @@
 import { queryOne } from "@/lib/db";
+import { sameProjectSql } from "@/lib/project-region-sql";
 import type { EmployeeReporting } from "@/types/admin";
 
 /**
  * Direct FKs first, then country: many Africa/Europe handlers have no
  * team_lead_id/manager_id and only sit under a manager via owned countries.
+ * The guess must be in the same project: Palestine is Main and Asia, Sudan is
+ * Main and Africa, so a country alone would pick another project's manager.
  */
 export const TEMP_TEAM_LEAD_NAME_SQL = `COALESCE(
   tl.full_name,
@@ -14,6 +17,7 @@ export const TEMP_TEAM_LEAD_NAME_SQL = `COALESCE(
        AND ctl.is_active = TRUE
        AND NULLIF(TRIM(u.country), '') IS NOT NULL
        AND LOWER(TRIM(ctl.country)) = LOWER(TRIM(u.country))
+       AND ${sameProjectSql("ctl.region", "u.region")}
      ORDER BY ctl.full_name ASC, ctl.id ASC
      LIMIT 1
   ),
@@ -25,6 +29,7 @@ export const TEMP_TEAM_LEAD_NAME_SQL = `COALESCE(
        AND ctl.is_active = TRUE
        AND NULLIF(TRIM(u.country), '') IS NOT NULL
        AND LOWER(TRIM(mc.country)) = LOWER(TRIM(u.country))
+       AND ${sameProjectSql("ctl.region", "u.region")}
      ORDER BY ctl.full_name ASC, ctl.id ASC
      LIMIT 1
   )
@@ -41,6 +46,7 @@ export const TEMP_MANAGER_NAME_SQL = `COALESCE(
        AND m.is_active = TRUE
        AND NULLIF(TRIM(u.country), '') IS NOT NULL
        AND LOWER(TRIM(mc.country)) = LOWER(TRIM(u.country))
+       AND ${sameProjectSql("m.region", "u.region")}
      ORDER BY m.full_name ASC, m.id ASC
      LIMIT 1
   ),
@@ -51,6 +57,7 @@ export const TEMP_MANAGER_NAME_SQL = `COALESCE(
        AND m.is_active = TRUE
        AND NULLIF(TRIM(u.country), '') IS NOT NULL
        AND LOWER(TRIM(m.country)) = LOWER(TRIM(u.country))
+       AND ${sameProjectSql("m.region", "u.region")}
      ORDER BY m.full_name ASC, m.id ASC
      LIMIT 1
   )
