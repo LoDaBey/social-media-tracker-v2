@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache";
 import * as XLSX from "xlsx";
 import { auth } from "@/auth";
-import { requireFullAdminActor } from "@/lib/admin-access";
+import { requirePagePermission } from "@/lib/admin-access";
+import { sameProject } from "@/lib/project-region-sql";
+import { baseCountryFromDisplay } from "@/lib/overview-country-display";
 import { pool, queryOne } from "@/lib/db";
 import { publicAdminMutationError } from "@/lib/admin-action-error";
 import {
@@ -43,13 +45,43 @@ async function requireAdminOrManager() {
     throw new Error("Unauthorized.");
   }
   if (role === "manager") {
-    return { userId, role: "manager" as const };
+    return { userId, role: "manager" as const, opScope: null };
   }
-  const actor = await requireFullAdminActor("employees", "canCreate");
+  // Importing replaces an existing employee's accounts: an update, not a create.
+  const viewer = await requirePagePermission("employees", "canUpdate");
   return {
-    userId: actor.userId,
-    role: (actor.role === "hoo" ? "hoo" : "admin") as "admin" | "hoo",
+    userId: viewer.userId,
+    role: (viewer.role === "hoo" ? "hoo" : "admin") as "admin" | "hoo",
+    // Operation Managers: only employees in their own project and countries.
+    opScope: viewer.role === "op" ? viewer.scope : null,
   };
+}
+
+async function assertOpCanImportHolder(
+  scope: { region: string; countries: string[] } | null,
+  holderId: number,
+  source: "temp" | "alphaa",
+  country: string
+): Promise<string | null> {
+  if (!scope) return null;
+  const allowed = new Set(scope.countries);
+  if (!allowed.has(country)) {
+    return "You can only import accounts into your countries.";
+  }
+  const holder = await queryOne<{ region: string | null; country: string | null }>(
+    `SELECT region, country FROM temp_users WHERE id = $1`,
+    [holderId]
+  );
+  if (!holder) return "Account holder not found.";
+  const holderProject = source === "alphaa" ? "Alphaa" : holder.region;
+  if (
+    !sameProject(holderProject, scope.region) ||
+    !holder.country ||
+    !allowed.has(baseCountryFromDisplay(holder.country))
+  ) {
+    return "You can only import accounts for employees in your project and countries.";
+  }
+  return null;
 }
 
 async function assertManagerCanImportHolder(
@@ -384,7 +416,7 @@ export async function importBulkEmployeeAccounts(input: {
   rows: BulkImportAccountDraft[];
 }): Promise<{ error?: string; imported?: number }> {
   try {
-    const { userId, role } = await requireAdminOrManager();
+    const { userId, role, opScope } = await requireAdminOrManager();
     const holderId = Number(input.holderId);
     if (!Number.isFinite(holderId)) return { error: "Select an account holder." };
     const source = input.source === "alphaa" ? "alphaa" : "temp";
@@ -400,6 +432,8 @@ export async function importBulkEmployeeAccounts(input: {
       );
       if (denied) return { error: denied };
     }
+    const opDenied = await assertOpCanImportHolder(opScope, holderId, source, country);
+    if (opDenied) return { error: opDenied };
     const savedLanguage = isSetupLanguage(language) ? language : null;
     if (!input.rows.length) return { error: "Add at least one account before importing." };
 
