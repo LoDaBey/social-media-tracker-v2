@@ -247,10 +247,8 @@ export async function assertManagerCanSpareAccount(
       [accountId]
     );
     if (!row) return false;
-    const region = row.region?.trim().toLowerCase() ?? "";
-    if (region !== "africa" && region !== "europe" && region !== "balkan") {
-      return false;
-    }
+    // Any project (Africa, Europe, Main, Asia): the account's owner must be in the
+    // manager's own project and one of the manager's countries.
     if (!sameProject(row.region, await fetchManagerRegion(managerId))) return false;
     return spareItemMatchesCountries(
       { country: row.country, projects: row.country ? [row.country] : [] },
