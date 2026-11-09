@@ -1,6 +1,7 @@
 "use server";
 
-import { requirePagePermission } from "@/lib/admin-access";
+import { requirePagePermission, type AdminViewer } from "@/lib/admin-access";
+import { baseCountryFromDisplay } from "@/lib/overview-country-display";
 import { fetchAdminExtract } from "@/lib/admin-extract-data";
 import { isExtractPlatform } from "@/lib/admin-extract-platform";
 import {
@@ -59,12 +60,49 @@ function normalizeFilters(input: AdminExtractFilters): AdminExtractFilters {
   };
 }
 
+/**
+ * Operation Managers only ever get their own project and countries, whatever the
+ * filters ask for (the page hides other countries; this enforces it on the server).
+ * Returns null when they have no countries at all.
+ */
+function scopeFiltersForViewer(
+  filters: AdminExtractFilters,
+  viewer: AdminViewer
+): AdminExtractFilters | null {
+  if (viewer.role !== "op") return filters;
+  const scope = viewer.scope;
+  if (!scope || scope.countries.length === 0) return null;
+  const allowed = new Set(scope.countries);
+  const picked = filters.countries.filter((country) =>
+    allowed.has(baseCountryFromDisplay(country))
+  );
+  return {
+    ...filters,
+    region: scope.region as AdminExtractRegionFilter,
+    countries: picked.length > 0 ? picked : [...scope.countries],
+  };
+}
+
 export async function runAdminExtract(
   input: AdminExtractFilters
 ): Promise<AdminExtractResult | { error: string }> {
   try {
-    await requirePagePermission("extract", "canRead");
-    return await fetchAdminExtract(normalizeFilters(input));
+    const viewer = await requirePagePermission("extract", "canRead");
+    const filters = scopeFiltersForViewer(normalizeFilters(input), viewer);
+    if (!filters) {
+      return {
+        rows: [],
+        summary: {
+          total: 0,
+          byRegion: [],
+          byCountry: [],
+          byPlatform: [],
+          byScope: [],
+          byRole: [],
+        },
+      };
+    }
+    return await fetchAdminExtract(filters);
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "Extract failed.",
