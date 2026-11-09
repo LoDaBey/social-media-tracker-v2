@@ -15,6 +15,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { baseCountryFromDisplay } from "@/lib/overview-country-display";
 import { isAdminWorkspaceRole } from "@/lib/role-hierarchy";
+import { sameProject } from "@/lib/project-region-sql";
 import type { AppHeaderProps } from "@/types/layout";
 import type { AdminPermissionPageKey } from "@/types/permissions";
 import Link from "next/link";
@@ -49,8 +50,14 @@ export async function AppHeader({
       const base = baseCountryFromDisplay(country);
       return allowed.has(base) || allowed.has(country);
     };
-    spareAccounts = spareAccounts.filter((account) =>
-      inScopeCountry(account.country)
+    // Same project too: Sudan / Somalia are Africa and Main, Palestine is Main and Asia.
+    spareAccounts = spareAccounts.filter(
+      (account) =>
+        inScopeCountry(account.country) &&
+        sameProject(
+          account.source === "alphaa" ? "Alphaa" : account.region,
+          viewer.scope!.region
+        )
     );
     spareHolders = spareHolders.filter(
       (holder) =>
