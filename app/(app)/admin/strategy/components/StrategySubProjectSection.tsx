@@ -102,10 +102,6 @@ export function StrategySubProjectSection({
           <h3 className="text-[13px] font-semibold text-[var(--color-ink)]">
             Countries
           </h3>
-          <p className="mt-0.5 text-[12px] text-[var(--color-muted)]">
-            Click a country to edit its plan. Double-click to open Strategy-style
-            live coverage with missing accounts highlighted per holder.
-          </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <ul className="flex flex-wrap items-center gap-3" aria-label="Category legend">

@@ -74,6 +74,8 @@ export default async function AdminEmployeesPage({
     const allowed = new Set(viewer.scope.countries);
     const regionName = viewer.scope.region.toLowerCase();
     listed = listed.filter((row) => {
+      // Operation Managers don't see themselves in their own team list.
+      if (row.source === "temp" && row.id === viewer.userId) return false;
       const base = baseCountryFromDisplay(row.country ?? "");
       if (!allowed.has(base) && !(row.country && allowed.has(row.country))) {
         return false;
@@ -100,6 +102,7 @@ export default async function AdminEmployeesPage({
       language: row.language,
       team_lead_name: row.team_lead_name,
       manager_name: row.manager_name,
+      region: row.region,
     }));
 
   return (

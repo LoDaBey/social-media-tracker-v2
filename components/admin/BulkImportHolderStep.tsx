@@ -47,10 +47,11 @@ export function BulkImportHolderStep({
   onRegionChange,
   onCountryChange,
 }: BulkImportHolderStepProps) {
-  const regionOptions = useMemo(
-    () => regionsForAllowedCountries(allowedCountries),
-    [allowedCountries]
-  );
+  const regionOptions = useMemo(() => {
+    const options = regionsForAllowedCountries(allowedCountries);
+    // The holder's own project must stay pickable (e.g. Main for Somalia).
+    return region && !options.includes(region) ? [...options, region] : options;
+  }, [allowedCountries, region]);
   const allowedSet = useMemo(
     () => (allowedCountries?.length ? new Set(allowedCountries) : null),
     [allowedCountries]

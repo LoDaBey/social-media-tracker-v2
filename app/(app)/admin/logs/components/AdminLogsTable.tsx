@@ -22,8 +22,25 @@ const ACTION_LABEL: Record<OrbitActionLogRow["action"], string> = {
   strategy: "Strategy",
 };
 
-function hasDetails(row: OrbitActionLogRow) {
-  return Boolean(row.details && Object.keys(row.details).length > 0);
+/** "replacedAccounts" -> "Replaced accounts", "holderId" -> "Holder id". */
+function detailLabel(key: string) {
+  const words = key.replace(/([a-z])([A-Z])/g, "$1 $2").replaceAll("_", " ");
+  return words.charAt(0).toUpperCase() + words.slice(1).toLowerCase();
+}
+
+function detailValue(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "—";
+  if (Array.isArray(value)) return value.map(detailValue).join(", ");
+  if (typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>)
+      .map(([key, item]) => `${key} ${detailValue(item)}`)
+      .join(" · ");
+  }
+  return String(value);
+}
+
+function failed(row: OrbitActionLogRow) {
+  return row.details?.result === "Failed";
 }
 
 export function AdminLogsTable({
@@ -98,7 +115,6 @@ export function AdminLogsTable({
             <th className="px-4 py-3 font-semibold">Who</th>
             <th className="px-4 py-3 font-semibold">Action</th>
             <th className="px-4 py-3 font-semibold">Area</th>
-            <th className="px-4 py-3 font-semibold">Summary</th>
           </tr>
         </thead>
         <tbody>
@@ -106,27 +122,17 @@ export function AdminLogsTable({
             const expanded = openId === row.id;
             return (
               <tr key={row.id} className="border-b border-[var(--color-hairline)] last:border-b-0">
-                <td colSpan={5} className="p-0">
+                <td colSpan={4} className="p-0">
                   <button
                     type="button"
                     aria-label={
-                      hasDetails(row)
-                        ? expanded
-                          ? "Hide action details"
-                          : "Show action details"
-                        : row.summary
+                      expanded ? "Hide action details" : "Show action details"
                     }
                     aria-expanded={expanded}
-                    onClick={() => {
-                      if (!hasDetails(row)) return;
-                      setOpenId(expanded ? null : row.id);
-                    }}
+                    onClick={() => setOpenId(expanded ? null : row.id)}
                     className={[
-                      "grid w-full grid-cols-1 gap-1 px-4 py-3 text-left sm:grid-cols-[160px_minmax(140px,1fr)_110px_90px_minmax(180px,2fr)] sm:items-center sm:gap-0",
-                      "outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]",
-                      hasDetails(row)
-                        ? "cursor-pointer hover:bg-[var(--color-cream-tint)]"
-                        : "cursor-default",
+                      "grid w-full grid-cols-1 gap-1 px-4 py-3 text-left sm:grid-cols-[160px_minmax(140px,2fr)_140px_minmax(90px,1fr)] sm:items-center sm:gap-0",
+                      "cursor-pointer outline-none hover:bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]",
                     ].join(" ")}
                   >
                     <span className="text-[var(--color-muted)]">
@@ -143,16 +149,41 @@ export function AdminLogsTable({
                     </span>
                     <span className="font-semibold text-[var(--color-ink)]">
                       {ACTION_LABEL[row.action]}
+                      {failed(row) ? (
+                        <span className="ml-1.5 rounded-md bg-[var(--color-coral)] px-1.5 py-0.5 text-[11px] font-bold text-white">
+                          Failed
+                        </span>
+                      ) : null}
                     </span>
                     <span className="capitalize text-[var(--color-muted)]">
                       {row.resource.replaceAll("_", " ")}
                     </span>
-                    <span className="min-w-0 text-[var(--color-ink)]">{row.summary}</span>
                   </button>
-                  {expanded && hasDetails(row) ? (
-                    <pre className="mx-4 mb-3 overflow-x-auto rounded-lg bg-[var(--color-cream-tint)] p-3 text-[12px] text-[var(--color-ink)]">
-                      {JSON.stringify(row.details, null, 2)}
-                    </pre>
+                  {expanded ? (
+                    <dl className="mx-4 mb-3 grid grid-cols-1 gap-x-6 gap-y-1.5 rounded-lg bg-[var(--color-cream-tint)] p-3 text-[13px] sm:grid-cols-[160px_minmax(0,1fr)]">
+                      <dt className="font-semibold text-[var(--color-muted)]">
+                        What happened
+                      </dt>
+                      <dd className="text-[var(--color-ink)]">{row.summary}</dd>
+                      {Object.entries(row.details ?? {}).map(([key, value]) => (
+                        <div key={key} className="contents">
+                          <dt className="font-semibold text-[var(--color-muted)]">
+                            {detailLabel(key)}
+                          </dt>
+                          <dd
+                            className={
+                              key === "result" && value === "Failed"
+                                ? "font-bold text-[var(--color-coral)]"
+                                : key === "result"
+                                  ? "font-bold text-[var(--color-emerald)]"
+                                  : "break-words text-[var(--color-ink)]"
+                            }
+                          >
+                            {detailValue(value)}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
                   ) : null}
                 </td>
               </tr>

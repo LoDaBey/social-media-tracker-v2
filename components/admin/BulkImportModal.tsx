@@ -16,9 +16,11 @@ import {
 } from "@/lib/bulk-import-parse";
 import { sheetLanguage1 } from "@/lib/sheets-country-config";
 import {
+  isCountryInEmployeeListRegion,
   setupRegionForCountry,
   type SetupRegion,
 } from "@/lib/setup-options";
+import { normalizeProjectRegion } from "@/lib/admin-view";
 import { BulkImportHolderStep } from "@/components/admin/BulkImportHolderStep";
 import { BulkImportSelectedEmployee } from "@/components/admin/BulkImportSelectedEmployee";
 import { BulkImportUploadStep } from "@/components/admin/BulkImportUploadStep";
@@ -34,12 +36,16 @@ function fieldsFromHolder(holder: BulkImportHolderOption | null | undefined) {
     return { country: "", region: "" as const, language: "" };
   }
   const country = bulkImportHolderCountry(holder.country);
+  // Shared countries (Somalia, Sudan: Africa + Main) keep the holder's saved project.
+  const saved = normalizeProjectRegion(holder.region);
   const region =
     holder.source === "alphaa"
       ? ("Alphaa" as const)
-      : country
-        ? setupRegionForCountry(country)
-        : ("" as const);
+      : saved && (!country || isCountryInEmployeeListRegion(country, saved))
+        ? saved
+        : country
+          ? setupRegionForCountry(country)
+          : ("" as const);
   const language =
     sheetLanguage1(country, holder.language || "") || holder.language || "";
   return { country, region, language };
@@ -320,10 +326,12 @@ function BulkImportModalDialog({
               onCountryChange={(next) => {
                 setCountry(next);
                 if (next) {
-                  setRegion(
+                  setRegion((prev) =>
                     selectedHolder?.source === "alphaa"
                       ? "Alphaa"
-                      : setupRegionForCountry(next)
+                      : prev && isCountryInEmployeeListRegion(next, prev)
+                        ? prev
+                        : setupRegionForCountry(next)
                   );
                   setLanguage((prev) => sheetLanguage1(next, prev) || prev);
                 }

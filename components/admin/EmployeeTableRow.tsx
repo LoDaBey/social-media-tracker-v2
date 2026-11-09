@@ -78,6 +78,7 @@ export function EmployeeTableRow({
     language: row.language,
     team_lead_name: row.team_lead_name,
     manager_name: row.manager_name,
+    region: row.region,
   };
   const importHolders = holders.some(
     (holder) => holder.id === row.id && holder.source === row.source

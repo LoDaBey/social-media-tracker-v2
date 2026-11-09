@@ -1134,6 +1134,8 @@ export type BulkImportHolderOption = {
   language: string | null;
   team_lead_name: string | null;
   manager_name: string | null;
+  /** The holder's saved project (temp_users.region), so shared countries keep it. */
+  region?: string | null;
 };
 
 export type BulkImportSelectedEmployeeProps = {
