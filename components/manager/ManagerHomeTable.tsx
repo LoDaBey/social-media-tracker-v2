@@ -26,6 +26,7 @@ export function ManagerHomeTable({ groups }: ManagerHomeTableProps) {
     language: holder.language,
     team_lead_name: null,
     manager_name: null,
+    region: holder.region,
   }));
   const allowedCountries = groups.map((group) => group.country);
   const countries = groups.map((group) => ({

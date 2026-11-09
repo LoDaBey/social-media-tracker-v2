@@ -15,7 +15,9 @@ import {
 import { accountScopeForPlatform } from "@/lib/account-scope";
 import { uniqueAccountUrlError } from "@/lib/social-account-validation";
 import { isAlphaaCountry } from "@/lib/region-config";
-import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
+import { MAIN_PROJECT_LABEL, regionDisplayLabel } from "@/lib/project-labels";
+import { extractPlatformLabel } from "@/lib/admin-extract-platform";
+import { normalizeProjectRegion } from "@/lib/admin-view";
 import { fetchStrategyProjectRegionForAlphaaUser } from "@/lib/strategy-projects-data";
 import { strategyAccountRegionValue } from "@/lib/strategy-regions";
 import {
@@ -265,17 +267,6 @@ async function importTempHolderAccounts(input: {
   }
 
   revalidateBulkImport(input.holderId, "temp");
-  await logOrbitAction({
-    action: "import",
-    resource: "account",
-    summary: `Imported ${input.rows.length} Africa/Europe accounts for employee #${input.holderId}`,
-    details: {
-      holderId: input.holderId,
-      country: input.country,
-      imported: input.rows.length,
-      source: "temp",
-    },
-  });
   return { imported: input.rows.length };
 }
 
@@ -394,18 +385,65 @@ async function importAlphaaHolderAccounts(input: {
   }
 
   revalidateBulkImport(input.holderId, "alphaa");
+  return { imported: input.rows.length };
+}
+
+/** Accounts a holder has right now (the import replaces all of them). */
+async function countHolderAccounts(holderId: number): Promise<number> {
+  const row = await queryOne<{ total: number }>(
+    `SELECT COUNT(*)::int AS total FROM temp_social_media_accounts WHERE user_id = $1`,
+    [holderId]
+  );
+  return row?.total ?? 0;
+}
+
+/**
+ * One Activity entry per import attempt: who it was for, project, country, table,
+ * what was imported per platform, and whether it worked. No account data is logged.
+ */
+async function logBulkImport(input: {
+  holderId: number;
+  source: "temp" | "alphaa";
+  country: string;
+  rows: BulkImportAccountDraft[];
+  previousAccounts: number | null;
+  result: { error?: string; imported?: number };
+}) {
+  const holder = await queryOne<{ full_name: string | null; region: string | null }>(
+    `SELECT full_name, region FROM temp_users WHERE id = $1`,
+    [input.holderId]
+  ).catch(() => null);
+  const name = holder?.full_name?.trim() || `Employee #${input.holderId}`;
+  const project =
+    input.source === "alphaa"
+      ? MAIN_PROJECT_LABEL
+      : regionDisplayLabel(normalizeProjectRegion(holder?.region) ?? "") || "—";
+  const platforms: Record<string, number> = {};
+  for (const row of input.rows) {
+    const label = extractPlatformLabel(row.platform);
+    platforms[label] = (platforms[label] ?? 0) + 1;
+  }
+  const ok = !input.result.error;
   await logOrbitAction({
     action: "import",
     resource: "account",
-    summary: `Imported ${input.rows.length} ${MAIN_PROJECT_LABEL} accounts for employee #${input.holderId}`,
+    summary: ok
+      ? `Imported ${input.result.imported ?? input.rows.length} accounts for ${name} — ${input.country} (${project})`
+      : `Import failed for ${name} — ${input.country} (${project}): ${input.result.error}`,
     details: {
-      holderId: input.holderId,
+      result: ok ? "Success" : "Failed",
+      ...(ok ? {} : { error: input.result.error }),
+      holder: `${name} (#${input.holderId})`,
+      project,
       country: input.country,
-      imported: input.rows.length,
-      source: "alphaa",
+      table: "temp_social_media_accounts",
+      imported: ok ? (input.result.imported ?? input.rows.length) : 0,
+      ...(input.previousAccounts !== null
+        ? { replacedAccounts: ok ? input.previousAccounts : 0 }
+        : {}),
+      platforms,
     },
   });
-  return { imported: input.rows.length };
 }
 
 export async function importBulkEmployeeAccounts(input: {
@@ -444,21 +482,30 @@ export async function importBulkEmployeeAccounts(input: {
       return { error: "No rows had a platform to import." };
     }
 
-    if (source === "alphaa") {
-      return importAlphaaHolderAccounts({
-        holderId,
-        country,
-        language: savedLanguage,
-        rows,
-      });
-    }
-
-    return importTempHolderAccounts({
+    const previousAccounts = await countHolderAccounts(holderId);
+    const result =
+      source === "alphaa"
+        ? await importAlphaaHolderAccounts({
+            holderId,
+            country,
+            language: savedLanguage,
+            rows,
+          })
+        : await importTempHolderAccounts({
+            holderId,
+            country,
+            language: savedLanguage,
+            rows,
+          });
+    await logBulkImport({
       holderId,
+      source,
       country,
-      language: savedLanguage,
       rows,
+      previousAccounts,
+      result,
     });
+    return result;
   } catch (error) {
     return { error: publicAdminMutationError(error) };
   }

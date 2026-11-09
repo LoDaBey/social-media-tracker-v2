@@ -55,11 +55,7 @@ export function ManagerTeamHeader({
           ))}
         </div>
       ) : null}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <p className="text-[15px] text-[var(--color-muted)]">
-          Account holders in your countries. Expand a row to see saved accounts,
-          or use Bulk import to replace or add accounts.
-        </p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-end">
         <p className="text-[13px] font-semibold text-[var(--color-muted)]">
           {holderCount} holders
         </p>

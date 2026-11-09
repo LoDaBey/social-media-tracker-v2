@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { CoverageLivePlatformGrid } from "@/components/admin/CoverageLivePlatformGrid";
 import { coverageLiveMetricsFromHolder } from "@/lib/coverage-live-metrics";
-import { holderGapSummary, holderHasCoverageGap } from "@/lib/admin-coverage-gaps";
 import { adminEmployeeHref } from "@/lib/admin-view";
 import type { CoverageLiveHolderCardProps } from "@/types/admin";
 
@@ -11,8 +10,6 @@ export function CoverageLiveHolderCard({
   language,
   showAlphaaPlatforms = false,
 }: CoverageLiveHolderCardProps) {
-  const hasGap = holderHasCoverageGap(holder);
-  const summary = hasGap ? holderGapSummary(holder) : null;
   const metrics = coverageLiveMetricsFromHolder(holder, showAlphaaPlatforms);
 
   return (
@@ -41,11 +38,6 @@ export function CoverageLiveHolderCard({
             {holder.vacant ? " · Vacant seat" : ""}
           </p>
         </div>
-        {summary ? (
-          <p className="max-w-full rounded-md bg-[var(--color-coral)] px-2.5 py-1.5 text-[11px] font-extrabold leading-snug text-white shadow-[0_0_0_1px_rgba(180,40,40,.35)]">
-            {summary}
-          </p>
-        ) : null}
       </header>
 
       <CoverageLivePlatformGrid

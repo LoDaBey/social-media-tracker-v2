@@ -39,6 +39,7 @@ export type ManagerHolderRow = {
   email: string;
   country: string;
   language: string | null;
+  region: string | null;
   employment_status: EmploymentStatus;
   targetAccountsSum: number;
   accountTotal: number;
