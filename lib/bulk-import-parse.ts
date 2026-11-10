@@ -396,31 +396,65 @@ export function getBulkImportStrictValidation(
   };
 }
 
-export function bulkImportRowWarnings(row: BulkImportAccountDraft): string[] {
-  const warnings: string[] = [];
+/**
+ * Problems in what was entered on one row. Empty cells are fine (they can be
+ * finished later); a wrong value is not: the import is blocked until it is fixed.
+ */
+export function bulkImportRowIssues(
+  row: BulkImportAccountDraft
+): BulkImportRowFieldErrors {
+  const issues: BulkImportRowFieldErrors = {};
   if (!row.platform || !PLATFORMS.includes(row.platform)) {
-    warnings.push("Select a platform.");
+    issues.platform = "Select a platform or remove this row.";
   }
   if (row.url.trim()) {
     if (!isValidAccountUrl(row.url)) {
-      warnings.push("URL is invalid and will be saved empty.");
+      issues.url = "URL is invalid. Fix it or clear it.";
     } else if (
       row.platform &&
       PLATFORMS.includes(row.platform) &&
       !isPlatformAccountUrl(row.platform, row.url)
     ) {
-      warnings.push(
-        `${platformUrlErrorMessage(row.platform)} It will be saved empty.`
-      );
+      issues.url = `${platformUrlErrorMessage(row.platform)} Fix it or clear it.`;
     }
   }
   if (row.category.trim() && !isSetupCategory(row.category.trim())) {
-    warnings.push("Category is invalid and will be saved empty.");
+    issues.category = "Category is invalid. Pick one from the list.";
   }
   if (row.email.trim() && !isValidAccountEmail(row.email)) {
-    warnings.push("Email is invalid and will be saved empty.");
+    issues.email = "Email is invalid. Fix it or clear it.";
   }
-  return warnings;
+  return issues;
+}
+
+export function bulkImportRowWarnings(row: BulkImportAccountDraft): string[] {
+  return Object.values(bulkImportRowIssues(row)).filter(Boolean) as string[];
+}
+
+/** Every row that must be fixed before importing (incl. the same URL twice). */
+export function bulkImportBlockingIssues(
+  rows: BulkImportAccountDraft[]
+): Record<string, BulkImportRowFieldErrors> {
+  const byRow: Record<string, BulkImportRowFieldErrors> = {};
+  const seenUrls = new Map<string, string>();
+  for (const row of rows) {
+    const issues = bulkImportRowIssues(row);
+    const url = row.url.trim();
+    if (url && row.platform && !issues.url && !issues.platform) {
+      const key = accountUrlKey(row.platform, url);
+      const firstId = seenUrls.get(key);
+      if (firstId) {
+        issues.url = "Same URL used twice.";
+        byRow[firstId] = { ...(byRow[firstId] ?? {}), url: "Same URL used twice." };
+      } else {
+        seenUrls.set(key, row.id);
+      }
+    }
+    if (Object.keys(issues).length > 0) {
+      byRow[row.id] = { ...(byRow[row.id] ?? {}), ...issues };
+    }
+  }
+  return byRow;
 }
 
 export function sanitizeBulkImportRow(

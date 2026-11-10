@@ -9,6 +9,7 @@ import { baseCountryFromDisplay } from "@/lib/overview-country-display";
 import { pool, queryOne } from "@/lib/db";
 import { publicAdminMutationError } from "@/lib/admin-action-error";
 import {
+  bulkImportBlockingIssues,
   parseAfricaTemplateSheet,
   sanitizeBulkImportRow,
 } from "@/lib/bulk-import-parse";
@@ -476,6 +477,13 @@ export async function importBulkEmployeeAccounts(input: {
     if (opDenied) return { error: opDenied };
     const savedLanguage = isSetupLanguage(language) ? language : null;
     if (!input.rows.length) return { error: "Add at least one account before importing." };
+    // Never save a file with wrong emails / links: the person must fix them first.
+    const badRows = Object.keys(bulkImportBlockingIssues(input.rows)).length;
+    if (badRows > 0) {
+      return {
+        error: `Fix the highlighted problems in ${badRows} row${badRows === 1 ? "" : "s"} before importing (wrong email, link or category).`,
+      };
+    }
 
     const holderName =
       input.rows[0]?.accountHolder.trim() || "Account holder";

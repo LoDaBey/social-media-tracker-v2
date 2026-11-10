@@ -4,20 +4,19 @@ import { motion } from "framer-motion";
 import { Trash2 } from "lucide-react";
 import { SETUP_CATEGORIES } from "@/lib/setup-options";
 import { PLATFORMS, PLATFORM_LABELS } from "@/lib/platform-config";
-import { bulkImportRowWarnings, bulkImportRowFieldErrors } from "@/lib/bulk-import-parse";
+import { bulkImportRowIssues, bulkImportRowFieldErrors } from "@/lib/bulk-import-parse";
 import type { BulkImportReviewRowProps } from "@/types/admin";
 
 const fieldClass =
   "w-full min-w-[140px] rounded outline-none border bg-[var(--color-surface)] px-2.5 py-2 text-[13px] font-medium text-[var(--color-ink)]";
 const okClass =
   "border-[var(--color-hairline)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]";
-const warnClass = "border-[var(--color-amber)] focus-visible:ring-2 focus-visible:ring-[var(--color-amber)]";
 const errorClass =
   "border-[var(--color-coral)] focus-visible:ring-2 focus-visible:ring-[var(--color-coral)]";
 
-function fieldBorder(hasIssue: boolean, strict: boolean) {
-  if (!hasIssue) return okClass;
-  return strict ? errorClass : warnClass;
+// Every issue blocks the import now, so it is always shown as an error.
+function fieldBorder(hasIssue: boolean) {
+  return hasIssue ? errorClass : okClass;
 }
 
 export function BulkImportReviewRow({
@@ -27,8 +26,9 @@ export function BulkImportReviewRow({
   onChange,
   onRemove,
 }: BulkImportReviewRowProps) {
-  const fieldErrors = fieldErrorsProp ?? (strict ? bulkImportRowFieldErrors(row) : {});
-  const warnings = strict ? [] : bulkImportRowWarnings(row);
+  const fieldErrors =
+    fieldErrorsProp ??
+    (strict ? bulkImportRowFieldErrors(row) : bulkImportRowIssues(row));
   const urlInvalid = Boolean(fieldErrors.url);
   const emailInvalid = Boolean(fieldErrors.email);
   const categoryInvalid = Boolean(fieldErrors.category);
@@ -46,7 +46,7 @@ export function BulkImportReviewRow({
                 platform: event.target.value as BulkImportReviewRowProps["row"]["platform"],
               })
             }
-            className={`cursor-pointer ${fieldClass} ${fieldBorder(platformInvalid, strict)}`}
+            className={`cursor-pointer ${fieldClass} ${fieldBorder(platformInvalid)}`}
           >
             <option value="">Select</option>
             {PLATFORMS.map((platform) => (
@@ -61,7 +61,7 @@ export function BulkImportReviewRow({
             value={row.username}
             aria-label="Username"
             onChange={(event) => onChange({ username: event.target.value })}
-            className={`${fieldClass} ${fieldBorder(Boolean(fieldErrors.username), strict)}`}
+            className={`${fieldClass} ${fieldBorder(Boolean(fieldErrors.username))}`}
           />
         </td>
         <td className="px-3 py-2">
@@ -69,7 +69,7 @@ export function BulkImportReviewRow({
             value={row.email}
             aria-label="Email"
             onChange={(event) => onChange({ email: event.target.value })}
-            className={`${fieldClass} ${fieldBorder(emailInvalid, strict)}`}
+            className={`${fieldClass} ${fieldBorder(emailInvalid)}`}
           />
         </td>
         <td className="px-3 py-2">
@@ -78,7 +78,7 @@ export function BulkImportReviewRow({
             aria-label="Account password"
             autoComplete="off"
             onChange={(event) => onChange({ accountPassword: event.target.value })}
-            className={`${fieldClass} ${fieldBorder(Boolean(fieldErrors.accountPassword), strict)}`}
+            className={`${fieldClass} ${fieldBorder(Boolean(fieldErrors.accountPassword))}`}
           />
         </td>
         <td className="px-3 py-2">
@@ -87,7 +87,7 @@ export function BulkImportReviewRow({
             aria-label="Email password"
             autoComplete="off"
             onChange={(event) => onChange({ emailPassword: event.target.value })}
-            className={`${fieldClass} ${fieldBorder(Boolean(fieldErrors.emailPassword), strict)}`}
+            className={`${fieldClass} ${fieldBorder(Boolean(fieldErrors.emailPassword))}`}
           />
         </td>
         <td className="px-3 py-2">
@@ -95,7 +95,7 @@ export function BulkImportReviewRow({
             value={row.url}
             aria-label="Profile URL"
             onChange={(event) => onChange({ url: event.target.value })}
-            className={`min-w-[220px] ${fieldClass} ${fieldBorder(urlInvalid, strict)}`}
+            className={`min-w-[220px] ${fieldClass} ${fieldBorder(urlInvalid)}`}
           />
         </td>
         <td className="px-3 py-2">
@@ -103,7 +103,7 @@ export function BulkImportReviewRow({
             value={row.category}
             aria-label="Category"
             onChange={(event) => onChange({ category: event.target.value })}
-            className={`cursor-pointer ${fieldClass} ${fieldBorder(categoryInvalid, strict)}`}
+            className={`cursor-pointer ${fieldClass} ${fieldBorder(categoryInvalid)}`}
           >
             <option value="">Select</option>
             {categoryInvalid ? (
@@ -138,7 +138,7 @@ export function BulkImportReviewRow({
             value={row.mobileNumber}
             aria-label="Mobile number"
             onChange={(event) => onChange({ mobileNumber: event.target.value })}
-            className={`${fieldClass} ${fieldBorder(Boolean(fieldErrors.mobileNumber), strict)}`}
+            className={`${fieldClass} ${fieldBorder(Boolean(fieldErrors.mobileNumber))}`}
           />
         </td>
         <td className="px-3 py-2">
@@ -154,23 +154,13 @@ export function BulkImportReviewRow({
           </motion.div>
         </td>
       </tr>
-      {strict && Object.keys(fieldErrors).length > 0 ? (
+      {Object.keys(fieldErrors).length > 0 ? (
         <tr>
           <td
             colSpan={10}
             className="px-3 pb-2 text-[12px] font-semibold text-[var(--color-coral)]"
           >
             {Object.values(fieldErrors).join(" ")}
-          </td>
-        </tr>
-      ) : null}
-      {!strict && warnings.length > 0 ? (
-        <tr>
-          <td
-            colSpan={10}
-            className="px-3 pb-2 text-[12px] font-semibold text-[var(--color-amber)]"
-          >
-            {warnings.join(" ")}
           </td>
         </tr>
       ) : null}

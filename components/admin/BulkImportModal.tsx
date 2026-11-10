@@ -10,9 +10,9 @@ import {
   parseBulkImportWorkbook,
 } from "@/actions/admin-bulk-import";
 import {
+  bulkImportBlockingIssues,
   bulkImportHolderCountry,
   bulkImportHolderKey,
-  bulkImportRowWarnings,
 } from "@/lib/bulk-import-parse";
 import { sheetLanguage1 } from "@/lib/sheets-country-config";
 import {
@@ -112,6 +112,10 @@ function BulkImportModalDialog({
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
+  // Rows with a wrong email / link / category: the import stays blocked until fixed.
+  const rowIssues = useMemo(() => bulkImportBlockingIssues(rows), [rows]);
+  const badRowCount = Object.keys(rowIssues).length;
+
   const selectedHolder = useMemo(
     () =>
       scopedHolders.find(
@@ -204,15 +208,12 @@ function BulkImportModalDialog({
       setFormError("Add at least one row with a platform.");
       return;
     }
-    const rowWarnings = rows.flatMap((row) =>
-      bulkImportRowWarnings(row).map(
-        (warning) => `${row.username || row.url || "A row"}: ${warning}`
-      )
-    );
-    setWarnings((prev) => {
-      const merged = [...prev.filter((item) => !item.includes("will be saved empty")), ...rowWarnings];
-      return [...new Set(merged)];
-    });
+    if (badRowCount > 0) {
+      setFormError(
+        `Fix the problems highlighted in red in ${badRowCount} row${badRowCount === 1 ? "" : "s"} before importing.`
+      );
+      return;
+    }
 
     startTransition(async () => {
       const result = await importBulkEmployeeAccounts({
@@ -271,7 +272,7 @@ function BulkImportModalDialog({
                 ? "Choose the account holder and country first."
                 : step === "upload"
                   ? "Upload the Excel template."
-                  : "Review the extracted accounts, then accept to import. Invalid cells are warnings only and import empty so the manager can finish them. This replaces any accounts already saved for this person."}
+                  : "Review the extracted accounts, then accept to import. Wrong emails, links or categories (in red) must be fixed or cleared first; empty cells are fine. This replaces any accounts already saved for this person."}
             </p>
           </div>
           <motion.button
@@ -353,6 +354,7 @@ function BulkImportModalDialog({
               region={assignedRegion}
               language={language}
               rows={rows}
+              rowFieldErrors={rowIssues}
               onLanguageChange={setLanguage}
               onRowChange={(id, patch) =>
                 setRows((prev) =>
@@ -433,12 +435,16 @@ function BulkImportModalDialog({
               layout
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              disabled={pending}
+              disabled={pending || badRowCount > 0}
               onClick={acceptImport}
               aria-label="Accept reviewed accounts and import"
               className="cursor-pointer rounded-lg bg-[var(--color-emerald)] px-4 py-2 text-[13px] font-semibold text-white outline-none hover:bg-[var(--color-emerald-hover)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] disabled:opacity-50"
             >
-              {pending ? "Importing…" : "Accept and import"}
+              {pending
+                ? "Importing…"
+                : badRowCount > 0
+                  ? `Fix ${badRowCount} row${badRowCount === 1 ? "" : "s"} first`
+                  : "Accept and import"}
             </motion.button>
           ) : null}
         </div>
