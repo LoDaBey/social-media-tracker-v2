@@ -14,7 +14,8 @@ import type { EmploymentStatus } from "@/types/db";
 const toneClass: Record<EmploymentStatus, string> = {
   active:
     "bg-[var(--color-emerald-tint)] text-[var(--color-emerald)] border-[var(--color-emerald)]/30",
-  on_hold: "bg-[var(--color-amber)]/15 text-[var(--color-amber)] border-[var(--color-amber)]/30",
+  on_hold:
+    "bg-[var(--color-amber)]/15 text-[var(--color-amber)] border-[var(--color-amber)]/30",
   deactivated:
     "bg-[var(--color-coral-tint)] text-[var(--color-coral)] border-[var(--color-coral)]/30",
 };
@@ -23,6 +24,7 @@ export function ManagerEmployeeStatusSelect({
   employeeId,
   fullName,
   status,
+  disabled = false,
 }: ManagerEmployeeStatusSelectProps) {
   const router = useRouter();
   const [value, setValue] = useState(status);
@@ -44,7 +46,7 @@ export function ManagerEmployeeStatusSelect({
         return;
       }
       toast.success(
-        `${fullName} status updated to ${EMPLOYMENT_STATUS_LABELS[next]}.`
+        `${fullName} status updated to ${EMPLOYMENT_STATUS_LABELS[next]}.`,
       );
       router.refresh();
     });
@@ -53,14 +55,12 @@ export function ManagerEmployeeStatusSelect({
   return (
     <select
       value={value}
-      disabled={pending}
+      disabled={pending || disabled}
       aria-label={`Employment status for ${fullName}`}
       onMouseDown={(event) => event.stopPropagation()}
       onClick={(event) => event.stopPropagation()}
       onKeyDown={(event) => event.stopPropagation()}
-      onChange={(event) =>
-        handleChange(event.target.value as EmploymentStatus)
-      }
+      onChange={(event) => handleChange(event.target.value as EmploymentStatus)}
       className={`min-w-[120px] cursor-pointer rounded-lg border px-2.5 py-1.5 text-[12px] font-semibold outline-none transition-opacity disabled:cursor-not-allowed disabled:opacity-60 ${toneClass[value]}`}
     >
       {EMPLOYMENT_STATUSES.map((option) => (

@@ -11,7 +11,7 @@ export function ManagerHomeTable({ groups }: ManagerHomeTableProps) {
       added: sum.added + holder.accountTotal,
       assigned: sum.assigned + holder.targetAccountsSum,
     }),
-    { added: 0, assigned: 0 }
+    { added: 0, assigned: 0 },
   );
   const holderOptions = rows.map((holder) => ({
     id: holder.id,
@@ -34,7 +34,7 @@ export function ManagerHomeTable({ groups }: ManagerHomeTableProps) {
     added: group.holders.reduce((sum, holder) => sum + holder.accountTotal, 0),
     assigned: group.holders.reduce(
       (sum, holder) => sum + holder.targetAccountsSum,
-      0
+      0,
     ),
   }));
 

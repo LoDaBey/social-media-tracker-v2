@@ -6,7 +6,11 @@ export type AdminPermissionPageKey =
   | "extract"
   | "spare"
   | "strategy"
-  | "activity";
+  | "activity"
+  // Country Manager pages (/manager).
+  | "manager_team"
+  | "manager_coverage"
+  | "manager_spare";
 
 export type AdminPermissionCrud = {
   canCreate: boolean;

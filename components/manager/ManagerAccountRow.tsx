@@ -14,6 +14,7 @@ import { AccountSpareToggleButton } from "@/components/admin/AccountSpareToggleB
 import { AccountStatusBadge } from "@/components/admin/AccountStatusBadge";
 import { AccountUrlCell } from "@/components/admin/AccountUrlCell";
 import { ManagerAccountDeleteButton } from "@/components/manager/ManagerAccountDeleteButton";
+import { useManagerPermissions } from "@/components/manager/ManagerPermissionsContext";
 import type { ManagerAccountRowProps } from "@/types/manager";
 
 export function ManagerAccountRow({
@@ -25,8 +26,12 @@ export function ManagerAccountRow({
   holderOptions,
 }: ManagerAccountRowProps) {
   const [editOpen, setEditOpen] = useState(false);
+  const { team, spare } = useManagerPermissions();
   const displayName =
-    account.account_name || account.username || account.account_url || "Account";
+    account.account_name ||
+    account.username ||
+    account.account_url ||
+    "Account";
 
   return (
     <tr className="border-t border-[var(--color-hairline)]">
@@ -59,29 +64,43 @@ export function ManagerAccountRow({
       </td>
       <td className="px-4 py-2.5">
         <div className="flex items-center gap-1.5">
-          <AccountSpareToggleButton
-            accountId={account.id}
-            accountName={displayName}
-            isSpare={account.is_spare}
-            source="temp"
-            setSpare={setManagerSocialAccountSpare}
-          />
-          <motion.div layout whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <button
-              type="button"
-              aria-label={`Edit ${displayName}`}
-              onClick={() => setEditOpen(true)}
-              className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-[var(--color-emerald)] outline-none hover:bg-[var(--color-emerald-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+          {spare.canUpdate ? (
+            <AccountSpareToggleButton
+              accountId={account.id}
+              accountName={displayName}
+              isSpare={account.is_spare}
+              source="temp"
+              setSpare={setManagerSocialAccountSpare}
+            />
+          ) : null}
+          {team.canUpdate ? (
+            <motion.div
+              layout
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <Pencil className="h-4 w-4" aria-hidden="true" strokeWidth={2} />
-            </button>
-          </motion.div>
-          <ManagerAccountDeleteButton
-            accountId={account.id}
-            accountName={displayName}
-            holderName={fullName}
-            country={country}
-          />
+              <button
+                type="button"
+                aria-label={`Edit ${displayName}`}
+                onClick={() => setEditOpen(true)}
+                className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-[var(--color-emerald)] outline-none hover:bg-[var(--color-emerald-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+              >
+                <Pencil
+                  className="h-4 w-4"
+                  aria-hidden="true"
+                  strokeWidth={2}
+                />
+              </button>
+            </motion.div>
+          ) : null}
+          {team.canDelete ? (
+            <ManagerAccountDeleteButton
+              accountId={account.id}
+              accountName={displayName}
+              holderName={fullName}
+              country={country}
+            />
+          ) : null}
         </div>
         <AccountEditModal
           open={editOpen}

@@ -23,6 +23,9 @@ const pageKeySchema = z.enum([
   "spare",
   "strategy",
   "activity",
+  "manager_team",
+  "manager_coverage",
+  "manager_spare",
 ]);
 
 const crudSchema = z.object({

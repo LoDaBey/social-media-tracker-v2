@@ -11,7 +11,7 @@ export function ManagerHomeTabs({
 }: ManagerHomeTabsProps) {
   const { params, update } = useInstantSearchParams();
   const tab: ManagerHomeTab =
-    params.get("tab") === "coverage" ? "coverage" : "team";
+    params.get("tab") === "coverage" && coveragePanel ? "coverage" : "team";
 
   function selectTab(next: ManagerHomeTab) {
     update({ tab: next === "coverage" ? "coverage" : null });
@@ -42,23 +42,25 @@ export function ManagerHomeTabs({
           >
             Team
           </motion.button>
-          <motion.button
-            type="button"
-            role="tab"
-            aria-selected={tab === "coverage"}
-            aria-label="Show planned coverage"
-            layout
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => selectTab("coverage")}
-            className={`cursor-pointer rounded-full px-5 py-2 text-[13px] font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] ${
-              tab === "coverage"
-                ? "bg-[var(--color-surface)] text-[var(--color-ink)] shadow-[0_4px_14px_rgba(20,20,20,.08)]"
-                : "text-[var(--color-muted)]"
-            }`}
-          >
-            Planned coverage
-          </motion.button>
+          {coveragePanel ? (
+            <motion.button
+              type="button"
+              role="tab"
+              aria-selected={tab === "coverage"}
+              aria-label="Show planned coverage"
+              layout
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => selectTab("coverage")}
+              className={`cursor-pointer rounded-full px-5 py-2 text-[13px] font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)] ${
+                tab === "coverage"
+                  ? "bg-[var(--color-surface)] text-[var(--color-ink)] shadow-[0_4px_14px_rgba(20,20,20,.08)]"
+                  : "text-[var(--color-muted)]"
+              }`}
+            >
+              Planned coverage
+            </motion.button>
+          ) : null}
         </div>
         {actions}
       </div>

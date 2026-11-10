@@ -2,6 +2,8 @@
 
 import { ManagerAccountsTable } from "@/components/manager/ManagerAccountsTable";
 import { ManagerBulkImportButton } from "@/components/manager/ManagerBulkImportButton";
+import { ManagerAddAccountButton } from "@/components/manager/ManagerAddAccountButton";
+import { useManagerPermissions } from "@/components/manager/ManagerPermissionsContext";
 import type { ManagerAccountsPanelProps } from "@/types/manager";
 
 export function ManagerAccountsPanel({
@@ -16,6 +18,7 @@ export function ManagerAccountsPanel({
   allowedCountries,
 }: ManagerAccountsPanelProps) {
   const total = accounts.length;
+  const { team } = useManagerPermissions();
 
   return (
     <div className="flex flex-col gap-4">
@@ -25,11 +28,22 @@ export function ManagerAccountsPanel({
             ? `${total} of ${assignedCount} assigned accounts`
             : `${total} ${total === 1 ? "account" : "accounts"}`}
         </p>
-        <ManagerBulkImportButton
-          holders={importHolders}
-          allowedCountries={allowedCountries}
-          initialHolderId={holderId}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          {team.canUpdate ? (
+            <ManagerBulkImportButton
+              holders={importHolders}
+              allowedCountries={allowedCountries}
+              initialHolderId={holderId}
+            />
+          ) : null}
+          {team.canCreate ? (
+            <ManagerAddAccountButton
+              holderId={holderId}
+              fullName={fullName}
+              holderOptions={holderOptions}
+            />
+          ) : null}
+        </div>
       </div>
       {accounts.length === 0 ? (
         <p className="rounded-lg bg-[var(--color-cream-tint)] px-4 py-6 text-center text-[14px] text-[var(--color-muted)]">

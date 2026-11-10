@@ -176,6 +176,13 @@ export async function fetchManagerHomeGroups(
       language: holder.language,
       region: holder.region,
       employment_status: holder.employment_status ?? "active",
+      targets: {
+        target_x_count: holder.target_x_count ?? 0,
+        target_facebook_personal_count: holder.target_facebook_personal_count ?? 0,
+        target_facebook_umbrella_count: holder.target_facebook_umbrella_count ?? 0,
+        target_instagram_count: holder.target_instagram_count ?? 0,
+        target_tiktok_count: holder.target_tiktok_count ?? 0,
+      },
       targetAccountsSum: totalAssignedAccountTarget(targets),
       accountTotal: publicAccounts.length,
       accounts: publicAccounts,

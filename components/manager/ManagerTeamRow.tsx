@@ -6,6 +6,8 @@ import { CountryFlag } from "@/lib/country-icons";
 import { AccountTotalsCell } from "@/components/admin/AccountTotalsCell";
 import { ManagerEmployeeStatusSelect } from "@/components/manager/ManagerEmployeeStatusSelect";
 import { ManagerAccountsPanel } from "@/components/manager/ManagerAccountsPanel";
+import { ManagerEmployeeEditButton } from "@/components/manager/ManagerEmployeeEditButton";
+import { useManagerPermissions } from "@/components/manager/ManagerPermissionsContext";
 import type { ManagerTeamRowProps } from "@/types/manager";
 
 export function ManagerTeamRow({
@@ -15,6 +17,7 @@ export function ManagerTeamRow({
   allowedCountries,
 }: ManagerTeamRowProps) {
   const [expanded, setExpanded] = useState(false);
+  const { team } = useManagerPermissions();
   const panelId = `manager-accounts-${row.id}`;
 
   function toggle() {
@@ -73,11 +76,15 @@ export function ManagerTeamRow({
           />
         </td>
         <td className="px-4 py-3" onClick={(event) => event.stopPropagation()}>
-          <ManagerEmployeeStatusSelect
-            employeeId={row.id}
-            fullName={row.full_name}
-            status={row.employment_status}
-          />
+          <div className="flex items-center gap-1.5">
+            <ManagerEmployeeStatusSelect
+              employeeId={row.id}
+              fullName={row.full_name}
+              status={row.employment_status}
+              disabled={!team.canUpdate}
+            />
+            {team.canUpdate ? <ManagerEmployeeEditButton row={row} /> : null}
+          </div>
         </td>
       </tr>
       {expanded ? (
