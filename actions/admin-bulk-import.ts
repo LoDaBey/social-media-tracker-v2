@@ -31,6 +31,7 @@ import type {
   BulkImportParseResult,
 } from "@/types/admin";
 import { logOrbitAction } from "@/lib/orbit-log";
+import { requireManagerPermission } from "@/lib/manager-permissions";
 import type { Platform } from "@/lib/platform-config";
 import {
   assertManagerCanEditEmployee,
@@ -47,6 +48,7 @@ async function requireAdminOrManager() {
     throw new Error("Unauthorized.");
   }
   if (role === "manager") {
+    await requireManagerPermission("manager_team", "canUpdate");
     return { userId, role: "manager" as const, opScope: null };
   }
   // Importing replaces an existing employee's accounts: an update, not a create.

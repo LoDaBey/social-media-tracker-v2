@@ -5,7 +5,9 @@ import type {
   AdminSpareAccountListItem,
   BulkImportHolderOption,
   SpareMarkHolderOption,
+  UpdateEmployeeTargetsPayload,
 } from "@/types/admin";
+import type { AdminPermissionCrud } from "@/types/permissions";
 import type { EmploymentStatus, Platform, AccountScope } from "@/types/db";
 
 export type ManagerOption = {
@@ -41,9 +43,34 @@ export type ManagerHolderRow = {
   language: string | null;
   region: string | null;
   employment_status: EmploymentStatus;
+  targets: UpdateEmployeeTargetsPayload;
   targetAccountsSum: number;
   accountTotal: number;
   accounts: ManagerAccountListItem[];
+};
+
+/** What this Country Manager may do on each of their pages (Access matrix). */
+export type ManagerPermissions = {
+  team: AdminPermissionCrud;
+  coverage: AdminPermissionCrud;
+  spare: AdminPermissionCrud;
+};
+
+export type ManagerEmployeeProfilePayload = {
+  full_name: string;
+  email: string;
+  language: string;
+  targets: UpdateEmployeeTargetsPayload;
+};
+
+export type ManagerEmployeeEditButtonProps = {
+  row: ManagerHolderRow;
+};
+
+export type ManagerAddAccountButtonProps = {
+  holderId: number;
+  fullName: string;
+  holderOptions: AccountHolderOption[];
 };
 
 export type ManagerCountryGroup = {
@@ -57,6 +84,7 @@ export type ManagerHomeTableProps = {
 
 export type ManagerHomeProps = {
   groups: ManagerCountryGroup[];
+  permissions: ManagerPermissions;
   coverage: AdminCountryCoverage;
   spareAccounts: AdminSpareAccountListItem[];
   spareHolders: SpareMarkHolderOption[];
@@ -66,7 +94,8 @@ export type ManagerHomeTab = "team" | "coverage";
 
 export type ManagerHomeTabsProps = {
   teamPanel: ReactNode;
-  coveragePanel: ReactNode;
+  /** Null when the CM has no Planned coverage access: the tab is hidden. */
+  coveragePanel: ReactNode | null;
   actions?: ReactNode;
 };
 
@@ -148,4 +177,6 @@ export type ManagerEmployeeStatusSelectProps = {
   employeeId: number;
   fullName: string;
   status: EmploymentStatus;
+  /** No "Your team · Update" permission. */
+  disabled?: boolean;
 };

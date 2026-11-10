@@ -3,6 +3,7 @@
 import { CountryFlag } from "@/lib/country-icons";
 import { ManagerBulkImportButton } from "@/components/manager/ManagerBulkImportButton";
 import { ManagerSyncSheetsButton } from "@/components/manager/ManagerSyncSheetsButton";
+import { useManagerPermissions } from "@/components/manager/ManagerPermissionsContext";
 import type { ManagerTeamHeaderProps } from "@/types/manager";
 
 export function ManagerTeamHeader({
@@ -13,6 +14,7 @@ export function ManagerTeamHeader({
   allowedCountries,
 }: ManagerTeamHeaderProps) {
   const showCountries = countries.length > 1;
+  const { team } = useManagerPermissions();
 
   return (
     <header className="flex flex-col gap-3">
@@ -21,10 +23,12 @@ export function ManagerTeamHeader({
           Your team
         </h1>
         <div className="inline-flex flex-wrap items-center justify-end gap-2">
-          <ManagerBulkImportButton
-            holders={importHolders}
-            allowedCountries={allowedCountries}
-          />
+          {team.canUpdate ? (
+            <ManagerBulkImportButton
+              holders={importHolders}
+              allowedCountries={allowedCountries}
+            />
+          ) : null}
           <ManagerSyncSheetsButton />
           <div className="inline-flex items-center gap-2">
             <span className="text-[14px] font-semibold text-[var(--color-ink)]">
@@ -40,13 +44,20 @@ export function ManagerTeamHeader({
         </div>
       </div>
       {showCountries ? (
-        <div className="flex flex-wrap gap-2" aria-label="Account totals by country">
+        <div
+          className="flex flex-wrap gap-2"
+          aria-label="Account totals by country"
+        >
           {countries.map((item) => (
             <span
               key={item.country}
               className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-surface)] px-2.5 py-1.5 text-[13px] font-semibold text-[var(--color-ink)]"
             >
-              <CountryFlag country={item.country} title={item.country} className="h-4 w-6" />
+              <CountryFlag
+                country={item.country}
+                title={item.country}
+                className="h-4 w-6"
+              />
               {item.country}
               <span className="tabular-nums text-[var(--color-muted)]">
                 {item.added} / {item.assigned}

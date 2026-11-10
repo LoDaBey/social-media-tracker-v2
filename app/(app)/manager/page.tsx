@@ -19,6 +19,7 @@ import {
   fetchManagerRegion,
 } from "@/lib/manager-data";
 import { sameProject } from "@/lib/project-region-sql";
+import { fetchManagerPermissions } from "@/lib/manager-permissions";
 import { adminRegionFromSlug } from "@/lib/region-config";
 import { homePathForRole } from "@/lib/setup-complete";
 import type { Role } from "@/types/db";
@@ -37,10 +38,11 @@ export default async function ManagerHomePage() {
   const managerId = Number(session.user.id);
   if (!Number.isFinite(managerId)) redirect("/login");
 
-  const [groups, countries, managerRegion] = await Promise.all([
+  const [groups, countries, managerRegion, permissions] = await Promise.all([
     fetchManagerHomeGroups(managerId),
     fetchManagerCountries(managerId),
     fetchManagerRegion(managerId),
+    fetchManagerPermissions(managerId),
   ]);
   const [coverage, spareAccounts, spareHolders] = await Promise.all([
     // Same project only: Palestine / Sudan / Somalia are in two projects.
@@ -59,6 +61,7 @@ export default async function ManagerHomePage() {
       <Suspense fallback={<ManagerHomeTable groups={groups} />}>
         <ManagerHome
           groups={groups}
+          permissions={permissions}
           coverage={coverage}
           spareAccounts={spareAccountsForCountries(
             spareAccounts.filter(inManagerProject),
