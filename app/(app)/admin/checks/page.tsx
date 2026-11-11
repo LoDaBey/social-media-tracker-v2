@@ -64,31 +64,31 @@ export default async function AdminWeeklyChecksPage({
       label: "Accounts to check",
       value: kpis.total,
       tone: "ink",
-      hint: "All active employees",
+      hint: "",
     },
     {
       label: "Checked",
       value: checked,
       tone: "emerald",
-      hint: `${percent(checked, kpis.total)}% done`,
+      hint: `${percent(checked, kpis.total)}%`,
     },
     {
       label: "Not checked yet",
       value: kpis.unchecked,
       tone: "amber",
-      hint: "Due by Sunday",
+      hint: "",
     },
     {
       label: "Problems reported",
       value: kpis.issue,
       tone: "coral",
-      hint: "Marked Problem by the CM",
+      hint: "",
     },
     {
       label: "Changed this week",
       value: kpis.changed,
       tone: "ink",
-      hint: "Added or edited since Monday",
+      hint: "",
     },
   ] as const;
   const toneClass = {
@@ -101,11 +101,9 @@ export default async function AdminWeeklyChecksPage({
   return (
     <AdminWorkspace view={adminViewChecks()}>
       <div className="flex flex-col gap-5">
-        <p className="text-[14px] text-[var(--color-muted)]">
-          Week of {formatShortDate(data.weekStart)} to{" "}
-          {formatShortDate(data.weekEnd)}. Country Managers confirm every
-          account once a week (OK or Problem). It starts again every Monday.
-        </p>
+        <span className="self-start rounded-full bg-[var(--color-cream-tint)] px-3 py-1 text-[13px] font-semibold tabular-nums text-[var(--color-ink)]">
+          {formatShortDate(data.weekStart)} – {formatShortDate(data.weekEnd)}
+        </span>
 
         <section
           aria-label="Weekly check totals"
@@ -126,9 +124,11 @@ export default async function AdminWeeklyChecksPage({
               >
                 {card.value}
               </p>
-              <p className="text-[11px] text-[var(--color-muted)]">
-                {card.hint}
-              </p>
+              {card.hint ? (
+                <p className="text-[11px] font-semibold tabular-nums text-[var(--color-muted)]">
+                  {card.hint}
+                </p>
+              ) : null}
             </div>
           ))}
         </section>

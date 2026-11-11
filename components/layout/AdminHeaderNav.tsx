@@ -34,10 +34,8 @@ export function AdminHeaderNav({
       link.href === "/admin/employees" ||
       link.href === "/admin/extract"
   );
-  const afterSpare = links.filter(
-    (link) =>
-      link.href === "/admin/strategy" || link.href === "/admin/logs"
-  );
+  // Everything after Spare, in ADMIN_NAV_PAGES order (Strategy, Weekly checks, Activity…).
+  const afterSpare = links.filter((link) => !beforeSpare.includes(link));
 
   return (
     <LayoutGroup id="admin-header-nav">
