@@ -23,6 +23,7 @@ const pageKeySchema = z.enum([
   "spare",
   "strategy",
   "activity",
+  "checks",
   "manager_team",
   "manager_coverage",
   "manager_spare",

@@ -84,3 +84,14 @@ export function formatCairoDateTime(isoDate: string): string {
     minute: "2-digit",
   }).format(parsed);
 }
+
+/** Monday (YYYY-MM-DD, Cairo) of the week that contains `isoDate` (default: today). */
+export function getCairoWeekStart(isoDate: string = getTodayCairoDate()): string {
+  const weekday = new Date(parseIsoDateUtc(isoDate)).getUTCDay(); // 0 = Sunday
+  return addDaysToIsoDate(isoDate, -((weekday + 6) % 7));
+}
+
+/** Sunday of the same Monday-to-Sunday week. */
+export function getCairoWeekEnd(weekStart: string): string {
+  return addDaysToIsoDate(weekStart, 6);
+}

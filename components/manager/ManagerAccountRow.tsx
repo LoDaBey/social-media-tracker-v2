@@ -15,6 +15,7 @@ import { AccountStatusBadge } from "@/components/admin/AccountStatusBadge";
 import { AccountUrlCell } from "@/components/admin/AccountUrlCell";
 import { ManagerAccountDeleteButton } from "@/components/manager/ManagerAccountDeleteButton";
 import { useManagerPermissions } from "@/components/manager/ManagerPermissionsContext";
+import { ManagerWeeklyCheckCell } from "@/components/manager/ManagerWeeklyCheckCell";
 import type { ManagerAccountRowProps } from "@/types/manager";
 
 export function ManagerAccountRow({
@@ -61,6 +62,14 @@ export function ManagerAccountRow({
       </td>
       <td className="px-4 py-2.5">
         <AccountStatusBadge status={account.status} />
+      </td>
+      <td className="px-4 py-2.5">
+        <ManagerWeeklyCheckCell
+          accountId={account.id}
+          accountName={displayName}
+          check={account.weekly_check}
+          canUpdate={team.canUpdate}
+        />
       </td>
       <td className="px-4 py-2.5">
         <div className="flex items-center gap-1.5">

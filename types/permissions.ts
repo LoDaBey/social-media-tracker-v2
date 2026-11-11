@@ -7,6 +7,7 @@ export type AdminPermissionPageKey =
   | "spare"
   | "strategy"
   | "activity"
+  | "checks"
   // Country Manager pages (/manager).
   | "manager_team"
   | "manager_coverage"

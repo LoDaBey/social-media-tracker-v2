@@ -18,6 +18,8 @@ export function ManagerTeamRow({
 }: ManagerTeamRowProps) {
   const [expanded, setExpanded] = useState(false);
   const { team } = useManagerPermissions();
+  const checked = row.accounts.filter((account) => account.weekly_check).length;
+  const allChecked = row.accounts.length > 0 && checked === row.accounts.length;
   const panelId = `manager-accounts-${row.id}`;
 
   function toggle() {
@@ -62,6 +64,19 @@ export function ManagerTeamRow({
         </td>
         <td className="px-4 py-3 text-[14px] font-semibold text-[var(--color-ink)]">
           {row.full_name}
+          {row.accounts.length > 0 ? (
+            <span
+              className={`mt-0.5 block text-[12px] font-semibold ${
+                allChecked
+                  ? "text-[var(--color-emerald)]"
+                  : "text-[var(--color-amber)]"
+              }`}
+            >
+              {allChecked
+                ? "All checked this week"
+                : `${checked} / ${row.accounts.length} checked this week`}
+            </span>
+          ) : null}
         </td>
         <td className="hidden px-4 py-3 text-[14px] text-[var(--color-muted)] sm:table-cell">
           {row.email}
