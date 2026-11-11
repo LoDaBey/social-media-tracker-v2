@@ -138,7 +138,20 @@ export async function fetchAdminWeeklyChecks(
        FROM temp_social_media_accounts a
        JOIN temp_users u ON u.id = a.user_id
        LEFT JOIN temp_users tl ON tl.id = u.team_lead_id AND tl.role = 'team_lead'
-       LEFT JOIN temp_users cm ON cm.id = COALESCE(u.manager_id, tl.manager_id)
+       -- No manager on the profile (or a team lead without one): the CM who covers
+       -- this country in the same project sees them on their page, so count them there.
+       LEFT JOIN LATERAL (
+         SELECT m.id
+           FROM temp_manager_countries mc
+           JOIN temp_users m ON m.id = mc.user_id
+          WHERE m.role = 'manager'
+            AND m.is_active = TRUE
+            AND mc.country = u.country
+            AND ${sameProjectSql("m.region", "u.region")}
+          ORDER BY m.id ASC
+          LIMIT 1
+       ) covering ON u.manager_id IS NULL AND tl.manager_id IS NULL
+       LEFT JOIN temp_users cm ON cm.id = COALESCE(u.manager_id, tl.manager_id, covering.id)
        LEFT JOIN temp_account_weekly_checks c
               ON c.account_id = a.id AND c.week_start = $1::date
        LEFT JOIN temp_users chk ON chk.id = c.checked_by
