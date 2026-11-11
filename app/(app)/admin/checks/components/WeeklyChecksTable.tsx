@@ -32,11 +32,11 @@ export function WeeklyChecksTable({
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-[13px] text-[var(--color-muted)]">
-        {matching > rows.length
-          ? `Showing the first ${rows.length} of ${matching} accounts. Narrow it down with a country or search.`
-          : `${matching} account${matching === 1 ? "" : "s"}`}
-      </p>
+      {matching > rows.length ? (
+        <p className="text-[13px] tabular-nums text-[var(--color-muted)]">
+          {rows.length} / {matching}
+        </p>
+      ) : null}
       <div className="overflow-x-auto rounded-[var(--radius-card)] border border-[var(--color-hairline)] bg-[var(--color-surface)]">
         <table className="w-full min-w-[1100px] text-left text-[13px]">
           <thead className="border-b border-[var(--color-hairline)] bg-[var(--color-cream-tint)] text-[12px] font-semibold uppercase tracking-[0.04em] text-[var(--color-muted)]">
