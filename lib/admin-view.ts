@@ -78,6 +78,10 @@ export function adminViewStrategy(): AdminView {
   return { kind: "strategy", title: "Strategy" };
 }
 
+export function adminViewChecks(): AdminView {
+  return { kind: "checks", title: "Weekly checks" };
+}
+
 export function adminViewLogs(): AdminView {
   return { kind: "logs", title: "Activity log" };
 }
@@ -100,6 +104,7 @@ export function adminWorkspaceBackHref(view: AdminView): string | null {
     case "employees":
     case "extract":
     case "strategy":
+    case "checks":
     case "logs":
       return "/admin";
     case "employee_new":

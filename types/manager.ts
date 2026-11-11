@@ -8,6 +8,7 @@ import type {
   UpdateEmployeeTargetsPayload,
 } from "@/types/admin";
 import type { AdminPermissionCrud } from "@/types/permissions";
+import type { WeeklyCheck } from "@/types/weekly-checks";
 import type { EmploymentStatus, Platform, AccountScope } from "@/types/db";
 
 export type ManagerOption = {
@@ -33,6 +34,8 @@ export type ManagerAccountListItem = {
   account_scope: AccountScope;
   status: "active" | "archived" | "suspended";
   is_spare: boolean;
+  /** This week's check (Monday to Sunday); null = not checked yet. */
+  weekly_check: WeeklyCheck | null;
 };
 
 export type ManagerHolderRow = {
@@ -159,6 +162,8 @@ export type ManagerCountryTotal = {
 };
 
 export type ManagerTeamHeaderProps = {
+  /** This week's account check-up progress. */
+  weekly: { checked: number; total: number; endsLabel: string };
   holderCount: number;
   overall: ManagerTeamTotals;
   countries: ManagerCountryTotal[];

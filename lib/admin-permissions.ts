@@ -17,6 +17,7 @@ const ADMIN_PAGE_KEYS: AdminPermissionPageKey[] = [
   "extract",
   "spare",
   "strategy",
+  "checks",
   "activity",
 ];
 
@@ -42,6 +43,7 @@ const PAGE_CATALOG: Record<
   extract: { label: "Data extract", sortOrder: 30 },
   spare: { label: "Spare accounts", sortOrder: 40 },
   strategy: { label: "Strategy", sortOrder: 50 },
+  checks: { label: "Weekly checks", sortOrder: 55 },
   activity: { label: "Activity", sortOrder: 60 },
   manager_team: { label: "Your team (employees & accounts)", sortOrder: 110 },
   manager_coverage: { label: "Planned coverage", sortOrder: 120 },
@@ -85,7 +87,8 @@ function codeRoleDefault(
   }
   if (role === "hoo") {
     const strategy = pageKey === "strategy";
-    const extractOrActivity = pageKey === "extract" || pageKey === "activity";
+    const extractOrActivity =
+      pageKey === "extract" || pageKey === "activity" || pageKey === "checks";
     const employees = pageKey === "employees";
     return {
       canCreate: employees,
@@ -295,7 +298,7 @@ export async function saveEmployeePermissions(
   );
   if (roleKeys.some((key) => !inDb.has(key))) {
     throw new Error(
-      "Country Manager permissions need the database update first (migration 0025).",
+      "These permissions need the database update first (migrations 0025 and 0026).",
     );
   }
   const pages = roleKeys.map((pageKey) => ({ pageKey }));

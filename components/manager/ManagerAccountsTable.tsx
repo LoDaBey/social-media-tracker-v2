@@ -13,7 +13,7 @@ export function ManagerAccountsTable({
 }: ManagerAccountsTableProps) {
   return (
     <div className="overflow-x-auto rounded-[16px] border border-[var(--color-hairline)] bg-[var(--color-surface)]">
-      <table className="w-full min-w-[1080px] border-collapse text-left">
+      <table className="w-full min-w-[1260px] border-collapse text-left">
         <thead>
           <tr className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
             <th scope="col" className="px-4 py-2">
@@ -39,6 +39,9 @@ export function ManagerAccountsTable({
             </th>
             <th scope="col" className="px-4 py-2">
               Status
+            </th>
+            <th scope="col" className="px-4 py-2">
+              This week&apos;s check
             </th>
             <th scope="col" className="px-4 py-2">
               Actions

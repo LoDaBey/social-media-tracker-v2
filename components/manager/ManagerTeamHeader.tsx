@@ -12,6 +12,7 @@ export function ManagerTeamHeader({
   countries,
   importHolders,
   allowedCountries,
+  weekly,
 }: ManagerTeamHeaderProps) {
   const showCountries = countries.length > 1;
   const { team } = useManagerPermissions();
@@ -30,6 +31,17 @@ export function ManagerTeamHeader({
             />
           ) : null}
           <ManagerSyncSheetsButton />
+          <span
+            className={`inline-flex rounded-lg px-3 py-1.5 text-[13px] font-bold tabular-nums ${
+              weekly.total > 0 && weekly.checked >= weekly.total
+                ? "bg-[var(--color-emerald-tint)] text-[var(--color-emerald)]"
+                : "bg-[var(--color-amber)]/15 text-[var(--color-amber)]"
+            }`}
+            title="Check every account once between Monday and Sunday."
+            aria-label={`Weekly check: ${weekly.checked} of ${weekly.total} accounts done, ends ${weekly.endsLabel}`}
+          >
+            Weekly check {weekly.checked} / {weekly.total} · ends {weekly.endsLabel}
+          </span>
           <div className="inline-flex items-center gap-2">
             <span className="text-[14px] font-semibold text-[var(--color-ink)]">
               Total accounts

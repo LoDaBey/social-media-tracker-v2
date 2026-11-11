@@ -27,6 +27,12 @@ export const ADMIN_NAV_PAGES: {
     match: "prefix",
   },
   {
+    pageKey: "checks",
+    href: "/admin/checks",
+    label: "Weekly checks",
+    match: "prefix",
+  },
+  {
     pageKey: "activity",
     href: "/admin/logs",
     label: "Activity",

@@ -9,6 +9,7 @@ import { sameProject } from "@/lib/project-region-sql";
 import type { AdminEmployeeSource } from "@/types/admin";
 import { targetsFromCounts } from "@/lib/setup-complete";
 import { totalAssignedAccountTarget } from "@/lib/setup-facebook";
+import { fetchWeeklyChecksForAccounts } from "@/lib/weekly-checks-data";
 import type { TempSocialMediaAccount } from "@/types/db";
 import type {
   ManagerAccountListItem,
@@ -133,6 +134,10 @@ export async function fetchManagerHomeGroups(
     [holders.map((h) => h.id)]
   );
 
+  const weeklyChecks = await fetchWeeklyChecksForAccounts(
+    accounts.map((account) => account.id)
+  );
+
   const accountsByUser = new Map<number, TempSocialMediaAccount[]>();
   for (const account of accounts) {
     const list = accountsByUser.get(account.user_id) ?? [];
@@ -166,6 +171,7 @@ export async function fetchManagerHomeGroups(
         account_scope: account.account_scope ?? "personal",
         status: account.status,
         is_spare: Boolean(account.is_spare),
+        weekly_check: weeklyChecks.get(account.id) ?? null,
       })
     );
     groups.get(country)!.push({

@@ -198,6 +198,7 @@ export type AdminViewKind =
   | "alphaa_employee"
   | "extract"
   | "strategy"
+  | "checks"
   | "logs";
 
 export type AdminEmployeePanel = "profile" | "targets" | "activity";
@@ -209,6 +210,7 @@ export type AdminView =
   | { kind: "extract"; title: string }
   | { kind: "strategy"; title: string }
   | { kind: "logs"; title: string }
+  | { kind: "checks"; title: string }
   | {
       kind: "employee";
       title: string;
