@@ -2,7 +2,7 @@ import type { Platform } from "@/types/db";
 
 export type WeeklyCheckResult = "ok" | "issue";
 
-/** This week's check on one account (null = not checked yet). */
+/** One day's check on one account (null = not checked yet). Checks are daily. */
 export type WeeklyCheck = {
   result: WeeklyCheckResult;
   note: string | null;
@@ -18,7 +18,7 @@ export type WeeklyCheckKpis = {
   ok: number;
   issue: number;
   unchecked: number;
-  /** Accounts added or edited since Monday. */
+  /** Accounts added or edited that day. */
   changed: number;
 };
 
@@ -42,16 +42,21 @@ export type WeeklyCheckAccountRow = {
   country: string | null;
   region: string | null;
   managerName: string | null;
-  changedThisWeek: boolean;
+  changedThatDay: boolean;
   check: WeeklyCheck | null;
 };
 
 export type AdminWeeklyChecksData = {
-  weekStart: string;
-  weekEnd: string;
+  /** The day shown (YYYY-MM-DD, Cairo). */
+  date: string;
+  isToday: boolean;
+  /** Set when the page is limited to one Country Manager's team. */
+  manager: { id: number; name: string } | null;
   kpis: WeeklyCheckKpis;
   managers: WeeklyCheckManagerProgress[];
   rows: WeeklyCheckAccountRow[];
+  /** All accounts marked Problem that day, with their notes. */
+  problems: WeeklyCheckAccountRow[];
   /** Rows matching the filter before the display limit. */
   matching: number;
   countries: string[];
@@ -61,16 +66,32 @@ export type AdminWeeklyChecksFilters = {
   filter: WeeklyCheckFilter;
   country: string;
   q: string;
+  /** YYYY-MM-DD; today when empty. */
+  date: string;
+  /** Only this Country Manager's team. */
+  managerId: number | null;
 };
 
-export type AdminWeeklyChecksFiltersProps = AdminWeeklyChecksFilters & {
+export type AdminWeeklyChecksFiltersProps = Pick<
+  AdminWeeklyChecksFilters,
+  "filter" | "country" | "q"
+> & {
   countries: string[];
+};
+
+/** Per Country Manager: accounts left unchecked on a day (OP notifications). */
+export type DailyCheckMissedSummary = {
+  managerId: number;
+  managerName: string;
+  unchecked: number;
+  total: number;
 };
 
 export type AdminWeeklyChecksTableProps = {
   rows: WeeklyCheckAccountRow[];
   matching: number;
   filter: WeeklyCheckFilter;
+  isToday: boolean;
 };
 
 export type ManagerWeeklyCheckCellProps = {
@@ -78,4 +99,9 @@ export type ManagerWeeklyCheckCellProps = {
   accountName: string;
   check: WeeklyCheck | null;
   canUpdate: boolean;
+};
+
+export type WeeklyChecksProblemsCardProps = {
+  count: number;
+  problems: WeeklyCheckAccountRow[];
 };

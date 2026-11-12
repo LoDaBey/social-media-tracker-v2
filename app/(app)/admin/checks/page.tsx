@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { X } from "lucide-react";
 import { requireAdminPageAccess } from "@/lib/admin-access";
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import { adminViewChecks } from "@/lib/admin-view";
@@ -9,9 +11,10 @@ import {
 } from "@/lib/weekly-checks-data";
 import { WeeklyChecksFilters } from "./components/WeeklyChecksFilters";
 import { WeeklyChecksTable } from "./components/WeeklyChecksTable";
+import { WeeklyChecksProblemsCard } from "./components/WeeklyChecksProblemsCard";
 
 export const metadata: Metadata = {
-  title: "Weekly checks",
+  title: "Daily checks",
 };
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -35,6 +38,9 @@ export default async function AdminWeeklyChecksPage({
     filter: parseWeeklyCheckFilter(firstParam(params.filter)),
     country: firstParam(params.country) ?? "",
     q: firstParam(params.q) ?? "",
+    date: firstParam(params.date) ?? "",
+    // From an OP notification: only this Country Manager's team.
+    managerId: Number(firstParam(params.manager)) || null,
   };
 
   let data;
@@ -51,7 +57,8 @@ export default async function AdminWeeklyChecksPage({
     return (
       <AdminWorkspace view={adminViewChecks()}>
         <p className="rounded-[16px] bg-[var(--color-cream-tint)] px-4 py-10 text-center text-[14px] text-[var(--color-muted)]">
-          Weekly checks need the database update first (migration 0026).
+          Daily checks need the database update first (migrations 0026 and
+          0027).
         </p>
       </AdminWorkspace>
     );
@@ -85,7 +92,7 @@ export default async function AdminWeeklyChecksPage({
       hint: "",
     },
     {
-      label: "Changed this week",
+      label: data.isToday ? "Changed today" : "Changed that day",
       value: kpis.changed,
       tone: "ink",
       hint: "",
@@ -101,39 +108,75 @@ export default async function AdminWeeklyChecksPage({
   return (
     <AdminWorkspace view={adminViewChecks()}>
       <div className="flex flex-col gap-5">
-        <span className="self-start rounded-full bg-[var(--color-cream-tint)] px-3 py-1 text-[13px] font-semibold tabular-nums text-[var(--color-ink)]">
-          {formatShortDate(data.weekStart)} – {formatShortDate(data.weekEnd)}
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-full bg-[var(--color-cream-tint)] px-3 py-1 text-[13px] font-semibold tabular-nums text-[var(--color-ink)]">
+            {data.isToday ? "Today" : formatShortDate(data.date)}
+          </span>
+          {data.manager ? (
+            <Link
+              href={
+                data.isToday
+                  ? "/admin/checks"
+                  : `/admin/checks?date=${data.date}`
+              }
+              aria-label={`Show all Country Managers instead of ${data.manager.name}`}
+              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-emerald-tint)] px-3 py-1 text-[13px] font-semibold text-[var(--color-emerald)] outline-none hover:opacity-80 focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+            >
+              {data.manager.name}
+              <X className="h-3.5 w-3.5" aria-hidden="true" />
+            </Link>
+          ) : null}
+          {!data.isToday ? (
+            <Link
+              href={
+                data.manager
+                  ? `/admin/checks?manager=${data.manager.id}`
+                  : "/admin/checks"
+              }
+              className="rounded-full border border-[var(--color-hairline)] px-3 py-1 text-[13px] font-semibold text-[var(--color-ink)] outline-none hover:bg-[var(--color-cream-tint)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
+            >
+              Today
+            </Link>
+          ) : null}
+        </div>
 
         <section
           aria-label="Weekly check totals"
           className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5"
         >
-          {cards.map((card) => (
-            <div
-              key={card.label}
-              className="flex flex-col gap-1 rounded-[16px] bg-[var(--color-surface)] px-4 py-4"
-              style={{ boxShadow: "0 4px 24px rgba(20,20,20,.06)" }}
-              aria-label={`${card.label}: ${card.value}`}
-            >
-              <p className="text-[12px] font-semibold text-[var(--color-muted)]">
-                {card.label}
-              </p>
-              <p
-                className={`text-[26px] font-extrabold tabular-nums leading-none ${toneClass[card.tone]}`}
+          {cards.map((card) =>
+            card.label === "Problems reported" ? (
+              <WeeklyChecksProblemsCard
+                key={card.label}
+                count={card.value}
+                problems={data.problems}
+              />
+            ) : (
+              <div
+                key={card.label}
+                className="flex flex-col gap-1 rounded-[16px] bg-[var(--color-surface)] px-4 py-4"
+                style={{ boxShadow: "0 4px 24px rgba(20,20,20,.06)" }}
+                aria-label={`${card.label}: ${card.value}`}
               >
-                {card.value}
-              </p>
-              {card.hint ? (
-                <p className="text-[11px] font-semibold tabular-nums text-[var(--color-muted)]">
-                  {card.hint}
+                <p className="text-[12px] font-semibold text-[var(--color-muted)]">
+                  {card.label}
                 </p>
-              ) : null}
-            </div>
-          ))}
+                <p
+                  className={`text-[26px] font-extrabold tabular-nums leading-none ${toneClass[card.tone]}`}
+                >
+                  {card.value}
+                </p>
+                {card.hint ? (
+                  <p className="text-[11px] font-semibold tabular-nums text-[var(--color-muted)]">
+                    {card.hint}
+                  </p>
+                ) : null}
+              </div>
+            ),
+          )}
         </section>
 
-        {data.managers.length > 0 ? (
+        {!data.manager && data.managers.length > 0 ? (
           <section
             aria-label="Progress by Country Manager"
             className="flex flex-col gap-2"
@@ -145,9 +188,15 @@ export default async function AdminWeeklyChecksPage({
               {data.managers.map((manager) => {
                 const done = percent(manager.checked, manager.total);
                 return (
-                  <div
+                  <Link
                     key={manager.managerId ?? "none"}
-                    className="flex flex-col gap-1.5 rounded-[14px] border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 py-2.5"
+                    href={
+                      manager.managerId
+                        ? `/admin/checks?manager=${manager.managerId}${data.isToday ? "" : `&date=${data.date}`}`
+                        : "#"
+                    }
+                    aria-label={`Show ${manager.managerName}'s team`}
+                    className="flex flex-col gap-1.5 rounded-[14px] border border-[var(--color-hairline)] bg-[var(--color-surface)] px-3 py-2.5 outline-none hover:border-[var(--color-emerald)] focus-visible:ring-2 focus-visible:ring-[var(--color-emerald)]"
                   >
                     <div className="flex items-center justify-between gap-2 text-[13px]">
                       <span className="truncate font-semibold text-[var(--color-ink)]">
@@ -172,7 +221,7 @@ export default async function AdminWeeklyChecksPage({
                         style={{ width: `${done}%` }}
                       />
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>
@@ -189,6 +238,7 @@ export default async function AdminWeeklyChecksPage({
           rows={data.rows}
           matching={data.matching}
           filter={filters.filter}
+          isToday={data.isToday}
         />
       </div>
     </AdminWorkspace>

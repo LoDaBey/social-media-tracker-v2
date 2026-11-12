@@ -43,7 +43,7 @@ const PAGE_CATALOG: Record<
   extract: { label: "Data extract", sortOrder: 30 },
   spare: { label: "Spare accounts", sortOrder: 40 },
   strategy: { label: "Strategy", sortOrder: 50 },
-  checks: { label: "Weekly checks", sortOrder: 55 },
+  checks: { label: "Daily checks", sortOrder: 55 },
   activity: { label: "Activity", sortOrder: 60 },
   manager_team: { label: "Your team (employees & accounts)", sortOrder: 110 },
   manager_coverage: { label: "Planned coverage", sortOrder: 120 },

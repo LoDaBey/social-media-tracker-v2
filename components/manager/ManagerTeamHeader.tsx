@@ -37,10 +37,9 @@ export function ManagerTeamHeader({
                 ? "bg-[var(--color-emerald-tint)] text-[var(--color-emerald)]"
                 : "bg-[var(--color-amber)]/15 text-[var(--color-amber)]"
             }`}
-            title="Check every account once between Monday and Sunday."
-            aria-label={`Weekly check: ${weekly.checked} of ${weekly.total} accounts done, ends ${weekly.endsLabel}`}
+            aria-label={`Today's check: ${weekly.checked} of ${weekly.total} accounts done`}
           >
-            Weekly check {weekly.checked} / {weekly.total} · ends {weekly.endsLabel}
+            Today&apos;s check {weekly.checked} / {weekly.total}
           </span>
           <div className="inline-flex items-center gap-2">
             <span className="text-[14px] font-semibold text-[var(--color-ink)]">

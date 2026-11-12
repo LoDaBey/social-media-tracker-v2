@@ -10,10 +10,10 @@ import { AccountUrlCell } from "@/components/admin/AccountUrlCell";
 import type { AdminWeeklyChecksTableProps } from "@/types/weekly-checks";
 
 const EMPTY: Record<AdminWeeklyChecksTableProps["filter"], string> = {
-  unchecked: "Every account has been checked this week.",
-  issue: "No problems reported this week.",
-  changed: "No accounts were added or edited this week.",
-  ok: "No accounts checked OK yet this week.",
+  unchecked: "Every account is checked.",
+  issue: "No problems reported.",
+  changed: "No accounts added or edited.",
+  ok: "No accounts checked OK yet.",
   all: "No accounts found.",
 };
 
@@ -21,6 +21,7 @@ export function WeeklyChecksTable({
   rows,
   matching,
   filter,
+  isToday,
 }: AdminWeeklyChecksTableProps) {
   if (rows.length === 0) {
     return (
@@ -47,7 +48,7 @@ export function WeeklyChecksTable({
               <th className="px-4 py-3">Platform</th>
               <th className="px-4 py-3">Account</th>
               <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">This week</th>
+              <th className="px-4 py-3">Check</th>
             </tr>
           </thead>
           <tbody>
@@ -101,9 +102,9 @@ export function WeeklyChecksTable({
                     <AccountStatusBadge
                       status={row.status as "active" | "archived" | "suspended"}
                     />
-                    {row.changedThisWeek ? (
+                    {row.changedThatDay ? (
                       <span className="mt-1 block text-[11px] font-semibold text-[var(--color-amber)]">
-                        Changed this week
+                        {isToday ? "Changed today" : "Changed that day"}
                       </span>
                     ) : null}
                   </td>

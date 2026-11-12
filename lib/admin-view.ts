@@ -79,7 +79,7 @@ export function adminViewStrategy(): AdminView {
 }
 
 export function adminViewChecks(): AdminView {
-  return { kind: "checks", title: "Weekly checks" };
+  return { kind: "checks", title: "Daily checks" };
 }
 
 export function adminViewLogs(): AdminView {
