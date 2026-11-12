@@ -12,13 +12,14 @@ export function EmployeesTableToolbar({
   counts,
   holders,
   canCreateEmployees = true,
+  filterCountries,
 }: EmployeesTableToolbarProps) {
   return (
     <div className="flex flex-col gap-3 border-b border-[var(--color-hairline)] px-4 py-3 lg:flex-row lg:items-center lg:gap-4">
       <EmployeesToolbarSearch initialQ={initialQ} />
       <EmployeesStatusChips counts={counts} />
       <div className="flex min-w-0 flex-wrap items-center gap-2 lg:ml-auto">
-        <EmployeesToolbarFilters />
+        <EmployeesToolbarFilters filterCountries={filterCountries} />
         {canCreateEmployees ? (
           <>
             <EmployeesBulkImportButton holders={holders} variant="button" />

@@ -34,7 +34,7 @@ export type ManagerAccountListItem = {
   account_scope: AccountScope;
   status: "active" | "archived" | "suspended";
   is_spare: boolean;
-  /** This week's check (Monday to Sunday); null = not checked yet. */
+  /** Today's check (Cairo day); null = not checked yet. */
   weekly_check: WeeklyCheck | null;
 };
 
@@ -162,8 +162,8 @@ export type ManagerCountryTotal = {
 };
 
 export type ManagerTeamHeaderProps = {
-  /** This week's account check-up progress. */
-  weekly: { checked: number; total: number; endsLabel: string };
+  /** Today's account check-up progress (checks are daily). */
+  weekly: { checked: number; total: number };
   holderCount: number;
   overall: ManagerTeamTotals;
   countries: ManagerCountryTotal[];

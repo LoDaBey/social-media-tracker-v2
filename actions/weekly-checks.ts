@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { pool, queryOne } from "@/lib/db";
-import { getCairoWeekStart } from "@/lib/cairo-date";
+import { getTodayCairoDate } from "@/lib/cairo-date";
 import { publicAdminMutationError } from "@/lib/admin-action-error";
 import { assertManagerCanEditEmployee } from "@/lib/manager-data";
 import { requireManagerPermission } from "@/lib/manager-permissions";
@@ -12,8 +12,8 @@ import type { Platform } from "@/types/db";
 import type { WeeklyCheckResult } from "@/types/weekly-checks";
 
 /**
- * Country Manager's weekly check on one account: "ok" (still active, working, no
- * issues), "issue" (with a note), or null to undo this week's check.
+ * Country Manager's daily check on one account: "ok" (still active, working, no
+ * issues), "issue" (with a note), or null to undo today's check. Once per account per day (Cairo).
  */
 export async function setManagerWeeklyCheck(
   accountId: number,
@@ -56,25 +56,25 @@ export async function setManagerWeeklyCheck(
     );
     if (!allowed) return { error: "You can only check accounts on your team." };
 
-    const weekStart = getCairoWeekStart();
+    const checkDate = getTodayCairoDate();
     if (result === null) {
       await pool.query(
-        `DELETE FROM temp_account_weekly_checks WHERE account_id = $1 AND week_start = $2::date`,
-        [accountId, weekStart],
+        `DELETE FROM temp_account_weekly_checks WHERE account_id = $1 AND check_date = $2::date`,
+        [accountId, checkDate],
       );
     } else {
       await pool.query(
         `INSERT INTO temp_account_weekly_checks
-           (account_id, week_start, result, note, checked_by, checked_at)
+           (account_id, check_date, result, note, checked_by, checked_at)
          VALUES ($1, $2::date, $3, $4, $5, CURRENT_TIMESTAMP)
-         ON CONFLICT (account_id, week_start) DO UPDATE
+         ON CONFLICT (account_id, check_date) DO UPDATE
            SET result = EXCLUDED.result,
                note = EXCLUDED.note,
                checked_by = EXCLUDED.checked_by,
                checked_at = EXCLUDED.checked_at`,
         [
           accountId,
-          weekStart,
+          checkDate,
           result,
           result === "issue" ? cleanNote : null,
           managerId,
@@ -91,10 +91,10 @@ export async function setManagerWeeklyCheck(
       resource: "account",
       summary:
         result === null
-          ? `Undid weekly check on ${platform} ${name} (${account.holder_name})`
+          ? `Undid daily check on ${platform} ${name} (${account.holder_name})`
           : result === "ok"
-            ? `Weekly check OK: ${platform} ${name} (${account.holder_name})`
-            : `Weekly check problem: ${platform} ${name} (${account.holder_name})`,
+            ? `Daily check OK: ${platform} ${name} (${account.holder_name})`
+            : `Daily check problem: ${platform} ${name} (${account.holder_name})`,
       details: {
         result: result === null ? "Undone" : result === "ok" ? "OK" : "Problem",
         ...(result === "issue" ? { problem: cleanNote } : {}),
@@ -102,7 +102,7 @@ export async function setManagerWeeklyCheck(
         country: account.country ?? "—",
         platform,
         account: name,
-        week: weekStart,
+        date: checkDate,
       },
     });
     return {};

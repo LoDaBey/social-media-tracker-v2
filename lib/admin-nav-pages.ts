@@ -29,7 +29,7 @@ export const ADMIN_NAV_PAGES: {
   {
     pageKey: "checks",
     href: "/admin/checks",
-    label: "Weekly checks",
+    label: "Daily checks",
     match: "prefix",
   },
   {

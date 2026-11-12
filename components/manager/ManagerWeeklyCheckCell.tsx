@@ -13,7 +13,7 @@ const smallButton =
 
 /**
  * One account's weekly check: OK = still active, working, no issues; Problem needs
- * a short note. Once per account per week (Monday to Sunday); Undo clears it.
+ * a short note. Once per account per day (Cairo); Undo clears it.
  */
 export function ManagerWeeklyCheckCell({
   accountId,
@@ -70,7 +70,7 @@ export function ManagerWeeklyCheckCell({
               type="button"
               disabled={pending}
               onClick={() => save(null)}
-              aria-label={`Undo this week's check for ${accountName}`}
+              aria-label={`Undo today's check for ${accountName}`}
               className={`${smallButton} text-[var(--color-muted)] hover:bg-[var(--color-cream-tint)]`}
             >
               <Undo2 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -139,7 +139,7 @@ export function ManagerWeeklyCheckCell({
         type="button"
         disabled={pending}
         onClick={() => save("ok")}
-        aria-label={`Mark ${accountName} as checked OK this week`}
+        aria-label={`Mark ${accountName} as checked OK today`}
         className={`${smallButton} border border-[var(--color-emerald)] text-[var(--color-emerald)] hover:bg-[var(--color-emerald-tint)]`}
       >
         <Check className="h-3.5 w-3.5" aria-hidden="true" strokeWidth={2.5} />

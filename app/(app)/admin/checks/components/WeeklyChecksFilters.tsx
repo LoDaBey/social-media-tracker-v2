@@ -10,7 +10,7 @@ import type {
 const FILTERS: { value: WeeklyCheckFilter; label: string }[] = [
   { value: "unchecked", label: "Not checked yet" },
   { value: "issue", label: "Problems reported" },
-  { value: "changed", label: "Changed this week" },
+  { value: "changed", label: "Changed that day" },
   { value: "ok", label: "Checked OK" },
   { value: "all", label: "All accounts" },
 ];

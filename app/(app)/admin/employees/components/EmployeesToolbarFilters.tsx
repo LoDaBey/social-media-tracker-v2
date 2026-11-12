@@ -4,13 +4,12 @@ import { useMemo } from "react";
 import { useInstantSearchParams } from "@/hooks/useInstantSearchParams";
 import { EmployeesToolbarSelect } from "@/app/(app)/admin/employees/components/EmployeesToolbarSelect";
 import {
-  ALL_SETUP_COUNTRIES,
   employeeListRegionFromSlug,
   employeeListRegionSlug,
   isCountryInEmployeeListRegion,
-  setupCountriesForRegion,
 } from "@/lib/setup-options";
 import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
+import type { EmployeesToolbarFiltersProps } from "@/types/admin";
 
 const ROLE_OPTIONS = [
   { value: "employee", label: "Employees" },
@@ -27,7 +26,9 @@ const REGION_OPTIONS = [
   { value: "asia", label: "Asia" },
 ];
 
-export function EmployeesToolbarFilters() {
+export function EmployeesToolbarFilters({
+  filterCountries,
+}: EmployeesToolbarFiltersProps) {
   const { params: sp, update: push } = useInstantSearchParams();
   const role = sp.get("role") ?? "";
   const region = employeeListRegionFromSlug(sp.get("region") ?? undefined);
@@ -36,14 +37,25 @@ export function EmployeesToolbarFilters() {
     ? countryRaw
     : "";
 
+  // Only projects and countries that have accounts (already limited for OPs).
+  const regionOptions = useMemo(() => {
+    const present = new Set(filterCountries.map((item) => item.region));
+    return REGION_OPTIONS.filter((option) =>
+      present.has(
+        employeeListRegionFromSlug(option.value) as (typeof filterCountries)[number]["region"]
+      )
+    );
+  }, [filterCountries]);
   const countryOptions = useMemo(
     () =>
       [
-        ...(region === "all"
-          ? ALL_SETUP_COUNTRIES
-          : setupCountriesForRegion(region)),
+        ...new Set(
+          filterCountries
+            .filter((item) => region === "all" || item.region === region)
+            .map((item) => item.country)
+        ),
       ].sort((a, b) => a.localeCompare(b)),
-    [region]
+    [filterCountries, region]
   );
 
   return (
@@ -53,7 +65,7 @@ export function EmployeesToolbarFilters() {
         value={region === "all" ? "" : employeeListRegionSlug(region)}
         ariaLabel="Filter by region"
         allLabel="All"
-        options={REGION_OPTIONS}
+        options={regionOptions}
         onChange={(value) => {
           const nextRegion = employeeListRegionFromSlug(value || undefined);
           const nextCountry =

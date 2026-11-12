@@ -73,8 +73,8 @@ export function ManagerTeamRow({
               }`}
             >
               {allChecked
-                ? "All checked this week"
-                : `${checked} / ${row.accounts.length} checked this week`}
+                ? "All checked today"
+                : `${checked} / ${row.accounts.length} checked today`}
             </span>
           ) : null}
         </td>

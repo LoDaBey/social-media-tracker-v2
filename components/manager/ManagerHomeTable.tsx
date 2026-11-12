@@ -3,11 +3,6 @@
 import { ManagerTeamHeader } from "@/components/manager/ManagerTeamHeader";
 import { ManagerTeamRow } from "@/components/manager/ManagerTeamRow";
 import type { ManagerHomeTableProps } from "@/types/manager";
-import {
-  formatShortDate,
-  getCairoWeekEnd,
-  getCairoWeekStart,
-} from "@/lib/cairo-date";
 
 export function ManagerHomeTable({ groups }: ManagerHomeTableProps) {
   const rows = groups.flatMap((group) => group.holders);
@@ -15,7 +10,6 @@ export function ManagerHomeTable({ groups }: ManagerHomeTableProps) {
   const weekly = {
     checked: allAccounts.filter((account) => account.weekly_check).length,
     total: allAccounts.length,
-    endsLabel: `Sun ${formatShortDate(getCairoWeekEnd(getCairoWeekStart()))}`,
   };
   const overall = rows.reduce(
     (sum, holder) => ({

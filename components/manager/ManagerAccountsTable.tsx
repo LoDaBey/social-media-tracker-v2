@@ -41,7 +41,7 @@ export function ManagerAccountsTable({
               Status
             </th>
             <th scope="col" className="px-4 py-2">
-              This week&apos;s check
+              Today&apos;s check
             </th>
             <th scope="col" className="px-4 py-2">
               Actions

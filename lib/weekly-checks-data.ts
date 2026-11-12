@@ -1,16 +1,22 @@
-import { query } from "@/lib/db";
-import { getCairoWeekEnd, getCairoWeekStart } from "@/lib/cairo-date";
+import { query, queryOne } from "@/lib/db";
+import { getTodayCairoDate } from "@/lib/cairo-date";
 import { sameProjectSql } from "@/lib/project-region-sql";
 import type { OpAccessScope } from "@/types/admin";
 import type {
   AdminWeeklyChecksData,
   AdminWeeklyChecksFilters,
+  DailyCheckMissedSummary,
   WeeklyCheck,
   WeeklyCheckAccountRow,
   WeeklyCheckFilter,
   WeeklyCheckManagerProgress,
 } from "@/types/weekly-checks";
 import type { Platform } from "@/types/db";
+
+/**
+ * Account checks are daily (Cairo time): every account once a day.
+ * Stored in temp_account_weekly_checks (name kept from 0026), keyed by check_date.
+ */
 
 /** Most rows the admin list shows at once (KPIs always count everything). */
 const ADMIN_ROW_LIMIT = 500;
@@ -24,6 +30,13 @@ export function parseWeeklyCheckFilter(
     value === "all"
     ? value
     : "unchecked";
+}
+
+/** A valid YYYY-MM-DD not after today, else today. */
+export function parseCheckDate(value: string | undefined): string {
+  const today = getTodayCairoDate();
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return today;
+  return value > today ? today : value;
 }
 
 type CheckRow = {
@@ -49,10 +62,10 @@ function toCheck(row: {
   };
 }
 
-/** This week's checks for these accounts (missing = not checked yet). */
+/** Today's checks for these accounts (missing = not checked yet). */
 export async function fetchWeeklyChecksForAccounts(
   accountIds: number[],
-  weekStart: string = getCairoWeekStart(),
+  date: string = getTodayCairoDate(),
 ): Promise<Map<number, WeeklyCheck>> {
   const map = new Map<number, WeeklyCheck>();
   if (!accountIds.length) return map;
@@ -61,16 +74,16 @@ export async function fetchWeeklyChecksForAccounts(
       `SELECT c.account_id, c.result, c.note, c.checked_at, u.full_name AS checked_by_name
          FROM temp_account_weekly_checks c
          LEFT JOIN temp_users u ON u.id = c.checked_by
-        WHERE c.week_start = $1::date
+        WHERE c.check_date = $1::date
           AND c.account_id = ANY($2::int[])`,
-      [weekStart, accountIds],
+      [date, accountIds],
     );
     for (const row of rows) {
       const check = toCheck(row);
       if (check) map.set(row.account_id, check);
     }
   } catch {
-    // Table not there yet (migration 0026): everything shows as not checked.
+    // Table / column not there yet (migrations 0026, 0027): nothing checked.
   }
   return map;
 }
@@ -96,15 +109,15 @@ type AdminRow = {
 };
 
 /**
- * Every account of an active employee, with this week's check. Operation Managers
- * only see their own project and countries.
+ * Every account of an active employee with its check for `$1` (a date), and the
+ * Country Manager responsible: the holder's manager, else their team lead's,
+ * else the CM who covers that country in the same project (who sees them).
  */
-export async function fetchAdminWeeklyChecks(
-  filters: AdminWeeklyChecksFilters,
+async function fetchCheckRows(
+  date: string,
   scope: OpAccessScope | null,
-): Promise<AdminWeeklyChecksData> {
-  const weekStart = getCairoWeekStart();
-  const values: unknown[] = [weekStart];
+): Promise<AdminRow[]> {
+  const values: unknown[] = [date];
   const where: string[] = [
     "u.role = 'employee'",
     "u.is_active = TRUE",
@@ -117,7 +130,7 @@ export async function fetchAdminWeeklyChecks(
     where.push(sameProjectSql("u.region", `$${values.length}::text`));
   }
 
-  const rows = await query<AdminRow>(
+  return query<AdminRow>(
     `SELECT a.id AS account_id,
             a.platform,
             a.username,
@@ -130,7 +143,8 @@ export async function fetchAdminWeeklyChecks(
             u.region,
             cm.id AS manager_id,
             cm.full_name AS manager_name,
-            (a.created_at >= $1::date OR a.updated_at >= $1::date) AS changed,
+            ((a.created_at >= $1::date AND a.created_at < $1::date + 1)
+              OR (a.updated_at >= $1::date AND a.updated_at < $1::date + 1)) AS changed,
             c.result,
             c.note,
             c.checked_at,
@@ -138,8 +152,6 @@ export async function fetchAdminWeeklyChecks(
        FROM temp_social_media_accounts a
        JOIN temp_users u ON u.id = a.user_id
        LEFT JOIN temp_users tl ON tl.id = u.team_lead_id AND tl.role = 'team_lead'
-       -- No manager on the profile (or a team lead without one): the CM who covers
-       -- this country in the same project sees them on their page, so count them there.
        LEFT JOIN LATERAL (
          SELECT m.id
            FROM temp_manager_countries mc
@@ -153,12 +165,37 @@ export async function fetchAdminWeeklyChecks(
        ) covering ON u.manager_id IS NULL AND tl.manager_id IS NULL
        LEFT JOIN temp_users cm ON cm.id = COALESCE(u.manager_id, tl.manager_id, covering.id)
        LEFT JOIN temp_account_weekly_checks c
-              ON c.account_id = a.id AND c.week_start = $1::date
+              ON c.account_id = a.id AND c.check_date = $1::date
        LEFT JOIN temp_users chk ON chk.id = c.checked_by
       WHERE ${where.join(" AND ")}
       ORDER BY u.country ASC NULLS LAST, u.full_name ASC, a.platform ASC, a.id ASC`,
     values,
   );
+}
+
+/**
+ * The checks page for one day. Operation Managers only see their own project and
+ * countries; `managerId` limits it to one Country Manager's team.
+ */
+export async function fetchAdminWeeklyChecks(
+  filters: AdminWeeklyChecksFilters,
+  scope: OpAccessScope | null,
+): Promise<AdminWeeklyChecksData> {
+  const date = parseCheckDate(filters.date);
+  let rows = await fetchCheckRows(date, scope);
+
+  let manager: AdminWeeklyChecksData["manager"] = null;
+  if (filters.managerId) {
+    rows = rows.filter((row) => row.manager_id === filters.managerId);
+    const found = await queryOne<{ full_name: string }>(
+      `SELECT full_name FROM temp_users WHERE id = $1 AND role = 'manager'`,
+      [filters.managerId],
+    );
+    manager = {
+      id: filters.managerId,
+      name: found?.full_name ?? "Country Manager",
+    };
+  }
 
   const kpis = {
     total: rows.length,
@@ -212,33 +249,56 @@ export async function fetchAdminWeeklyChecks(
     return true;
   });
 
-  const list: WeeklyCheckAccountRow[] = matchingRows
-    .slice(0, ADMIN_ROW_LIMIT)
-    .map((row) => ({
-      accountId: row.account_id,
-      platform: row.platform,
-      username: row.username,
-      accountName: row.account_name,
-      accountUrl: row.account_url,
-      status: row.status,
-      holderId: row.holder_id,
-      holderName: row.holder_name,
-      country: row.country,
-      region: row.region,
-      managerName: row.manager_name,
-      changedThisWeek: Boolean(row.changed),
-      check: toCheck(row),
-    }));
+  const toAccountRow = (row: AdminRow): WeeklyCheckAccountRow => ({
+    accountId: row.account_id,
+    platform: row.platform,
+    username: row.username,
+    accountName: row.account_name,
+    accountUrl: row.account_url,
+    status: row.status,
+    holderId: row.holder_id,
+    holderName: row.holder_name,
+    country: row.country,
+    region: row.region,
+    managerName: row.manager_name,
+    changedThatDay: Boolean(row.changed),
+    check: toCheck(row),
+  });
 
   return {
-    weekStart,
-    weekEnd: getCairoWeekEnd(weekStart),
+    date,
+    isToday: date === getTodayCairoDate(),
+    manager,
     kpis,
     managers: [...byManager.values()].sort(
       (a, b) => b.total - b.checked - (a.total - a.checked),
     ),
-    rows: list,
+    rows: matchingRows.slice(0, ADMIN_ROW_LIMIT).map(toAccountRow),
+    // Every problem that day, whatever filter is on (Problems card window).
+    problems: rows.filter((row) => row.result === "issue").map(toAccountRow),
     matching: matchingRows.length,
     countries: [...countries].sort((a, b) => a.localeCompare(b)),
   };
+}
+
+/** Country Managers (in this scope) who left accounts unchecked on `date`. */
+export async function fetchDailyCheckMissed(
+  date: string,
+  scope: OpAccessScope | null,
+): Promise<DailyCheckMissedSummary[]> {
+  const rows = await fetchCheckRows(date, scope);
+  const byManager = new Map<number, DailyCheckMissedSummary>();
+  for (const row of rows) {
+    if (!row.manager_id) continue;
+    const item = byManager.get(row.manager_id) ?? {
+      managerId: row.manager_id,
+      managerName: row.manager_name ?? "Country Manager",
+      unchecked: 0,
+      total: 0,
+    };
+    item.total += 1;
+    if (!row.result) item.unchecked += 1;
+    byManager.set(row.manager_id, item);
+  }
+  return [...byManager.values()].filter((item) => item.unchecked > 0);
 }

@@ -12,6 +12,8 @@ import { EmployeesTableToolbar } from "@/app/(app)/admin/employees/components/Em
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import { adminViewEmployees } from "@/lib/admin-view";
 import { baseCountryFromDisplay } from "@/lib/overview-country-display";
+import { fetchEmployeeFilterCountries } from "@/lib/employee-filter-countries";
+import { sameProject } from "@/lib/project-region-sql";
 import {
   employeeListRegionFromSlug,
   isCountryInEmployeeListRegion,
@@ -63,12 +65,24 @@ export default async function AdminEmployeesPage({
     }
   }
 
-  let listed = await fetchAdminEmployeesList({
-    q,
-    role: role === "all" ? undefined : role,
-    region,
-    country: country || undefined,
-  });
+  let [listed, filterCountries] = await Promise.all([
+    fetchAdminEmployeesList({
+      q,
+      role: role === "all" ? undefined : role,
+      region,
+      country: country || undefined,
+    }),
+    fetchEmployeeFilterCountries(),
+  ]);
+  if (viewer.role === "op" && viewer.scope) {
+    // Operation Managers: only their own project and countries in the dropdowns.
+    const scope = viewer.scope;
+    filterCountries = filterCountries.filter(
+      (item) =>
+        sameProject(item.region, scope.region) &&
+        scope.countries.includes(item.country)
+    );
+  }
 
   if (viewer.role === "op" && viewer.scope) {
     const allowed = new Set(viewer.scope.countries);
@@ -123,6 +137,7 @@ export default async function AdminEmployeesPage({
             counts={counts}
             holders={holders}
             canCreateEmployees={canCreateEmployees}
+            filterCountries={filterCountries}
           />
         }
       />

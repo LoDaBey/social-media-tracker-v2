@@ -765,11 +765,22 @@ export type EmployeesTableProps = {
   canManagePermissions?: boolean;
 };
 
+/** A project + country that has accounts (Employees filter dropdowns). */
+export type EmployeeFilterCountry = {
+  region: "Africa" | "Europe" | "Alphaa" | "Asia";
+  country: string;
+};
+
 export type EmployeesTableToolbarProps = {
   initialQ: string;
   counts: EmployeeListStatusCounts;
   holders: BulkImportHolderOption[];
   canCreateEmployees?: boolean;
+  filterCountries: EmployeeFilterCountry[];
+};
+
+export type EmployeesToolbarFiltersProps = {
+  filterCountries: EmployeeFilterCountry[];
 };
 
 export type EmployeesHeadingActionsProps = {
