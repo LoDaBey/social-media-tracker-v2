@@ -127,7 +127,8 @@ function appendTempUserRegionFilter(
     params.push(["Europe", "Balkan"]);
     where.push(`TRIM(u.region) = ANY($${params.length}::text[])`);
   } else if (filters.region === "Asia") {
-    params.push(["Asia"]);
+    // Compared lowercased below, so the value must be lowercase too.
+    params.push(["asia"]);
     where.push(
       `LOWER(TRIM(COALESCE(u.region, ''))) = ANY($${params.length}::text[])`
     );
