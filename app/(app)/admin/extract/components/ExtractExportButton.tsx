@@ -3,45 +3,86 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import * as XLSX from "xlsx";
-import { extractRoleLabel } from "@/lib/admin-extract-filters";
 import { extractFilterPlatformLabel } from "@/lib/admin-extract-platform";
-import { accountScopeLabel } from "@/lib/account-scope";
+import { baseCountryFromDisplay } from "@/lib/overview-country-display";
 import { MAIN_PROJECT_LABEL } from "@/lib/project-labels";
 import type { AdminExtractRow, ExtractExportButtonProps } from "@/types/admin";
 
-function rowsToSheetRows(rows: AdminExtractRow[]) {
-  return rows.map((row) => {
-    const normalizedRegion = row.region?.trim().toLowerCase();
-    const region =
-      normalizedRegion === "balkan"
-        ? "Europe"
-        : normalizedRegion === "alphaa"
-          ? MAIN_PROJECT_LABEL
-          : (row.region ?? "");
-    return {
-      Region: region,
-      Country: row.country ?? "",
-      Handler: row.handler_name,
-      Role: extractRoleLabel(row.handler_role),
-      Platform: row.platform ? extractFilterPlatformLabel(row.platform) : "",
-      "Account type": row.platform
-        ? accountScopeLabel(row.account_scope)
-        : "",
-      Account: row.platform ? row.account_name : "",
-      Username: row.username ?? "",
-      URL: row.account_url ?? "",
-      Category: row.category ?? "",
-      Status: row.status,
-      Spare: row.platform ? (row.is_spare ? "Yes" : "No") : "",
-      Source: row.source === "alphaa" ? MAIN_PROJECT_LABEL : "Temp",
-    };
-  });
+/**
+ * Same columns as public/Africa Template.xlsx (so the file can also be imported
+ * back), with the project as a first "Region" column. Used for every project.
+ */
+const TEMPLATE_HEADER = [
+  "Region",
+  "Handler Name",
+  "Country",
+  "Platforms",
+  "Categories",
+  "Acount Name",
+  "URL",
+  "Personal",
+  "Umbrella",
+  "Status",
+  "Language1",
+  "Username ",
+  "Email",
+  "Password",
+  "Mobile No.",
+] as const;
+
+const COLUMN_WIDTHS = [12, 28, 16, 12, 12, 26, 44, 10, 10, 13, 14, 24, 30, 18, 16];
+
+const STATUS_LABEL: Record<AdminExtractRow["status"], string> = {
+  active: "Active",
+  archived: "Temp locked",
+  suspended: "Suspended",
+};
+
+function projectLabel(region: string | null): string {
+  const value = region?.trim().toLowerCase() ?? "";
+  if (value === "alphaa" || value === "main") return MAIN_PROJECT_LABEL;
+  if (value === "balkan" || value === "europe") return "Europe";
+  if (value === "africa") return "Africa";
+  if (value === "asia") return "Asia";
+  return region?.trim() ?? "";
+}
+
+function rowToTemplate(row: AdminExtractRow): string[] {
+  const hasAccount = Boolean(row.platform);
+  const personal = hasAccount && row.account_scope !== "umbrella";
+  const umbrella = hasAccount && row.account_scope === "umbrella";
+  return [
+    projectLabel(row.region),
+    row.handler_name,
+    row.country ? baseCountryFromDisplay(row.country) : "",
+    hasAccount ? extractFilterPlatformLabel(row.platform) : "",
+    hasAccount ? (row.category ?? "") : "",
+    hasAccount ? row.account_name : "",
+    hasAccount ? (row.account_url ?? "") : "",
+    personal ? "Yes" : "",
+    umbrella ? "Yes" : "",
+    hasAccount ? STATUS_LABEL[row.status] : "",
+    row.language ?? "",
+    hasAccount ? (row.username ?? "") : "",
+    hasAccount ? (row.account_email ?? "") : "",
+    hasAccount ? (row.account_password ?? "") : "",
+    hasAccount ? (row.mobile_number ?? "") : "",
+  ];
 }
 
 function downloadWorkbook(rows: AdminExtractRow[]) {
-  const sheet = XLSX.utils.json_to_sheet(rowsToSheetRows(rows));
+  // Already ordered by project, country, handler and platform.
+  const aoa: string[][] = [[...TEMPLATE_HEADER], ...rows.map(rowToTemplate)];
+  const sheet = XLSX.utils.aoa_to_sheet(aoa);
+  sheet["!cols"] = COLUMN_WIDTHS.map((wch) => ({ wch }));
+  sheet["!autofilter"] = {
+    ref: XLSX.utils.encode_range({
+      s: { r: 0, c: 0 },
+      e: { r: aoa.length - 1, c: TEMPLATE_HEADER.length - 1 },
+    }),
+  };
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, sheet, "Extract");
+  XLSX.utils.book_append_sheet(workbook, sheet, "template");
   const stamp = new Date().toISOString().slice(0, 10);
   XLSX.writeFile(workbook, `smt-extract-${stamp}.xlsx`);
 }

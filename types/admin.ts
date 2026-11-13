@@ -1384,6 +1384,11 @@ export type AdminExtractRow = {
   category: string | null;
   status: "active" | "archived" | "suspended";
   is_spare: boolean;
+  /** Africa template columns (Excel export). Null on role/user rows. */
+  account_email?: string | null;
+  account_password?: string | null;
+  mobile_number?: string | null;
+  language?: string | null;
 };
 
 export type AdminExtractBucketCount = {

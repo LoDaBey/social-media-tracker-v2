@@ -51,6 +51,10 @@ type AlphaaExtractQueryRow = {
   category: string | null;
   status: AdminExtractRow["status"];
   is_spare: boolean;
+  account_email: string | null;
+  account_password: string | null;
+  mobile_number: string | null;
+  language: string | null;
 };
 
 function legacyLabelsForExtractRole(role: AdminExtractRoleFilter): string[] {
@@ -201,6 +205,10 @@ function mapAlphaaRow(row: AlphaaExtractQueryRow): AdminExtractRow {
     category: row.category,
     status: row.status,
     is_spare: Boolean(row.is_spare),
+    account_email: row.account_email,
+    account_password: row.account_password,
+    mobile_number: row.mobile_number,
+    language: row.language,
   };
 }
 
@@ -342,7 +350,11 @@ export async function fetchAlphaaAdminExtract(
         sma.account_url,
         sma.category,
         sma.status,
-        sma.is_spare
+        sma.is_spare,
+        sma.account_email,
+        sma.account_password,
+        sma.mobile_number,
+        COALESCE(NULLIF(TRIM(sma.language1), ''), u.language) AS language
        FROM temp_social_media_accounts sma
        INNER JOIN temp_users u ON u.id = sma.user_id
       ${whereSql}

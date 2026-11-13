@@ -292,7 +292,11 @@ async function fetchTempAdminExtract(
         a.account_url,
         a.category,
         a.status,
-        a.is_spare
+        a.is_spare,
+        a.account_email,
+        a.account_password,
+        a.mobile_number,
+        COALESCE(NULLIF(TRIM(a.language1), ''), u.language) AS language
        FROM temp_social_media_accounts a
        INNER JOIN temp_users u ON u.id = a.user_id
       WHERE ${where.join("\n        AND ")}
